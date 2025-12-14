@@ -1,168 +1,257 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { TTSButton } from "@/components/ui/tts-button";
-import { Badge } from "@/components/ui/badge";
-import { Volume2, Mic, Users, MessageSquare } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdvancedTTSButton } from '@/components/ui/advanced-tts-button';
+import { TTSButton } from '@/components/ui/tts-button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info, Sparkles, Volume2 } from 'lucide-react';
+import { VoiceInfoCard } from '@/components/ui/voice-info-card';
+import { HuggingFaceStatusCard } from '@/components/ui/huggingface-status-card';
 
-const TTSDemo = () => {
-  const [selectedText, setSelectedText] = useState("");
+const TTSDemo: React.FC = () => {
+  const [customText, setCustomText] = useState('আসসালামু আলাইকুম। আমি বাংলা টেক্সট-টু-স্পিচ সিস্টেম।');
 
   const sampleTexts = [
-    "আসসালামু আলাইকুম! আমি একজন কৃষক। আজ আমার ধানের ক্ষেতে নতুন জাতের বীজ বপন করেছি।",
-    "এই বছর আমার টমেটের ফলন খুবই ভাল হয়েছে। প্রতি বিঘায় ১৫ মণ টমেটো পেয়েছি।",
-    "কৃষি বিশেষজ্ঞের পরামর্শ: এই মৌসুমে সরিষার চাষ করলে ভালো লাভ হবে।",
-    "বাজারে আজ পেঁয়াজের দাম কমেছে। প্রতি কেজি ৪০ টাকা থেকে ৩৫ টাকা হয়েছে।"
+    {
+      title: 'ধান চাষের পরামর্শ',
+      text: 'ধান চাষের জন্য মাটি ভালোভাবে চাষ করে নিন। বীজ বপনের আগে জমিতে পর্যাপ্ত পানি দিন। সার প্রয়োগের সময় সতর্ক থাকুন।',
+      author: 'কৃষি বিশেষজ্ঞ'
+    },
+    {
+      title: 'আবহাওয়া সতর্কতা',
+      text: 'আগামী ৩ দিন ভারী বৃষ্টিপাতের সম্ভাবনা রয়েছে। ফসলের সুরক্ষার জন্য প্রয়োজনীয় ব্যবস্থা নিন। নিষ্কাশনের ব্যবস্থা রাখুন।',
+      author: 'আবহাওয়া দপ্তর'
+    },
+    {
+      title: 'সবজি চাষ',
+      text: 'শীতকালীন সবজি চাষের জন্য এখনই প্রস্তুতি শুরু করুন। বাঁধাকপি, ফুলকপি, টমেটো এবং মরিচের চারা তৈরি করুন।',
+      author: 'উদ্যানতত্ত্ব বিভাগ'
+    },
+    {
+      title: 'কীটনাশক ব্যবহার',
+      text: 'কীটনাশক ব্যবহারের সময় সুরক্ষা সরঞ্জাম পরিধান করুন। সকাল বা বিকেলে স্প্রে করুন। বাতাস থাকলে স্প্রে করবেন না।',
+      author: 'কৃষি সম্প্রসারণ অফিসার'
+    },
+    {
+      title: 'বীজ সংরক্ষণ',
+      text: 'ভালো মানের বীজ নির্বাচন করুন এবং শুকনো স্থানে সংরক্ষণ করুন। বীজ বপনের আগে শোধন করে নিন। রোগমুক্ত বীজ ব্যবহার করুন।',
+      author: 'বীজ প্রযুক্তিবিদ'
+    }
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
-            <Volume2 className="h-8 w-8 text-primary" />
-            TTS ডেমো - কৃষক ফিড
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            বাংলা টেক্সট-টু-স্পিচ ফিচার পরীক্ষা করুন
-          </p>
-        </div>
+    <div className="container mx-auto p-4 space-y-6 max-w-6xl">
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          বাংলা টেক্সট-টু-স্পিচ ডেমো
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          উচ্চমানের AI মডেল দিয়ে বাংলা টেক্সট শুনুন
+        </p>
+      </div>
 
-        {/* Features */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Volume2 className="h-12 w-12 mx-auto mb-4 text-blue-500" />
-              <h3 className="font-semibold mb-2">বাংলা TTS</h3>
-              <p className="text-sm text-muted-foreground">
-                পোস্টের বিষয়বস্তু বাংলায় শুনুন
-              </p>
-            </CardContent>
-          </Card>
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          এই সিস্টেম দুটি মোড সাপোর্ট করে:
+          <br />
+          <strong className="text-purple-600">AI TTS (Hugging Face)</strong> - উচ্চমানের Meta এর MMS মডেল (Backend প্রয়োজন)
+          <br />
+          <strong className="text-green-600">Browser TTS (প্রস্তাবিত)</strong> - অফলাইন কাজ করে, CORS সমস্যা নেই
+        </AlertDescription>
+      </Alert>
 
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Users className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <h3 className="font-semibold mb-2">সবার জন্য</h3>
-              <p className="text-sm text-muted-foreground">
-                নিরক্ষর কৃষকরাও ব্যবহার করতে পারবেন
-              </p>
-            </CardContent>
-          </Card>
+      <div className="grid md:grid-cols-2 gap-4">
+        <HuggingFaceStatusCard />
+        <VoiceInfoCard />
+      </div>
 
-          <Card>
-            <CardContent className="p-6 text-center">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-purple-500" />
-              <h3 className="font-semibold mb-2">সহজ ব্যবহার</h3>
-              <p className="text-sm text-muted-foreground">
-                একটি ক্লিকেই পোস্ট শুনুন
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      <Tabs defaultValue="samples" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="samples">নমুনা টেক্সট</TabsTrigger>
+          <TabsTrigger value="custom">কাস্টম টেক্সট</TabsTrigger>
+        </TabsList>
 
-        {/* Sample Posts */}
-        <div className="space-y-4 mb-8">
-          <h2 className="text-2xl font-semibold mb-4">নমুনা পোস্ট</h2>
-          
-          {sampleTexts.map((text, index) => (
-            <Card key={index} className="transition-all hover:shadow-md">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="font-semibold text-primary">
-                        {String.fromCharCode(65 + index)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-semibold">কৃষক ভাই {index + 1}</p>
-                      <p className="text-sm text-muted-foreground">২ ঘন্টা আগে</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">সাধারণ</Badge>
-                    <TTSButton 
-                      text={text}
-                      authorName={`কৃষক ভাই ${index + 1}`}
-                      size="sm"
-                      variant="ghost"
+        <TabsContent value="samples" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {sampleTexts.map((sample, index) => (
+              <Card key={index} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="text-lg">{sample.title}</span>
+                    <Badge variant="outline">{sample.author}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {sample.text}
+                  </p>
+
+                  <div className="flex gap-2 flex-wrap">
+                    {/* AI TTS Button */}
+                    <AdvancedTTSButton
+                      text={sample.text}
+                      authorName={sample.author}
+                      size="default"
+                      variant="default"
+                      showLabel
+                      useHuggingFace={true}
+                      className="flex-1"
+                    />
+
+                    {/* Browser TTS Button */}
+                    <AdvancedTTSButton
+                      text={sample.text}
+                      authorName={sample.author}
+                      size="default"
+                      variant="outline"
+                      showLabel
+                      useHuggingFace={false}
+                      className="flex-1"
                     />
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed">{text}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {/* Custom Text Input */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="h-5 w-5" />
-              কাস্টম টেক্সট পরীক্ষা
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                আপনার টেক্সট লিখুন:
-              </label>
-              <textarea
-                value={selectedText}
-                onChange={(e) => setSelectedText(e.target.value)}
-                className="w-full p-3 border rounded-md min-h-[100px] resize-none"
-                placeholder="এখানে বাংলায় যেকোনো টেক্সট লিখুন..."
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <TTSButton 
-                text={selectedText || "কোনো টেক্সট লেখা হয়নি"}
-                size="default"
-                variant="default"
-                
-                className={!selectedText ? "opacity-50 cursor-not-allowed" : ""}
-              />
-              <Button
-                variant="outline"
-                onClick={() => setSelectedText("")}
-                disabled={!selectedText}
-              >
-                পরিষ্কার করুন
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    <Sparkles className="h-3 w-3" />
+                    <span>উচ্চমানের AI TTS</span>
+                    <Volume2 className="h-3 w-3 ml-2" />
+                    <span>ব্রাউজার TTS</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-        {/* Instructions */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>ব্যবহারের নির্দেশনা</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5">১</Badge>
-              <p className="text-sm">যেকোনো পোস্টের স্পিকার আইকনে ক্লিক করুন</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5">২</Badge>
-              <p className="text-sm">পোস্টটি বাংলায় পড়া শুরু হবে</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5">৩</Badge>
-              <p className="text-sm">বন্ধ করতে আবার স্পিকার আইকনে ক্লিক করুন</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5">৪</Badge>
-              <p className="text-sm">কাস্টম টেক্সট বক্সে নিজের টেক্সট লিখে পরীক্ষা করুন</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="custom" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>আপনার টেক্সট লিখুন</CardTitle>
+              <CardDescription>
+                যেকোনো বাংলা টেক্সট লিখুন এবং AI দিয়ে শুনুন
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="custom-text">বাংলা টেক্সট</Label>
+                <Textarea
+                  id="custom-text"
+                  placeholder="এখানে বাংলা টেক্সট লিখুন..."
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  rows={6}
+                  className="resize-none font-bengali"
+                />
+                <p className="text-xs text-muted-foreground">
+                  টেক্সট দৈর্ঘ্য: {customText.length} অক্ষর
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-950/20">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-purple-600" />
+                      AI TTS (Hugging Face)
+                    </CardTitle>
+                    <CardDescription>
+                      Meta এর MMS মডেল - সবচেয়ে ভালো মান
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AdvancedTTSButton
+                      text={customText}
+                      size="default"
+                      variant="default"
+                      showLabel
+                      useHuggingFace={true}
+                      className="w-full"
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-blue-600" />
+                      ব্রাউজার TTS
+                    </CardTitle>
+                    <CardDescription>
+                      অফলাইন কাজ করে - API লাগে না
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AdvancedTTSButton
+                      text={customText}
+                      size="default"
+                      variant="outline"
+                      showLabel
+                      useHuggingFace={false}
+                      className="w-full"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Old TTS Button for comparison */}
+          <Card className="border-dashed">
+            <CardHeader>
+              <CardTitle className="text-base">পুরাতন TTS বাটন (তুলনার জন্য)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 items-center">
+                <TTSButton
+                  text={customText}
+                  size="default"
+                  variant="secondary"
+                />
+                <span className="text-sm text-muted-foreground">
+                  মূল Web Speech API বাটন
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+        <CardHeader>
+          <CardTitle>কিভাবে ব্যবহার করবেন?</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-purple-600" />
+              AI TTS সেটআপ (ঐচ্ছিক):
+            </h4>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground ml-4">
+              <li>Hugging Face এ একাউন্ট তৈরি করুন (huggingface.co)</li>
+              <li>API Token তৈরি করুন (Settings → Access Tokens)</li>
+              <li>প্রজেক্টের <code className="bg-gray-200 dark:bg-gray-800 px-1 rounded">.env</code> ফাইলে যোগ করুন:</li>
+              <li className="ml-4">
+                <code className="bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded text-xs">
+                  VITE_HUGGINGFACE_API_KEY=your_token_here
+                </code>
+              </li>
+            </ol>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Volume2 className="h-4 w-4 text-blue-600" />
+              ব্রাউজার TTS:
+            </h4>
+            <p className="text-sm text-muted-foreground ml-4">
+              কোন সেটআপ প্রয়োজন নেই। সরাসরি ব্যবহার করুন। অফলাইনেও কাজ করবে।
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -16,6 +16,7 @@ import Diagnosis from "./pages/Diagnosis";
 import Recommendation from "./pages/Recommendation";
 import NewsFeed from "./pages/NewsFeed";
 import WeatherPlanning from "./pages/WeatherPlanning";
+import WeatherForecast from "./pages/WeatherForecast";
 import Consultation from "./pages/Consultation";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
@@ -39,6 +40,7 @@ import MarketPrices from "./pages/MarketPrices";
 import AgriculturalNews from "./pages/AgriculturalNews";
 import FarmerDashboard from "./pages/FarmerDashboard";
 import CentralMarketplace from "./pages/CentralMarketplace";
+import TTSDemo from "./pages/TTSDemo";
 
 const queryClient = new QueryClient();
 
@@ -153,6 +155,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <WeatherPlanning />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/abhaowa-purbabhas"
+                  element={
+                    <ProtectedRoute>
+                      <WeatherForecast />
                     </ProtectedRoute>
                   }
                 />
@@ -277,6 +287,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <AgriculturalNews />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/tts-demo"
+                  element={
+                    <ProtectedRoute>
+                      <TTSDemo />
                     </ProtectedRoute>
                   }
                 />

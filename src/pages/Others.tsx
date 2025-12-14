@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Cloud, Newspaper, MessageSquare, Grid3X3 } from "lucide-react";
-import WeatherPlanning from "./WeatherPlanning";
+import WeatherForecast from "./WeatherForecast";
 import NewsFeed from "./NewsFeed";
 import Consultation from "./Consultation";
 
@@ -10,21 +10,21 @@ const Others = () => {
   const [activeTab, setActiveTab] = useState("weather");
 
   const tabs = [
-    { 
-      id: "weather", 
-      label: "আবহাওয়া পরিকল্পনা", 
+    {
+      id: "weather",
+      label: "আবহাওয়া পরিকল্পনা",
       icon: Cloud,
       description: "আবহাওয়ার সাথে ফসল পরিকল্পনা"
     },
-    { 
-      id: "news", 
-      label: "সংবাদ ও বাজার", 
+    {
+      id: "news",
+      label: "সংবাদ ও বাজার",
       icon: Newspaper,
       description: "কৃষি সংবাদ ও বাজারদর"
     },
-    { 
-      id: "consultation", 
-      label: "পরামর্শ সেবা", 
+    {
+      id: "consultation",
+      label: "পরামর্শ সেবা",
       icon: MessageSquare,
       description: "বাংলা ভয়েস পরামর্শ"
     }
@@ -33,13 +33,13 @@ const Others = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "weather":
-        return <WeatherPlanning />;
+        return <WeatherForecast />;
       case "news":
         return <NewsFeed />;
       case "consultation":
         return <Consultation />;
       default:
-        return <WeatherPlanning />;
+        return <WeatherForecast />;
     }
   };
 
@@ -63,7 +63,7 @@ const Others = () => {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            
+
             return (
               <Button
                 key={tab.id}

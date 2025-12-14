@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -212,190 +213,193 @@ const Consultation = () => {
   };
 
   return (
-    <div className="p-4 pb-20 space-y-4">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="p-2 mr-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <MessageSquare className="h-5 w-5 text-primary" />
-            কৃষি পরামর্শ সেবা
-          </CardTitle>
-        </CardHeader>
-      </Card>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="p-4 pb-20 space-y-4 pt-20">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="p-2 mr-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <MessageSquare className="h-5 w-5 text-primary" />
+              কৃষি পরামর্শ সেবা
+            </CardTitle>
+          </CardHeader>
+        </Card>
 
-      {/* Question Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">প্রশ্ন করুন</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">ক্যাটেগরি নির্বাচন করুন</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-3 border border-border rounded-md bg-background"
-            >
-              <option value="">ক্যাটেগরি নির্বাচন করুন</option>
-              {categories.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Question Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">প্রশ্ন করুন</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">ক্যাটেগরি নির্বাচন করুন</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full p-3 border border-border rounded-md bg-background"
+              >
+                <option value="">ক্যাটেগরি নির্বাচন করুন</option>
+                {categories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">আপনার প্রশ্ন</label>
-            <Textarea
-              placeholder="আপনার কৃষি সমস্যা বা প্রশ্ন বিস্তারিত লিখুন..."
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">আপনার প্রশ্ন</label>
+              <Textarea
+                placeholder="আপনার কৃষি সমস্যা বা প্রশ্ন বিস্তারিত লিখুন..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">যোগাযোগের মাধ্যম</label>
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { value: 'text', label: 'লিখিত উত্তর', icon: MessageSquare },
-                { value: 'voice', label: 'ভয়েস কল', icon: Phone },
-                { value: 'video', label: 'ভিডিও কল', icon: Video }
-              ].map((method) => (
-                <button
-                  key={method.value}
-                  onClick={() => setContactMethod(method.value)}
-                  className={`px-3 py-2 rounded-lg text-sm border transition-colors flex items-center gap-2 ${contactMethod === method.value
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background border-border hover:bg-muted"
-                    }`}
-                >
-                  <method.icon className="h-4 w-4" />
-                  {method.label}
-                </button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">যোগাযোগের মাধ্যম</label>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: 'text', label: 'লিখিত উত্তর', icon: MessageSquare },
+                  { value: 'voice', label: 'ভয়েস কল', icon: Phone },
+                  { value: 'video', label: 'ভিডিও কল', icon: Video }
+                ].map((method) => (
+                  <button
+                    key={method.value}
+                    onClick={() => setContactMethod(method.value)}
+                    className={`px-3 py-2 rounded-lg text-sm border transition-colors flex items-center gap-2 ${contactMethod === method.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted"
+                      }`}
+                  >
+                    <method.icon className="h-4 w-4" />
+                    {method.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleVoiceInput}
+                disabled={isListening}
+                className="flex-1"
+              >
+                <Mic className={`h-4 w-4 mr-2 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
+                {isListening ? "শুনছি..." : "ভয়েস দিয়ে বলুন"}
+              </Button>
+              <Button onClick={handleSubmitQuestion} className="flex-1">
+                <Send className="h-4 w-4 mr-2" />
+                প্রশ্ন পাঠান
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Available Experts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">উপলব্ধ বিশেষজ্ঞগণ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {experts.map((expert) => (
+                <div key={expert.id} className={`border rounded-lg p-3 ${expert.available ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-semibold">{expert.name}</h4>
+                      <p className="text-sm text-muted-foreground">{expert.specialization}</p>
+                      <p className="text-xs text-muted-foreground">অভিজ্ঞতা: {expert.experience}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm">রেটিং: ⭐ {expert.rating}</div>
+                        <div className="text-xs">
+                          {expert.languages.join(', ')}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={expert.available ? "default" : "secondary"}>
+                        {expert.available ? "অনলাইন" : "অফলাইন"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleVoiceInput}
-              disabled={isListening}
-              className="flex-1"
-            >
-              <Mic className={`h-4 w-4 mr-2 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
-              {isListening ? "শুনছি..." : "ভয়েস দিয়ে বলুন"}
-            </Button>
-            <Button onClick={handleSubmitQuestion} className="flex-1">
-              <Send className="h-4 w-4 mr-2" />
-              প্রশ্ন পাঠান
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Available Experts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">উপলব্ধ বিশেষজ্ঞগণ</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {experts.map((expert) => (
-              <div key={expert.id} className={`border rounded-lg p-3 ${expert.available ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h4 className="font-semibold">{expert.name}</h4>
-                    <p className="text-sm text-muted-foreground">{expert.specialization}</p>
-                    <p className="text-xs text-muted-foreground">অভিজ্ঞতা: {expert.experience}</p>
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm">রেটিং: ⭐ {expert.rating}</div>
-                      <div className="text-xs">
-                        {expert.languages.join(', ')}
+        {/* Previous Consultations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">আপনার পূর্ববর্তী প্রশ্ন</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[...consultations, ...mockConsultations].map((consultation) => (
+                <div key={consultation.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(consultation.status)}
+                        <span className="font-semibold">{consultation.category}</span>
+                        {getStatusBadge(consultation.status)}
                       </div>
+                      <p className="text-sm">{consultation.question}</p>
+                      {consultation.response && (
+                        <div className="bg-muted/50 p-3 rounded-md">
+                          <p className="text-sm font-medium text-primary mb-1">
+                            {consultation.expert} এর উত্তর:
+                          </p>
+                          <p className="text-sm">{consultation.response}</p>
+                        </div>
+                      )}
                     </div>
+                    <TTSButton
+                      text={`প্রশ্ন: ${consultation.question}${consultation.response ? `. উত্তর: ${consultation.response}` : ''}`}
+                      authorName={consultation.expert}
+                      size="icon"
+                      variant="ghost"
+                    />
                   </div>
-                  <div className="text-right">
-                    <Badge variant={expert.available ? "default" : "secondary"}>
-                      {expert.available ? "অনলাইন" : "অফলাইন"}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Previous Consultations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">আপনার পূর্ববর্তী প্রশ্ন</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[...consultations, ...mockConsultations].map((consultation) => (
-              <div key={consultation.id} className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(consultation.status)}
-                      <span className="font-semibold">{consultation.category}</span>
-                      {getStatusBadge(consultation.status)}
-                    </div>
-                    <p className="text-sm">{consultation.question}</p>
-                    {consultation.response && (
-                      <div className="bg-muted/50 p-3 rounded-md">
-                        <p className="text-sm font-medium text-primary mb-1">
-                          {consultation.expert} এর উত্তর:
-                        </p>
-                        <p className="text-sm">{consultation.response}</p>
-                      </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{consultation.timestamp}</span>
+                    {consultation.expert && (
+                      <span>বিশেষজ্ঞ: {consultation.expert}</span>
                     )}
                   </div>
-                  <TTSButton
-                    text={`প্রশ্ন: ${consultation.question}${consultation.response ? `. উত্তর: ${consultation.response}` : ''}`}
-                    authorName={consultation.expert}
-                    size="icon"
-                    variant="ghost"
-                  />
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{consultation.timestamp}</span>
-                  {consultation.expert && (
-                    <span>বিশেষজ্ঞ: {consultation.expert}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Emergency Contact */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">জরুরি যোগাযোগ</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p><strong>কৃষি কল সেন্টার:</strong> ১৬১২৩ (২৪/৭ সেবা)</p>
-          <p><strong>জরুরি পরামর্শ:</strong> ০১৭৭৭-৭০০৮৮৮</p>
-          <p><strong>কৃষি অধিদপ্তর হটলাইন:</strong> ৩৩৩</p>
-          <p className="text-muted-foreground mt-2">
-            জরুরি অবস্থায় সরাসরি ফোন করুন বা নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।
-          </p>
-        </CardContent>
-      </Card>
+        {/* Emergency Contact */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">জরুরি যোগাযোগ</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p><strong>কৃষি কল সেন্টার:</strong> ১৬১২৩ (২৪/৭ সেবা)</p>
+            <p><strong>জরুরি পরামর্শ:</strong> ০১৭৭৭-৭০০৮৮৮</p>
+            <p><strong>কৃষি অধিদপ্তর হটলাইন:</strong> ৩৩৩</p>
+            <p className="text-muted-foreground mt-2">
+              জরুরি অবস্থায় সরাসরি ফোন করুন বা নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

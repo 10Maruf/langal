@@ -2,8 +2,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserType = 'farmer' | 'customer' | 'expert';
 
+export interface UserLocationInfo {
+    village?: string;
+    postal_code?: number;
+    post_office_bn?: string;
+    upazila_bn?: string;
+    district_bn?: string;
+    division_bn?: string;
+}
+
 export interface User {
     id: string;
+    user_id?: number; // Database user_id
     name: string;
     type: UserType;
     email: string;
@@ -11,6 +21,7 @@ export interface User {
     phone?: string;
     profilePhoto?: string;
     location?: string;
+    location_info?: UserLocationInfo;
 }
 
 interface AuthContextType {
@@ -18,6 +29,7 @@ interface AuthContextType {
     login: (email: string, password: string, userType: UserType) => Promise<boolean>;
     register: (userData: any, userType: UserType) => Promise<boolean>;
     logout: () => void;
+    setAuthUser: (user: User, token: string) => void;
     isAuthenticated: boolean;
 }
 
@@ -38,11 +50,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         // Check if user is stored in localStorage
         const storedUser = localStorage.getItem('user');
-        if (storedUser) {
+        const token = localStorage.getItem('auth_token');
+        if (storedUser && token) {
             setUser(JSON.parse(storedUser));
             setIsAuthenticated(true);
         }
     }, []);
+
+    const setAuthUser = (user: User, token: string) => {
+        setUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('auth_token', token);
+    };
 
     const login = async (email: string, password: string, userType: UserType): Promise<boolean> => {
         // Simulate API call - in real app, this would be an actual API call
@@ -80,10 +100,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem('user');
+        localStorage.removeItem('auth_token');
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, login, register, logout, setAuthUser, isAuthenticated }}>
             {children}
         </AuthContext.Provider>
     );

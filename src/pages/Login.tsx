@@ -6,25 +6,28 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth, UserType } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Users, User, UserCheck, Database } from "lucide-react";
+import { Loader2, Users, User, UserCheck, Database, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAssetPath } from "@/lib/utils";
 import FarmerLogin from "@/components/farmer/FarmerLogin";
+import api from "@/services/api";
 
 const Login = () => {
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<UserType>("farmer");
     const [showFarmerLogin, setShowFarmerLogin] = useState(false);
-    const { login } = useAuth();
+    const { login, setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!email || !password) {
+        // Expert uses email, Customer uses phone
+        if (activeTab === 'expert' && (!email || !password)) {
             toast({
                 title: "ত্রুটি",
                 description: "অনুগ্রহ করে সব ক্ষেত্র পূরণ করুন",
@@ -33,35 +36,80 @@ const Login = () => {
             return;
         }
 
+        if (activeTab === 'customer' && (!phone || !password)) {
+            toast({
+                title: "ত্রুটি",
+                description: "অনুগ্রহ করে মোবাইল নম্বর ও পাসওয়ার্ড দিন",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const success = await login(email, password, activeTab);
-            if (success) {
-                toast({
-                    title: "সফল",
-                    description: "সফলভাবে লগইন হয়েছে",
+            if (activeTab === 'customer') {
+                // Customer login via API
+                const response = await api.post('/customer/login', {
+                    phone: phone,
+                    password: password,
                 });
 
-                // Navigate based on user type
-                switch (activeTab) {
-                    case 'farmer':
-                        navigate('/');
-                        break;
-                    case 'expert':
-                        navigate('/consultant-dashboard');
-                        break;
-                    case 'customer':
-                        navigate('/customer-dashboard');
-                        break;
-                    default:
-                        navigate('/');
+                if (response.data.success) {
+                    const { user, token } = response.data.data;
+
+                    // Map backend user to frontend user format
+                    const authUser = {
+                        id: user.user_id.toString(),
+                        user_id: user.user_id,
+                        name: user.profile?.full_name || user.phone,
+                        type: 'customer' as const,
+                        email: user.email || '',
+                        phone: user.phone,
+                        profilePhoto: user.profile?.profile_photo_url_full,
+                        location: user.profile?.address || 'Bangladesh',
+                        location_info: user.location_info || undefined,
+                        businessName: user.customer_business?.business_name,
+                    };
+
+                    // Set user in context
+                    setAuthUser(authUser, token);
+
+                    toast({
+                        title: "সফল",
+                        description: "সফলভাবে লগইন হয়েছে",
+                    });
+
+                    navigate('/customer-dashboard');
+                } else {
+                    throw new Error(response.data.message);
+                }
+            } else {
+                // Expert login (existing flow)
+                const success = await login(email, password, activeTab);
+                if (success) {
+                    toast({
+                        title: "সফল",
+                        description: "সফলভাবে লগইন হয়েছে",
+                    });
+
+                    // Navigate based on user type
+                    switch (activeTab) {
+                        case 'farmer':
+                            navigate('/');
+                            break;
+                        case 'expert':
+                            navigate('/consultant-dashboard');
+                            break;
+                        default:
+                            navigate('/');
+                    }
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "ত্রুটি",
-                description: "লগইনে সমস্যা হয়েছে",
+                description: error.response?.data?.message || "লগইনে সমস্যা হয়েছে",
                 variant: "destructive",
             });
         } finally {
@@ -188,13 +236,42 @@ const Login = () => {
 
                                 <TabsContent value="customer" className="space-y-4 mt-0">
                                     <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                        <h3 className="font-semibold text-purple-800">ক্রেতা হিসেবে লগইন</h3>
-                                        <p className="text-sm text-purple-600">তাজা কৃষিপণ্য কিনুন</p>
+                                        <h3 className="font-semibold text-purple-800">ক্রেতা/ব্যবসায়ী হিসেবে লগইন</h3>
+                                        <p className="text-sm text-purple-600">মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে লগইন করুন</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phone">মোবাইল নম্বর</Label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                            <Input
+                                                id="phone"
+                                                type="tel"
+                                                placeholder="০১XXXXXXXXX"
+                                                className="pl-10 border-purple-200 focus:border-purple-500"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customerPassword">পাসওয়ার্ড</Label>
+                                        <Input
+                                            id="customerPassword"
+                                            type="password"
+                                            placeholder="আপনার পাসওয়ার্ড দিন"
+                                            className="border-purple-200 focus:border-purple-500"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                        />
                                     </div>
                                 </TabsContent>
 
-                                {/* Only show email/password fields for expert and customer */}
-                                {(activeTab === 'expert' || activeTab === 'customer') && (
+                                {/* Only show email/password fields for expert */}
+                                {activeTab === 'expert' && (
                                     <>
                                         <div className="space-y-2">
                                             <Label htmlFor="email">ইমেইল</Label>
@@ -226,11 +303,11 @@ const Login = () => {
                     </CardContent>
 
                     <CardFooter className="flex flex-col space-y-4">
-                        {/* Only show login button for expert and customer */}
-                        {(activeTab === 'expert' || activeTab === 'customer') && (
+                        {/* Expert login button */}
+                        {activeTab === 'expert' && (
                             <Button
                                 onClick={handleLogin}
-                                className="w-full"
+                                className="w-full bg-blue-600 hover:bg-blue-700"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
@@ -242,6 +319,27 @@ const Login = () => {
                                     <>
                                         {getUserTypeIcon(activeTab)}
                                         <span className="ml-2">{getUserTypeLabel(activeTab)} হিসেবে লগইন</span>
+                                    </>
+                                )}
+                            </Button>
+                        )}
+
+                        {/* Customer login button - Purple */}
+                        {activeTab === 'customer' && (
+                            <Button
+                                onClick={handleLogin}
+                                className="w-full bg-purple-600 hover:bg-purple-700"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        লগইন হচ্ছে...
+                                    </>
+                                ) : (
+                                    <>
+                                        {getUserTypeIcon(activeTab)}
+                                        <span className="ml-2">ক্রেতা/ব্যবসায়ী হিসেবে লগইন</span>
                                     </>
                                 )}
                             </Button>

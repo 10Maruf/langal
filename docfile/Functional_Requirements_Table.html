@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functional Requirements</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1in;
+        }
+
+        body {
+            font-family: sans-serif;
+            line-height: 1.5;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .container {
+            max-width: 18cm;
+            /* Centered content area for A4 printing */
+            margin: 2em auto;
+            padding: 2em;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+            margin-top: 1.5em;
+            margin-bottom: 1em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1.5em;
+            border: 1px solid #dee2e6;
+            word-wrap: break-word;
+            table-layout: fixed;
+        }
+
+        th,
+        td {
+            border: 1px solid #dee2e6;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+            font-size: 11px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        /* First column (Description/Stakeholders) */
+        th:first-child {
+            width: 18%;
+        }
+
+        /* Third column (Priority header when present) */
+        th:nth-child(3) {
+            width: 12%;
+        }
+
+        /* Fourth column (Priority value when present) */
+        td:nth-child(4) {
+            width: 15%;
+        }
+
+        /* Hide container styles when printing */
+        @media print {
+            body {
+                background-color: #fff;
+            }
+
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Functional Requirements</h1>
+        <p>This document outlines the functional requirements for the Langol Krishi Sahayak application, organized by
+            the
+            core features and informed by the project's source code.</p>
+
+        <h2>1. User Registration & Onboarding</h2>
+        <table>
+            <tr>
+                <th colspan="4">FR 1: Users can create an account with a phone number and password.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td colspan="3">New users must be able to register for an account by providing their mobile number and
+                    creating a
+                    password.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All new users.</td>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="4">FR 2: Users can log in to their account.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td colspan="3">Registered users must be able to securely log in to the application using their phone
+                    number and
+                    password.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All registered users.</td>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="4">FR 3: New users get a simple onboarding tour.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td colspan="3">Upon first login, new users will be shown a brief, guided tour explaining the main
+                    features of the
+                    app.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All new users.</td>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>2. Role-Based Authentication & Access Control</h2>
+        <table>
+            <tr>
+                <th colspan="4">FR 4: The system assigns a role to each user.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td colspan="3">Every user is assigned a specific role (e.g., Farmer, Expert, Data Operator) which
+                    defines their
+                    identity in the system.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="4">FR 5: Users can only access features permitted for their role.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td colspan="3">The system must restrict access to certain dashboards, data, and functionalities based
+                    on the user's
+                    assigned role. For example, a Data Operator cannot access the Expert's dashboard.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+
+        <h2>3. User Profile Management</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 6: Users can view and edit their profile information.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users must be able to see their profile details and edit information such as their name, location,
+                    and
+                    profile picture.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 7: Users can change their password.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>For security, users must have the ability to change their account password from their profile
+                    settings.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>4. Crop Recommendation System (AI-Based)</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 8: Farmers can input cultivation parameters for recommendations.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system will allow farmers to enter data such as their district, season, budget, and land size to
+                    get
+                    personalized crop suggestions.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 9: An AI model analyzes inputs to recommend suitable crops.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system's AI model will process the farmer's input parameters to generate a list of the most
+                    suitable
+                    crops.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 10: Each recommendation includes a detailed profit and cost analysis.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>For each suggested crop, the system will provide a breakdown of the estimated cultivation cost,
+                    potential yield, market price, and expected profit.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+
+        <h2>5. Crop Planning Guideline</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 11: Farmers can get a step-by-step guide for crop cultivation.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>For a chosen crop, the system provides a simple, sequential guide covering all stages from planting
+                    to
+                    harvesting.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 12: The guide includes a schedule for farming activities.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system provides a calendar or timeline that reminds farmers about important activities like
+                    planting, watering, and fertilizing.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Low</td>
+            </tr>
+        </table>
+
+        <h2>6. Disease Diagnosis System (AI-Based)</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 13: Farmers can upload a crop photo for AI-powered diagnosis.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users can upload an image of an affected plant. The AI model will analyze the image to identify
+                    potential diseases.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 14: The system provides a list of possible diseases with probability scores.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>After analysis, the system presents a list of potential diseases, each with a confidence score
+                    (probability) to indicate the likelihood of the diagnosis.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 15: The system suggests detailed treatment plans for each disease.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>For each identified disease, the system provides information on treatment options, including
+                    recommended
+                    chemicals, application dosage, and estimated costs.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 16: Farmers can view their past diagnosis history.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system saves all previous diagnoses, allowing farmers to track recurring crop health issues over
+                    time.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>7. Expert Consultation</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 17: Users can find and view a list of available experts.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system displays a list of agricultural experts, showing their specialization and availability.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Customers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 18: Users can start a chat or video call with an expert.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system allows users to initiate a real-time conversation with an expert to get personalized
+                    advice.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Customers, Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 19: Users can schedule an appointment with an expert.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users can book a consultation with an expert for a future date and time.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Customers, Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>8. Social Feed System</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 20: Users can create and share posts with text and images.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users can publish their own content, including text updates and photos, to the community social
+                    feed.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 21: Users can view a feed of posts from others.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system displays a scrollable feed of posts created by other members of the community.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 22: Users can comment on and like posts.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>To encourage interaction, users can leave comments and "like" posts on the social feed.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>9. Weather Forecasting</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 23: Users can see the weather forecast for their location.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system provides current and future weather information, including temperature, rainfall, and
+                    humidity, for the user's area.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Data Operators.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 24: The system provides a 7-day weather forecast.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users can view a forecast for the upcoming week to help them plan their agricultural activities in
+                    advance.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>10. Marketplace System</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 25: Farmers can list their agricultural products for sale.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Farmers can create listings for their products, including details like price, quantity, and photos.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 26: Customers can browse and search for products.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Customers can view all available products in the marketplace and use a search function to find
+                    specific
+                    items.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Customers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 27: Customers can purchase products through the app.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system must provide a way for customers to place an order and complete the purchase of products
+                    listed in the marketplace.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Customers, Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+
+        <h2>11. Market Price Monitoring</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 28: Users can view current market prices for various crops.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system displays a list of major crops and their real-time average market prices.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers, Customers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 29: Users can view historical price trends for a crop.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system shows a simple chart illustrating how the price of a specific crop has changed over time.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Farmers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Low</td>
+            </tr>
+        </table>
+
+        <h2>12. Agricultural News and Policy Updates</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 30: The system displays a feed of agricultural news.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users can read recent articles and updates related to the agriculture sector.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 31: The system provides information on new government policies.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The app informs users about new or updated government policies and schemes relevant to farmers.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>13. Expert Service Dashboard</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 32: Experts can view and manage consultation requests.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Experts have a dashboard where they can see all incoming consultation requests and accept or decline
+                    them.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 33: Experts can manage their appointment schedule.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The dashboard allows experts to set their availability and view their calendar of scheduled
+                    appointments.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+
+        <h2>14. Crop & Diagnosis Management</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 34: Experts can add or edit crop information.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Authorized experts can contribute to the system's database by adding new crops or updating details
+                    of
+                    existing ones.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Experts, Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 35: Experts can review and improve AI diagnosis data.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Experts can validate the accuracy of the automated diagnosis system and update the disease
+                    information
+                    and treatment suggestions to retrain the model.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Experts, Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>15. Profile Verification</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 36: Data operators can review and verify new user profiles.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Data operators are responsible for checking the documents and information provided by new Farmers
+                    and
+                    Experts to verify their identity.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Data Operators, Farmers, Experts.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 37: Verified users get a "verified" badge on their profile.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Once a user's profile is successfully verified, a badge will appear on their profile to build trust
+                    within the community.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>16. Field Data Collection</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 38: Data operators can input field data using a form.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Data operators can use a digital form in the app to record data collected from the field, such as
+                    soil
+                    test results and crop conditions.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Data Operators.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 39: The collected data is automatically tagged with a location.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>All data submitted by data operators is geotagged to ensure it is linked to the correct farm or
+                    location.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Data Operators, Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+
+        <h2>17. Crop Info Verification</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 40: Data operators can verify crop listings in the marketplace.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Data operators can be assigned to check the quality and accuracy of the crop information that
+                    farmers
+                    post on the marketplace.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Data Operators, Farmers, Customers.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>18. Social Feed Report Management</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 41: Users can report inappropriate posts or comments.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Users must have an option to flag content on the social feed that they believe is harmful, spam, or
+                    inappropriate.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>All users.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 42: Admins can review and take action on reported content.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Admins have a dashboard to see all reported content and can decide whether to remove the content or
+                    warn
+                    the user.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>High</td>
+            </tr>
+        </table>
+
+        <h2>19. Data Operator Report Analysis</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 43: Admins can view summary reports of data operator activities.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system generates reports summarizing the amount and type of data collected by each data
+                    operator.
+                </td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Low</td>
+            </tr>
+        </table>
+
+        <h2>20. Administrative Report Review & Export</h2>
+        <table>
+            <tr>
+                <th colspan="2">FR 44: Admins can generate reports on system usage.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>Admins can create reports on metrics like the number of active users, consultations, and marketplace
+                    transactions.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th colspan="2">FR 45: Admins can export reports as PDF or CSV files.</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>The system allows administrators to download the generated reports in standard file formats for
+                    offline
+                    analysis or record-keeping.</td>
+            </tr>
+            <tr>
+                <th>Stakeholders</th>
+                <td>Admins.</td>
+            </tr>
+            <tr>
+                <th>Priority</th>
+                <td>Medium</td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

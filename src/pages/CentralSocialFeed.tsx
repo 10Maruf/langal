@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Header } from "@/components/layout/Header";
 import { EnhancedPostCard } from "@/components/social/EnhancedPostCard";
 import { CreatePost } from "@/components/social/CreatePost";
 import { PersonalPostManager } from "@/components/social/PersonalPostManager";
@@ -23,7 +24,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { socialFeedService } from "@/services/socialFeedService";
 import { SocialPost, FEED_FILTERS } from "@/types/social";
 
-const CentralSocialFeed = () => {
+interface CentralSocialFeedProps {
+    showHeader?: boolean;
+}
+
+const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
     const { toast } = useToast();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -171,135 +176,138 @@ const CentralSocialFeed = () => {
     );
 
     return (
-        <div className="pb-20">
-            {/* Header */}
-            <div className="bg-card border-b p-4 sticky top-0 z-40 backdrop-blur-md bg-background/95">
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(-1)}
-                            className="p-2"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <div>
-                            <h1 className="text-xl font-bold">{getPageTitle()}</h1>
+        <div className="min-h-screen bg-background">
+            {showHeader && <Header />}
+            <div className={showHeader ? "pb-20 pt-14" : "pb-20"}>
+                {/* Header */}
+                <div className="border-b p-4 sticky top-0 z-40 backdrop-blur-md bg-background/95">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(-1)}
+                                className="p-2"
+                            >
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                            <div>
+                                <h1 className="text-xl font-bold">{getPageTitle()}</h1>
 
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowPostManager(true)}
+                            >
+                                <User className="h-4 w-4 mr-1" />
+                                আমার পোস্ট
+                            </Button>
+                            <Button size="sm" onClick={() => setShowCreatePost(true)}>
+                                <Plus className="h-4 w-4 mr-1" />
+                                {getCreateButtonText()}
+                            </Button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowPostManager(true)}
-                        >
-                            <User className="h-4 w-4 mr-1" />
-                            আমার পোস্ট
-                        </Button>
-                        <Button size="sm" onClick={() => setShowCreatePost(true)}>
-                            <Plus className="h-4 w-4 mr-1" />
-                            {getCreateButtonText()}
-                        </Button>
-                    </div>
-                </div>
 
-                {/* Feed Filters */}
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                    {availableFilters.map((filter) => {
-                        const IconComponent = filter.icon === "Users" ? Users :
-                            filter.icon === "TrendingUp" ? TrendingUp :
-                                filter.icon === "Zap" ? Zap :
-                                    filter.icon === "MessageSquare" ? MessageSquare :
-                                        filter.icon === "UserCheck" ? UserCheck : Users;
+                    {/* Feed Filters */}
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                        {availableFilters.map((filter) => {
+                            const IconComponent = filter.icon === "Users" ? Users :
+                                filter.icon === "TrendingUp" ? TrendingUp :
+                                    filter.icon === "Zap" ? Zap :
+                                        filter.icon === "MessageSquare" ? MessageSquare :
+                                            filter.icon === "UserCheck" ? UserCheck : Users;
 
-                        const isExpertAdvice = filter.id === 'expert_advice';
-                        const isActive = feedFilter === filter.id;
+                            const isExpertAdvice = filter.id === 'expert_advice';
+                            const isActive = feedFilter === filter.id;
 
-                        return (
-                            <Button
-                                key={filter.id}
-                                variant={isActive ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setFeedFilter(filter.id)}
-                                className={`flex-shrink-0 ${isExpertAdvice && !isActive
+                            return (
+                                <Button
+                                    key={filter.id}
+                                    variant={isActive ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setFeedFilter(filter.id)}
+                                    className={`flex-shrink-0 ${isExpertAdvice && !isActive
                                         ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
                                         : ''
-                                    }`}
-                            >
-                                <IconComponent className="h-4 w-4 mr-1" />
-                                {filter.label}
-                                {isExpertAdvice && (
-                                    <Badge variant="secondary" className="ml-1 text-xs bg-blue-100 text-blue-700">
-                                        নতুন
-                                    </Badge>
-                                )}
-                            </Button>
-                        );
-                    })}
+                                        }`}
+                                >
+                                    <IconComponent className="h-4 w-4 mr-1" />
+                                    {filter.label}
+                                    {isExpertAdvice && (
+                                        <Badge variant="secondary" className="ml-1 text-xs bg-blue-100 text-blue-700">
+                                            নতুন
+                                        </Badge>
+                                    )}
+                                </Button>
+                            );
+                        })}
+                    </div>
                 </div>
+
+                {/* Posts Feed */}
+                <div className="space-y-4 p-4 max-w-4xl mx-auto">
+                    {isLoading ? (
+                        <div className="space-y-4 max-w-2xl mx-auto">
+                            {[...Array(3)].map((_, index) => (
+                                <div key={index} className="animate-pulse">
+                                    <div className="bg-muted h-32 rounded-lg"></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : posts.length === 0 ? (
+                        <div className="text-center py-12 max-w-2xl mx-auto">
+                            <div className="text-4xl mb-4">📝</div>
+                            <h3 className="text-lg font-medium mb-2">কোন পোস্ট নেই</h3>
+                            <p className="text-muted-foreground mb-4">
+                                {feedFilter === "all"
+                                    ? "প্রথম পোস্ট করুন এবং কমিউনিটির সাথে শেয়ার করুন!"
+                                    : "এই ক্যাটেগরিতে কোন পোস্ট নেই। অন্য ক্যাটেগরি দেখুন।"
+                                }
+                            </p>
+                            <Button onClick={() => setShowCreatePost(true)}>
+                                <Plus className="h-4 w-4 mr-1" />
+                                {getCreateButtonText()}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                            {posts.map((post) => (
+                                <div key={post.id} className="max-w-2xl mx-auto w-full">
+                                    <EnhancedPostCard
+                                        post={post}
+                                        onLike={handleLike}
+                                        onShare={handleShare}
+                                        onMarketplaceClick={handleMarketplaceClick}
+                                        onDelete={handleDeletePost}
+                                        onUpdate={handleUpdatePost}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Create Post Dialog */}
+                <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <CreatePost
+                            onPost={handleCreatePost}
+                            onCancel={() => setShowCreatePost(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
+
+                {/* Personal Post Manager Dialog */}
+                <Dialog open={showPostManager} onOpenChange={setShowPostManager}>
+                    <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                        <PersonalPostManager onClose={() => setShowPostManager(false)} />
+                    </DialogContent>
+                </Dialog>
             </div>
-
-            {/* Posts Feed */}
-            <div className="space-y-4 p-4 max-w-4xl mx-auto">
-                {isLoading ? (
-                    <div className="space-y-4 max-w-2xl mx-auto">
-                        {[...Array(3)].map((_, index) => (
-                            <div key={index} className="animate-pulse">
-                                <div className="bg-muted h-32 rounded-lg"></div>
-                            </div>
-                        ))}
-                    </div>
-                ) : posts.length === 0 ? (
-                    <div className="text-center py-12 max-w-2xl mx-auto">
-                        <div className="text-4xl mb-4">📝</div>
-                        <h3 className="text-lg font-medium mb-2">কোন পোস্ট নেই</h3>
-                        <p className="text-muted-foreground mb-4">
-                            {feedFilter === "all"
-                                ? "প্রথম পোস্ট করুন এবং কমিউনিটির সাথে শেয়ার করুন!"
-                                : "এই ক্যাটেগরিতে কোন পোস্ট নেই। অন্য ক্যাটেগরি দেখুন।"
-                            }
-                        </p>
-                        <Button onClick={() => setShowCreatePost(true)}>
-                            <Plus className="h-4 w-4 mr-1" />
-                            {getCreateButtonText()}
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {posts.map((post) => (
-                            <div key={post.id} className="max-w-2xl mx-auto w-full">
-                                <EnhancedPostCard
-                                    post={post}
-                                    onLike={handleLike}
-                                    onShare={handleShare}
-                                    onMarketplaceClick={handleMarketplaceClick}
-                                    onDelete={handleDeletePost}
-                                    onUpdate={handleUpdatePost}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Create Post Dialog */}
-            <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <CreatePost
-                        onPost={handleCreatePost}
-                        onCancel={() => setShowCreatePost(false)}
-                    />
-                </DialogContent>
-            </Dialog>
-
-            {/* Personal Post Manager Dialog */}
-            <Dialog open={showPostManager} onOpenChange={setShowPostManager}>
-                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                    <PersonalPostManager onClose={() => setShowPostManager(false)} />
-                </DialogContent>
-            </Dialog>
         </div>
     );
 };

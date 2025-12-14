@@ -14,9 +14,190 @@ import pumpImg from "@/assets/marketplace/pump.png";
 import compostImg from "@/assets/marketplace/compost.png";
 import potatoImg from "@/assets/marketplace/potato.png";
 
+type ApiResponse<T> = { success: boolean; data?: T; message?: string; errors?: unknown };
+type Pagination<T> = { data: T[]; current_page: number; per_page: number; total: number } & Record<string, unknown>;
+type DbListing = {
+    listing_id?: number | string;
+    id?: number | string;
+    seller_id?: number;
+    seller?: { 
+        user_id?: number; 
+        phone?: string; 
+        email?: string; 
+        is_verified?: boolean; 
+        user_type?: string;
+        profile?: {
+            full_name?: string;
+            profile_photo_url?: string;
+            address?: string;
+            postal_code?: number;
+        }
+    };
+    // Transformed seller info from backend
+    seller_info?: {
+        user_id?: number;
+        name?: string;
+        avatar?: string;
+        phone?: string;
+        district?: string;
+        upazila?: string;
+        post_office?: string;
+        verified?: boolean;
+        user_type?: string;
+    };
+    category_id?: number;
+    category?: string;
+    category_slug?: string;
+    category_name?: string;
+    category_name_bn?: string;
+    listing_type_bn?: string;
+    title?: string;
+    description?: string;
+    price?: number | string;
+    currency?: string;
+    status?: string;
+    listing_type?: string;
+    type?: string;
+    location?: string;
+    full_location_bn?: string;
+    location_details?: {
+        postal_code?: number;
+        district?: string;
+        upazila?: string;
+        division?: string;
+        village?: string;
+    };
+    contact_phone?: string;
+    tags?: string[];
+    images?: string[];
+    created_at?: string;
+    updated_at?: string;
+    featured?: boolean;
+    views_count?: number;
+    views?: number;
+    saves_count?: number;
+    saves?: number;
+    contacts_count?: number;
+    contacts?: number;
+    is_saved?: boolean;
+};
+
 class MarketplaceService {
     private listings: MarketplaceListing[] = [];
     private initialized = false;
+    private API_BASE: string;
+
+    constructor() {
+        const env = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env || {};
+        const fromEnv = env.VITE_API_BASE;
+        this.API_BASE = (fromEnv ? fromEnv.replace(/\/$/, '') : '') || 'http://localhost:8000/api';
+    }
+
+    private async fetchJSON<T>(path: string, options?: RequestInit): Promise<T | null> {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const headers: HeadersInit = { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            console.log(`[MarketplaceService] Fetching: ${this.API_BASE}${path}`, { 
+                method: options?.method || 'GET',
+                hasToken: !!token 
+            });
+            
+            const res = await fetch(`${this.API_BASE}${path}`, {
+                headers,
+                ...options,
+            });
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error(`[MarketplaceService] API Error (${res.status}):`, errorText);
+                return null;
+            }
+            
+            const jsonData = await res.json();
+            console.log(`[MarketplaceService] API Success:`, jsonData);
+            return jsonData;
+        } catch (e) {
+            console.error('[MarketplaceService] Fetch error:', e);
+            return null;
+        }
+    }
+
+    // Map DB listing shape to UI MarketplaceListing
+    private mapDbListingToUi(db: DbListing): MarketplaceListing {
+        const asCategory = (val: unknown): MarketplaceListing['category'] => {
+            const allowed = new Set(['crops','machinery','fertilizer','seeds','livestock','tools','other']);
+            const v = String(val || '').toLowerCase();
+            return (allowed.has(v) ? (v as MarketplaceListing['category']) : 'other');
+        };
+        const asType = (val: unknown): MarketplaceListing['type'] => {
+            const allowed = new Set(['sell','rent','buy','service']);
+            const v = String(val || '').toLowerCase();
+            return (allowed.has(v) ? (v as MarketplaceListing['type']) : 'sell');
+        };
+        const asStatus = (val: unknown): MarketplaceListing['status'] => {
+            const allowed = new Set(['active','sold','expired','draft']);
+            const v = String(val || '').toLowerCase();
+            return (allowed.has(v) ? (v as MarketplaceListing['status']) : 'active');
+        };
+        return {
+            id: String(db.listing_id ?? db.id ?? Date.now()),
+            author: {
+                // Use seller_info from backend transformation first, then fallback to seller.profile
+                name: db.seller_info?.name || db.seller?.profile?.full_name || db.seller?.phone || `ব্যবহারকারী #${db.seller_id ?? 'N/A'}`,
+                avatar: db.seller_info?.avatar || db.seller?.profile?.profile_photo_url || '/placeholder.svg',
+                location: db.location || db.seller_info?.district || db.seller?.profile?.address || 'অজানা',
+                verified: db.seller_info?.verified ?? db.seller?.is_verified ?? false,
+                rating: undefined,
+                userType: (db.seller_info?.user_type || db.seller?.user_type) as 'farmer' | 'customer' | 'expert' || 'farmer',
+            },
+            title: db.title ?? 'Untitled',
+            description: db.description ?? '',
+            price: Number(db.price ?? 0),
+            currency: db.currency || 'BDT',
+            // Use category_name_bn from backend or fallback
+            category: asCategory(db.category_slug || db.category || 'other'),
+            categoryNameBn: db.category_name_bn,
+            type: asType(db.listing_type || db.type || 'sell'),
+            listingTypeBn: db.listing_type_bn,
+            status: asStatus(db.status || 'active'),
+            images: Array.isArray(db.images) 
+                ? db.images.map(img => {
+                    // If image is already a full URL, return as-is
+                    if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/')) {
+                        return img;
+                    }
+                    // Otherwise, construct the storage URL
+                    const baseUrl = this.API_BASE.replace('/api', '');
+                    return `${baseUrl}/storage/${img}`;
+                  })
+                : [],
+            tags: Array.isArray(db.tags) ? db.tags : [],
+            location: db.location || db.full_location_bn || 
+                (db.location_details ? `${db.location_details.upazila || ''}, ${db.location_details.district || ''}`.replace(/^, |, $/g, '') : '') ||
+                (db.seller_info ? `${db.seller_info.upazila || ''}, ${db.seller_info.district || ''}`.replace(/^, |, $/g, '') : '') ||
+                '',
+            contactInfo: db.contact_phone ? { phone: db.contact_phone } : undefined,
+            createdAt: db.created_at || new Date().toISOString(),
+            updatedAt: db.updated_at || new Date().toISOString(),
+            featured: Boolean(db.featured),
+            views: Number(db.views_count ?? db.views ?? 0),
+            saves: Number(db.saves_count ?? db.saves ?? 0),
+            contacts: Number(db.contacts_count ?? db.contacts ?? 0),
+            isOwnListing: false,
+            isSaved: Boolean(db.is_saved),
+            // Preserve location details for edit functionality
+            postal_code: db.location_details?.postal_code,
+            village: db.location_details?.village,
+        };
+    }
 
     initializeDummyData() {
         if (this.initialized) return;
@@ -319,15 +500,41 @@ class MarketplaceService {
     }
 
     // Get listings with optional filtering
-    getListings(filter?: Partial<ListingFilter>, userType?: string): MarketplaceListing[] {
-        if (!this.initialized) {
-            this.initializeDummyData();
+    async getListings(filter?: Partial<ListingFilter>, userType?: string, userLocation?: { village?: string; postal_code?: number; upazila_bn?: string; district_bn?: string; division_bn?: string }, userId?: number): Promise<MarketplaceListing[]> {
+        // Try backend first
+        const params = new URLSearchParams();
+        if (filter?.search) params.set('search', filter.search);
+        if (filter?.categoryId) params.set('category_id', String(filter.categoryId));
+        if (filter?.type && filter.type !== 'all') params.set('type', filter.type);
+        if (filter?.division && filter.division !== 'all') params.set('division', filter.division);
+        if (filter?.district && filter.district !== 'all') params.set('district', filter.district);
+        if (filter?.upazila && filter.upazila !== 'all') params.set('upazila', filter.upazila);
+        if (filter?.status && filter.status !== 'all') params.set('status', filter.status);
+        if (filter?.sortBy) params.set('sortBy', filter.sortBy);
+        // Pass user_id for is_saved check
+        if (userId) params.set('user_id', String(userId));
+        // Pass user's full location for proximity-based priority sorting
+        if (userLocation?.village) params.set('user_village', userLocation.village);
+        if (userLocation?.postal_code) params.set('user_postal_code', String(userLocation.postal_code));
+        if (userLocation?.upazila_bn) params.set('user_upazila', userLocation.upazila_bn);
+        if (userLocation?.district_bn) params.set('user_district', userLocation.district_bn);
+        if (userLocation?.division_bn) params.set('user_division', userLocation.division_bn);
+
+        const apiRes = await this.fetchJSON<ApiResponse<Pagination<DbListing> | DbListing[]>>(`/marketplace?${params.toString()}`);
+        if (apiRes && apiRes.success && apiRes.data) {
+            const payload = apiRes.data as Pagination<DbListing> | DbListing[];
+            const items = Array.isArray((payload as Pagination<DbListing>).data)
+                ? (payload as Pagination<DbListing>).data
+                : (payload as DbListing[]);
+            // Return API data - even if empty, don't fallback to dummy
+            return items.map((db) => this.mapDbListingToUi(db));
         }
 
+        // Only fallback to local dummy if API completely fails (network error, etc.)
+        console.log('API failed, using dummy data fallback');
+        if (!this.initialized) this.initializeDummyData();
         let filtered = [...this.listings];
-
         if (filter) {
-            // Filter by search
             if (filter.search) {
                 filtered = filtered.filter(listing =>
                     listing.title.toLowerCase().includes(filter.search!.toLowerCase()) ||
@@ -335,74 +542,117 @@ class MarketplaceService {
                     listing.tags.some(tag => tag.toLowerCase().includes(filter.search!.toLowerCase()))
                 );
             }
-
-            // Filter by category
-            if (filter.category && filter.category !== "all") {
+            if (filter.category && filter.category !== 'all') {
                 filtered = filtered.filter(listing => listing.category === filter.category);
             }
-
-            // Filter by type
-            if (filter.type && filter.type !== "all") {
+            if (filter.type && filter.type !== 'all') {
                 filtered = filtered.filter(listing => listing.type === filter.type);
             }
-
-            // Filter by location
-            if (filter.location && filter.location !== "all") {
+            // Location filtering - check division, district, upazila
+            if (filter.division && filter.division !== 'all') {
                 filtered = filtered.filter(listing => 
-                    listing.location.includes(filter.location!) ||
-                    listing.author.location.includes(filter.location!)
+                    listing.location.includes(filter.division!) || 
+                    listing.author.location.includes(filter.division!)
                 );
             }
-
-            // Filter by status (for personal listings)
-            if (filter.status && filter.status !== "all") {
+            if (filter.district && filter.district !== 'all') {
+                filtered = filtered.filter(listing => 
+                    listing.location.includes(filter.district!) || 
+                    listing.author.location.includes(filter.district!)
+                );
+            }
+            if (filter.upazila && filter.upazila !== 'all') {
+                filtered = filtered.filter(listing => 
+                    listing.location.includes(filter.upazila!) || 
+                    listing.author.location.includes(filter.upazila!)
+                );
+            }
+            if (filter.status && filter.status !== 'all') {
                 filtered = filtered.filter(listing => listing.status === filter.status);
             }
-
-            // Sort listings
             if (filter.sortBy) {
                 switch (filter.sortBy) {
-                    case "newest":
+                    case 'newest':
                         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                         break;
-                    case "oldest":
+                    case 'oldest':
                         filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                         break;
-                    case "price_low":
+                    case 'price_low':
                         filtered.sort((a, b) => a.price - b.price);
                         break;
-                    case "price_high":
+                    case 'price_high':
                         filtered.sort((a, b) => b.price - a.price);
                         break;
-                    case "popular":
+                    case 'popular':
                         filtered.sort((a, b) => b.views - a.views);
                         break;
                 }
             }
         }
-
         return filtered;
     }
 
     // Get user's listings
-    getUserListings(userName: string): MarketplaceListing[] {
+    async getUserListings(userIdOrName: string | number): Promise<MarketplaceListing[]> {
+        // Try backend by userId
+        if (typeof userIdOrName === 'number' || /^\d+$/.test(String(userIdOrName))) {
+            const res = await this.fetchJSON<ApiResponse<DbListing[]>>(`/marketplace/user/${userIdOrName}`);
+            if (res && res.success && Array.isArray(res.data)) {
+                return res.data.map((db) => ({ ...this.mapDbListingToUi(db), isOwnListing: true }));
+            }
+        }
+        // Fallback to local by author name
+        if (!this.initialized) this.initializeDummyData();
         return this.listings
-            .filter(listing => listing.author.name === userName)
+            .filter(listing => listing.author.name === userIdOrName)
             .map(listing => ({ ...listing, isOwnListing: true }));
     }
 
     // Create new listing
-    createListing(listingData: any, author: ListingAuthor): MarketplaceListing {
+    async createListing(listingData: Partial<MarketplaceListing> & { category_id?: number; listing_type?: string; postal_code?: number; village?: string }, author: ListingAuthor & { userId?: number }): Promise<MarketplaceListing> {
+        // Note: seller_id is NOT sent - backend uses authenticated user from token
+        const payload: Record<string, unknown> = {
+            title: listingData.title,
+            description: listingData.description,
+            price: listingData.price,
+            currency: listingData.currency || 'BDT',
+            category_id: listingData.category_id || this.getCategoryId(listingData.category),
+            listing_type: listingData.listing_type || listingData.type || 'sell',
+            location: listingData.location || author.location || 'বাংলাদেশ',
+            postal_code: listingData.postal_code || null,
+            village: listingData.village || null,
+            contact_phone: listingData.contactInfo?.phone,
+            tags: listingData.tags || [],
+            images: listingData.images || [],
+        };
+
+        console.log('[MarketplaceService] Creating listing with payload:', payload);
+        console.log('[MarketplaceService] Auth token:', localStorage.getItem('auth_token') ? 'Present' : 'Missing');
+
+        const res = await this.fetchJSON<ApiResponse<DbListing>>('/marketplace', { method: 'POST', body: JSON.stringify(payload) });
+        console.log('[MarketplaceService] API Response:', res);
+        
+        if (res && res.success && res.data) {
+            console.log('[MarketplaceService] Listing created successfully in DB:', res.data);
+            const mapped = { ...this.mapDbListingToUi(res.data), isOwnListing: true };
+            return mapped;
+        }
+        
+        console.warn('[MarketplaceService] API call failed or returned null, falling back to local storage');
+
+        // Fallback local
+        if (!this.initialized) this.initializeDummyData();
         const newListing: MarketplaceListing = {
             id: Date.now().toString(),
             author,
             title: listingData.title,
             description: listingData.description,
             price: listingData.price,
-            currency: listingData.currency || "BDT",
+            currency: listingData.currency || 'BDT',
             category: listingData.category,
             type: listingData.type,
-            status: "active",
+            status: 'active',
             images: listingData.images || [],
             tags: listingData.tags || [],
             location: listingData.location || author.location,
@@ -413,72 +663,153 @@ class MarketplaceService {
             views: 0,
             saves: 0,
             contacts: 0,
-            isOwnListing: true
+            isOwnListing: true,
         };
-
         this.listings.unshift(newListing);
         return newListing;
     }
 
     // Update listing
-    updateListing(listingId: string, updates: Partial<MarketplaceListing>, userName: string): MarketplaceListing | null {
-        const listingIndex = this.listings.findIndex(l => l.id === listingId);
-        if (listingIndex === -1) return null;
-
-        const listing = this.listings[listingIndex];
-        if (listing.author.name !== userName) return null;
-
-        const updatedListing = {
-            ...listing,
-            ...updates,
-            updatedAt: new Date().toISOString()
+    async updateListing(listingId: string, updates: Partial<MarketplaceListing>, userName?: string, postalCode?: number | null, village?: string | null): Promise<MarketplaceListing | null> {
+        const payload: Record<string, unknown> = {
+            title: updates.title,
+            description: updates.description,
+            price: updates.price,
+            currency: updates.currency,
+            listing_type: updates.type,
+            location: updates.location,
+            contact_phone: updates.contactInfo?.phone,
+            tags: updates.tags,
+            images: updates.images,
+            status: updates.status,
         };
 
+        // Only include postal_code and village if they have actual values
+        // This prevents overwriting existing values with null
+        if (postalCode !== null && postalCode !== undefined) {
+            payload.postal_code = postalCode;
+        }
+        if (village !== null && village !== undefined && village !== '') {
+            payload.village = village;
+        }
+
+        const res = await this.fetchJSON<ApiResponse<DbListing>>(`/marketplace/${listingId}`, { method: 'PUT', body: JSON.stringify(payload) });
+        if (res && res.success && res.data) {
+            return this.mapDbListingToUi(res.data);
+        }
+
+        // Fallback local
+        const listingIndex = this.listings.findIndex(l => l.id === listingId);
+        if (listingIndex === -1) return null;
+        const listing = this.listings[listingIndex];
+        if (userName && listing.author.name !== userName) return null;
+        const updatedListing = { ...listing, ...updates, updatedAt: new Date().toISOString() } as MarketplaceListing;
         this.listings[listingIndex] = updatedListing;
         return updatedListing;
     }
 
     // Delete listing
-    deleteListing(listingId: string, userName: string): boolean {
-        const listingIndex = this.listings.findIndex(l => l.id === listingId);
-        if (listingIndex === -1) return false;
-
-        const listing = this.listings[listingIndex];
-        if (listing.author.name !== userName) return false;
-
-        this.listings.splice(listingIndex, 1);
+    async deleteListing(listingId: string, userName?: string): Promise<boolean> {
+    const res = await this.fetchJSON<ApiResponse<unknown>>(`/marketplace/${listingId}`, { method: 'DELETE' });
+        if (res && res.success) return true;
+        const idx = this.listings.findIndex(l => l.id === listingId);
+        if (idx === -1) return false;
+        if (userName && this.listings[idx].author.name !== userName) return false;
+        this.listings.splice(idx, 1);
         return true;
     }
 
     // Contact seller (increment contact count)
-    contactSeller(listingId: string): MarketplaceListing | null {
+    async contactSeller(listingId: string): Promise<MarketplaceListing | null> {
+        const res = await this.fetchJSON<ApiResponse<unknown>>(`/marketplace/${listingId}/contact`, { method: 'POST' });
+        if (res && res.success) {
+            const refreshed = await this.getListing(listingId);
+            return refreshed;
+        }
         const listing = this.listings.find(l => l.id === listingId);
         if (!listing) return null;
-
         listing.contacts += 1;
         return listing;
     }
 
     // Save/unsave listing
-    toggleSave(listingId: string): MarketplaceListing | null {
+    async toggleSave(listingId: string, userId: number = 1): Promise<{ listing: MarketplaceListing | null; saved: boolean }> {
+        const res = await this.fetchJSON<ApiResponse<{ saved: boolean }>>(`/marketplace/${listingId}/save`, { method: 'POST', body: JSON.stringify({ user_id: userId }) });
+        if (res && res.success) {
+            // Get the current listing and update isSaved directly instead of refetching
+            const refreshed = await this.getListing(listingId);
+            const saved = res.data?.saved ?? false;
+            if (refreshed) {
+                refreshed.isSaved = saved;
+                // Update saves count based on saved state
+                if (saved) {
+                    refreshed.saves += 1;
+                } else {
+                    refreshed.saves = Math.max(0, refreshed.saves - 1);
+                }
+            }
+            return { listing: refreshed, saved };
+        }
         const listing = this.listings.find(l => l.id === listingId);
-        if (!listing) return null;
+        if (!listing) return { listing: null, saved: false };
+        return { listing, saved: false };
+    }
 
-        listing.saves += 1;
-        return listing;
+    // Boost listing (repost to top)
+    async boostListing(listingId: string, userId: number = 1): Promise<{ success: boolean; listing: MarketplaceListing | null }> {
+        const res = await this.fetchJSON<ApiResponse<MarketplaceListing>>(`/marketplace/${listingId}/boost`, { 
+            method: 'POST', 
+            body: JSON.stringify({ user_id: userId }) 
+        });
+        if (res && res.success && res.data) {
+            return { success: true, listing: res.data };
+        }
+        return { success: false, listing: null };
     }
 
     // Increment view count
-    incrementViews(listingId: string): void {
-        const listing = this.listings.find(l => l.id === listingId);
-        if (listing) {
-            listing.views += 1;
+    async incrementViews(listingId: string): Promise<void> {
+        const res = await this.fetchJSON<ApiResponse<unknown>>(`/marketplace/${listingId}/view`, { method: 'POST' });
+        if (!res || !res.success) {
+            const listing = this.listings.find(l => l.id === listingId);
+            if (listing) listing.views += 1;
         }
     }
 
+    private getCategoryId(category?: string): number | undefined {
+        // Map category slugs to database IDs
+        // You'll need to populate marketplace_categories table first
+        const categoryMap: Record<string, number> = {
+            'crops': 1,
+            'machinery': 2,
+            'fertilizer': 3,
+            'seeds': 4,
+            'livestock': 5,
+            'tools': 6,
+            'other': 7,
+        };
+        return category ? categoryMap[category] : undefined;
+    }
+
     // Get single listing
-    getListing(listingId: string): MarketplaceListing | null {
+    async getListing(listingId: string): Promise<MarketplaceListing | null> {
+        const res = await this.fetchJSON<ApiResponse<DbListing>>(`/marketplace/${listingId}`);
+        if (res && res.success && res.data) return this.mapDbListingToUi(res.data);
         return this.listings.find(l => l.id === listingId) || null;
+    }
+
+    // Get user's saved listings
+    async getSavedListings(userIdOrName: string | number): Promise<MarketplaceListing[]> {
+        // Try backend
+        if (typeof userIdOrName === 'number' || /^\d+$/.test(String(userIdOrName))) {
+            const res = await this.fetchJSON<ApiResponse<DbListing[]>>(`/marketplace/saved/${userIdOrName}`);
+            if (res && res.success && Array.isArray(res.data)) {
+                return res.data.map((db) => this.mapDbListingToUi(db));
+            }
+        }
+        // Fallback to local saved listings
+        if (!this.initialized) this.initializeDummyData();
+        return this.listings.filter(listing => listing.saved === true);
     }
 }
 

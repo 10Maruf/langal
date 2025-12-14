@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Home, ShoppingCart, TrendingUp, History } from "lucide-react";
+import { Home, ShoppingCart, TrendingUp, CloudSun } from "lucide-react";
 
 interface CustomerBottomNavProps {
     activeTab: string;
@@ -12,7 +12,7 @@ export const CustomerBottomNav = ({ activeTab, onTabChange }: CustomerBottomNavP
         { id: "social", label: "ফিড", icon: Home, labelEn: "Feed" },
         { id: "marketplace", label: "বাজার", icon: ShoppingCart, labelEn: "Market" },
         { id: "news", label: "বাজার দর", icon: TrendingUp, labelEn: "Prices" },
-        { id: "history", label: "ইতিহাস", icon: History, labelEn: "History" },
+        { id: "weather", label: "আবহাওয়া", icon: CloudSun, labelEn: "Weather" },
     ];
 
     return (

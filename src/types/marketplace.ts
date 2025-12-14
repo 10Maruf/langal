@@ -21,11 +21,15 @@ export interface MarketplaceListing {
     price: number;
     currency: string;
     category: ListingCategory;
+    categoryNameBn?: string;  // Bangla category name from backend
     type: ListingType;
+    listingTypeBn?: string;   // Bangla listing type from backend
     status: ListingStatus;
     images: string[];
     tags: string[];
     location: string;
+    postal_code?: number;     // Location postal code for edit preservation
+    village?: string;         // Village name for edit preservation
     contactInfo?: {
         phone?: string;
         email?: string;
@@ -37,6 +41,7 @@ export interface MarketplaceListing {
     saves: number;
     contacts: number;
     isOwnListing?: boolean;
+    isSaved?: boolean;
 }
 
 export interface ListingComment {
@@ -55,30 +60,33 @@ export interface ListingComment {
 export interface ListingFilter {
     search: string;
     category: string;
+    categoryId: number | null;
     type: string;
-    location: string;
+    division: string;
+    district: string;
+    upazila: string;
     priceRange: [number, number];
     sortBy: string;
     status?: string;
 }
 
-// Category options
+// Category options (icon names for Lucide React)
 export const LISTING_CATEGORIES = [
-    { id: "crops", label: "ফসল ও শাকসবজি", icon: "🌾" },
-    { id: "machinery", label: "যন্ত্রপাতি", icon: "🚜" },
-    { id: "fertilizer", label: "সার ও কীটনাশক", icon: "🧪" },
-    { id: "seeds", label: "বীজ ও চারা", icon: "🌱" },
-    { id: "livestock", label: "গবাদি পশু", icon: "🐄" },
-    { id: "tools", label: "হাতিয়ার", icon: "🔧" },
-    { id: "other", label: "অন্যান্য", icon: "📦" }
+    { id: "crops", label: "ফসল ও শাকসবজি", icon: "Wheat" },
+    { id: "machinery", label: "যন্ত্রপাতি", icon: "Tractor" },
+    { id: "fertilizer", label: "সার ও কীটনাশক", icon: "FlaskConical" },
+    { id: "seeds", label: "বীজ ও চারা", icon: "Sprout" },
+    { id: "livestock", label: "গবাদি পশু", icon: "PawPrint" },
+    { id: "tools", label: "হাতিয়ার", icon: "Wrench" },
+    { id: "other", label: "অন্যান্য", icon: "Package" }
 ];
 
 // Type options
 export const LISTING_TYPES = [
-    { id: "sell", label: "বিক্রি", color: "green" },
-    { id: "rent", label: "ভাড়া", color: "blue" },
-    { id: "buy", label: "কিনতে চাই", color: "purple" },
-    { id: "service", label: "সেবা", color: "orange" }
+    { id: "sell", label: "বিক্রি", color: "green", icon: "Tag" },
+    { id: "rent", label: "ভাড়া", color: "blue", icon: "RefreshCw" },
+    { id: "buy", label: "কিনতে চাই", color: "purple", icon: "ShoppingCart" },
+    { id: "service", label: "সেবা", color: "orange", icon: "Settings" }
 ];
 
 // Location options (major districts in Bangladesh)
@@ -90,5 +98,5 @@ export const LOCATIONS = [
     "বাগেরহাট", "পিরোজপুর", "ঝালকাঠি", "ভোলা", "পটুয়াখালী", "বরগুনা", "হবিগঞ্জ",
     "মৌলভীবাজার", "সুনামগঞ্জ", "ব্রাহ্মণবাড়িয়া", "চাঁদপুর", "লক্ষ্মীপুর", "নোয়াখালী",
     "ফেনী", "খাগড়াছড়ি", "রাঙ্গামাটি", "বান্দরবান", "পঞ্চগড়", "ঠাকুরগাঁও", "দিনাজপুর",
-    "নীলফামারী", "লালমনিরহাট", "কুড়িগ্রাম", "গাইবান্ধা", "জামালপুর", "শেরপুর"
+    "নীলফামারী", "লালমনিরহাট", "কুড়িগ্রাম", "গাইবান্ধা"
 ];

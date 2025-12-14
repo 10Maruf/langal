@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বাংলা TTS টেস্ট - Standalone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .status.idle {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status.loading {
+            background: #fff3e0;
+            color: #f57c00;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .status.playing {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 20px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-speak {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+
+        .samples {
+            margin-top: 30px;
+        }
+
+        .samples h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .sample-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .sample-item:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+
+        .sample-text {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .info {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info strong {
+            color: #667eea;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎙️ বাংলা TTS টেস্ট</h1>
+        <p class="subtitle">টেক্সট লিখুন এবং শুনুন</p>
+
+        <div class="status idle" id="status">
+            প্রস্তুত - টেক্সট লিখুন এবং 'শুনুন' বাটনে ক্লিক করুন
+        </div>
+
+        <textarea id="textInput"
+            placeholder="এখানে বাংলা টেক্সট লিখুন...">আসসালামু আলাইকুম! আমি বাংলা টেক্সট-টু-স্পিচ সিস্টেম। এটি আপনার টেক্সট পড়ে শোনাবে।</textarea>
+
+        <div class="button-group">
+            <button class="btn-speak" id="speakBtn" onclick="speak()">
+                <span>🔊</span>
+                <span>শুনুন</span>
+            </button>
+            <button class="btn-stop" id="stopBtn" onclick="stop()" disabled>
+                <span>⏹️</span>
+                <span>বন্ধ করুন</span>
+            </button>
+        </div>
+
+        <div class="samples">
+            <h3>নমুনা টেক্সট (ক্লিক করুন):</h3>
+
+            <div class="sample-item" onclick="useSample(0)">
+                <div class="sample-text">
+                    আজ আবহাওয়া খুব ভালো। ধান চাষের জন্য উপযুক্ত সময়। কৃষকদের এখনই বীজ বপন করা উচিত।
+                </div>
+            </div>
+
+            <div class="sample-item" onclick="useSample(1)">
+                <div class="sample-text">
+                    ফসলের রোগ প্রতিরোধের জন্য নিয়মিত পরিচর্যা করুন। সার ও পানি সঠিক সময়ে প্রয়োগ করুন।
+                </div>
+            </div>
+
+            <div class="sample-item" onclick="useSample(2)">
+                <div class="sample-text">
+                    বাজারে আজ সবজির দাম কমেছে। টমেটো প্রতি কেজি ৩০ টাকা এবং পেঁয়াজ ৪০ টাকা।
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>নোট:</strong> এই টেস্ট পেজটি ব্রাউজারের Web Speech API ব্যবহার করে। সবচেয়ে ভালো ফলাফলের জন্য Chrome
+            বা Edge ব্রাউজার ব্যবহার করুন।
+            <br><br>
+            <strong>বাংলা ভয়েস ইনস্টল:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li><strong>Windows:</strong> Settings → Time & Language → Language → Add Bengali → Options → Download
+                </li>
+                <li><strong>Chrome:</strong> সাধারণত স্বয়ংক্রিয়ভাবে Google বাংলা ভয়েস ব্যবহার করে</li>
+                <li><strong>Edge:</strong> Microsoft Bengali Natural voice সাপোর্ট করে</li>
+            </ul>
+            <br>
+            <strong>Hugging Face AI TTS</strong> (উচ্চমান) ব্যবহার করতে চাইলে: <code>/tts-demo</code>
+        </div>
+
+        <div id="voiceWarning"
+            style="display: none; background: #fff3cd; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 4px solid #ffc107;">
+            <strong>⚠️ বাংলা ভয়েস পাওয়া যায়নি!</strong>
+            <p style="margin: 10px 0; font-size: 14px;">
+                আপনার সিস্টেমে বাংলা TTS voice ইনস্টল করা নেই।
+                <br>
+                ডিফল্ট voice ব্যবহার হবে তবে উচ্চারণ ভালো হবে না।
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const samples = [
+            "আজ আবহাওয়া খুব ভালো। ধান চাষের জন্য উপযুক্ত সময়। কৃষকদের এখনই বীজ বপন করা উচিত।",
+            "ফসলের রোগ প্রতিরোধের জন্য নিয়মিত পরিচর্যা করুন। সার ও পানি সঠিক সময়ে প্রয়োগ করুন।",
+            "বাজারে আজ সবজির দাম কমেছে। টমেটো প্রতি কেজি ৩০ টাকা এবং পেঁয়াজ ৪০ টাকা।"
+        ];
+
+        let utterance = null;
+        const statusEl = document.getElementById('status');
+        const speakBtn = document.getElementById('speakBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const textInput = document.getElementById('textInput');
+
+        function updateStatus(message, type) {
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+        }
+
+        function useSample(index) {
+            textInput.value = samples[index];
+            textInput.focus();
+        }
+
+        function speak() {
+            const text = textInput.value.trim();
+
+            if (!text) {
+                updateStatus('❌ কোন টেক্সট নেই! অনুগ্রহ করে টেক্সট লিখুন।', 'error');
+                return;
+            }
+
+            if (!('speechSynthesis' in window)) {
+                updateStatus('❌ আপনার ব্রাউজার TTS সাপোর্ট করে না।', 'error');
+                return;
+            }
+
+            // Stop any ongoing speech
+            speechSynthesis.cancel();
+
+            updateStatus('⏳ প্রস্তুত হচ্ছে...', 'loading');
+
+            utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'bn-BD';
+            utterance.rate = 0.85;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            // Try to find a Bengali voice with priority
+            const voices = speechSynthesis.getVoices();
+
+            // Priority 1: Google বাংলা (exact match)
+            let bengaliVoice = voices.find(voice =>
+                voice.name.toLowerCase().includes('bangla') ||
+                voice.name.toLowerCase().includes('bengali') ||
+                (voice.lang === 'bn-BD' || voice.lang === 'bn-IN' || voice.lang === 'bn')
+            );
+
+            // Priority 2: Any voice with 'bn' language code (exclude Hindi)
+            if (!bengaliVoice) {
+                bengaliVoice = voices.find(voice =>
+                    voice.lang.startsWith('bn') &&
+                    !voice.name.includes('हिन्दी') &&
+                    !voice.name.includes('Hindi')
+                );
+            }
+
+            // Priority 3: Microsoft or other Bengali voices
+            if (!bengaliVoice) {
+                bengaliVoice = voices.find(voice =>
+                    (voice.name.includes('Bengali') || voice.name.includes('Bangla')) &&
+                    !voice.name.includes('Hindi')
+                );
+            }
+
+            if (bengaliVoice) {
+                utterance.voice = bengaliVoice;
+                console.log('✓ Selected voice:', bengaliVoice.name, bengaliVoice.lang);
+            } else {
+                console.warn('⚠️ No Bengali voice found. Using default.');
+            }
+
+            utterance.onstart = () => {
+                updateStatus('🔊 প্লে হচ্ছে... (বন্ধ করতে "বন্ধ করুন" বাটন ক্লিক করুন)', 'playing');
+                speakBtn.disabled = true;
+                stopBtn.disabled = false;
+            };
+
+            utterance.onend = () => {
+                updateStatus('✅ সম্পন্ন হয়েছে! আবার শুনতে চাইলে "শুনুন" বাটন ক্লিক করুন।', 'idle');
+                speakBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            utterance.onerror = (event) => {
+                console.error('TTS Error:', event);
+                updateStatus('❌ ত্রুটি হয়েছে। আবার চেষ্টা করুন।', 'error');
+                speakBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            speechSynthesis.speak(utterance);
+        }
+
+        function stop() {
+            speechSynthesis.cancel();
+            updateStatus('⏹️ বন্ধ করা হয়েছে।', 'idle');
+            speakBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        // Load voices and show available Bengali voices
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = () => {
+                const voices = speechSynthesis.getVoices();
+                console.log('📢 Total voices available:', voices.length);
+
+                // Find Bengali voices
+                const bengaliVoices = voices.filter(v =>
+                    v.name.toLowerCase().includes('beng') ||
+                    v.name.toLowerCase().includes('bang') ||
+                    v.lang.includes('bn')
+                );
+
+                console.log('🇧🇩 Bengali voices found:', bengaliVoices.length);
+                bengaliVoices.forEach(voice => {
+                    console.log('  ✓', voice.name, '(' + voice.lang + ')');
+                });
+
+                // Show warning if no Bengali voice found
+                const warningEl = document.getElementById('voiceWarning');
+                if (bengaliVoices.length === 0) {
+                    console.warn('⚠️ No Bengali voice found. You may need to:');
+                    console.warn('   1. Install Bengali language pack in Windows');
+                    console.warn('   2. Use Chrome/Edge browser');
+                    console.warn('   3. Check system language settings');
+
+                    if (warningEl) {
+                        warningEl.style.display = 'block';
+                    }
+                } else {
+                    if (warningEl) {
+                        warningEl.style.display = 'none';
+                    }
+                }
+            };
+        }
+
+        // Handle Enter key
+        textInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                speak();
+            }
+        });
+    </script>
+</body>
+
+</html>

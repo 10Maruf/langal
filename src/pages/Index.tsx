@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import FarmerDashboard from "./FarmerDashboard";
 
@@ -19,6 +18,8 @@ const Index = () => {
           navigate('/customer-dashboard');
           break;
         case 'farmer':
+          navigate('/farmer-dashboard');
+          break;
         default:
           // Farmers stay on the main dashboard
           break;
@@ -27,12 +28,7 @@ const Index = () => {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-14">
-        <FarmerDashboard />
-      </main>
-    </div>
+    <FarmerDashboard />
   );
 };
 

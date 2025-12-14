@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,24 +26,34 @@ import {
     Droplets,
     Package
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
     const navigate = useNavigate();
+    const { user, setAuthUser } = useAuth();
+    const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string>("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [profileData, setProfileData] = useState({
-        name: "আব্দুল করিম",
-        email: "abdul.karim@gmail.com",
-        phone: "০১৭১২৩৪৫৬৭৮",
-        nid: "১২৩৪৫৬৭৮৯০১২৩",
-        address: "গ্রাম: হাসনাবাদ, উপজেলা: সিংগাইর, জেলা: মানিকগঞ্জ",
-        dateOfBirth: "১৫/০৮/১৯৮৫",
+        name: "",
+        email: "",
+        phone: "",
+        nid: "",
+        address: "",
+        dateOfBirth: "",
         occupation: "কৃষক",
-        farmSize: "৫ একর",
-        crops: "ধান, গম, শাকসবজি",
-        experience: "১৫ বছর",
-        bio: "আমি একজন অভিজ্ঞ কৃষক। আধুনিক কৃষি প্রযুক্তি ব্যবহার করে ফসল উৎপাদনে আগ্রহী।",
+        farmSize: "",
+        crops: "",
+        experience: "",
+        bio: "",
+        profilePhotoUrl: "",
         // কৃষি সংক্রান্ত নতুন তথ্য
         currentCrops: [
             { name: "আমন ধান", season: "২০২৪-২৫", area: "৩ একর", status: "চলমান", expectedHarvest: "ডিসেম্বর ২০২৪" },
@@ -65,6 +74,57 @@ const Profile = () => {
         seedSource: "কৃষি অফিস ও বিএডিসি"
     });
 
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                setIsLoading(true);
+                const response = await api.get('/farmer/profile');
+                if (response.data.success) {
+                    const userData = response.data.data.user;
+                    const profile = userData.profile || {};
+                    const farmer = userData.farmer || {};
+                    const additionalInfo = farmer.additional_info || {};
+
+                    setProfileData(prev => ({
+                        ...prev,
+                        name: profile.full_name || "",
+                        email: userData.email || "",
+                        phone: userData.phone || "",
+                        nid: profile.nid_number || "",
+                        address: profile.address || "",
+                        dateOfBirth: profile.date_of_birth || "",
+                        profilePhotoUrl: profile.profile_photo_url_full || "",
+                        occupation: additionalInfo.occupation || "কৃষক",
+                        farmSize: farmer.farm_size ? String(farmer.farm_size) : "",
+                        crops: farmer.farm_type || "",
+                        experience: farmer.experience_years ? String(farmer.experience_years) : "",
+                        bio: additionalInfo.bio || "",
+                        currentCrops: additionalInfo.currentCrops || prev.currentCrops,
+                        pastCrops: additionalInfo.pastCrops || prev.pastCrops,
+                        totalInvestment: additionalInfo.totalInvestment || prev.totalInvestment,
+                        totalIncome: additionalInfo.totalIncome || prev.totalIncome,
+                        totalProfit: additionalInfo.totalProfit || prev.totalProfit,
+                        machineryOwned: additionalInfo.machineryOwned || prev.machineryOwned,
+                        irrigationMethod: additionalInfo.irrigationMethod || prev.irrigationMethod,
+                        fertilizers: additionalInfo.fertilizers || prev.fertilizers,
+                        seedSource: additionalInfo.seedSource || prev.seedSource
+                    }));
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                toast({
+                    title: "ত্রুটি",
+                    description: "প্রোফাইল তথ্য লোড করতে সমস্যা হয়েছে",
+                    variant: "destructive",
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
+
     const handleInputChange = (field: string, value: string) => {
         setProfileData(prev => ({
             ...prev,
@@ -72,14 +132,136 @@ const Profile = () => {
         }));
     };
 
-    const handleSave = () => {
-        setIsEditing(false);
-        // Here you would typically save to backend
-        console.log("Profile updated:", profileData);
+    const handleProfilePhotoClick = () => {
+        if (isEditing && fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                toast({
+                    title: "ত্রুটি",
+                    description: "শুধুমাত্র ছবি ফাইল নির্বাচন করুন",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast({
+                    title: "ত্রুটি",
+                    description: "ছবির সাইজ ৫ MB এর কম হতে হবে",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            setSelectedProfilePhoto(file);
+
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            // Create FormData for multipart/form-data
+            const formData = new FormData();
+
+            formData.append('full_name', profileData.name);
+            formData.append('email', profileData.email);
+            formData.append('phone', profileData.phone);
+            formData.append('address', profileData.address);
+            formData.append('farm_size', profileData.farmSize || '0');
+            formData.append('farm_type', profileData.crops);
+            formData.append('experience_years', profileData.experience || '0');
+            formData.append('additional_info', JSON.stringify({
+                bio: profileData.bio,
+                occupation: profileData.occupation,
+                currentCrops: profileData.currentCrops,
+                pastCrops: profileData.pastCrops,
+                totalInvestment: profileData.totalInvestment,
+                totalIncome: profileData.totalIncome,
+                totalProfit: profileData.totalProfit,
+                machineryOwned: profileData.machineryOwned,
+                irrigationMethod: profileData.irrigationMethod,
+                fertilizers: profileData.fertilizers,
+                seedSource: profileData.seedSource
+            }));
+
+            // Add profile photo if selected
+            if (selectedProfilePhoto) {
+                formData.append('profile_photo', selectedProfilePhoto);
+            }
+
+            // Don't set Content-Type header manually for FormData - axios will set it with proper boundary
+            const response = await api.post('/farmer/profile', formData);
+
+            if (response.data.success) {
+                // Update local state with fresh data from server
+                const userData = response.data.data.user;
+                const profile = userData.profile || {};
+                const farmer = userData.farmer || {};
+                const additionalInfo = farmer.additional_info || {};
+
+                setProfileData(prev => ({
+                    ...prev,
+                    name: profile.full_name || "",
+                    email: userData.email || "",
+                    phone: userData.phone || "",
+                    nid: profile.nid_number || "",
+                    address: profile.address || "",
+                    dateOfBirth: profile.date_of_birth || "",
+                    profilePhotoUrl: profile.profile_photo_url_full || "",
+                    occupation: additionalInfo.occupation || "কৃষক",
+                    farmSize: farmer.farm_size ? String(farmer.farm_size) : "",
+                    crops: farmer.farm_type || "",
+                    experience: farmer.experience_years ? String(farmer.experience_years) : "",
+                    bio: additionalInfo.bio || "",
+                    currentCrops: additionalInfo.currentCrops || prev.currentCrops,
+                    pastCrops: additionalInfo.pastCrops || prev.pastCrops,
+                    totalInvestment: additionalInfo.totalInvestment || prev.totalInvestment,
+                    totalIncome: additionalInfo.totalIncome || prev.totalIncome,
+                    totalProfit: additionalInfo.totalProfit || prev.totalProfit,
+                    machineryOwned: additionalInfo.machineryOwned || prev.machineryOwned,
+                    irrigationMethod: additionalInfo.irrigationMethod || prev.irrigationMethod,
+                    fertilizers: additionalInfo.fertilizers || prev.fertilizers,
+                    seedSource: additionalInfo.seedSource || prev.seedSource
+                }));
+
+                // Clear selected photo and preview
+                setSelectedProfilePhoto(null);
+                setPreviewUrl("");
+
+                toast({
+                    title: "সফল",
+                    description: "প্রোফাইল সফলভাবে আপডেট করা হয়েছে",
+                });
+                setIsEditing(false);
+            }
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            toast({
+                title: "ত্রুটি",
+                description: "প্রোফাইল আপডেট করতে সমস্যা হয়েছে",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleCancel = () => {
         setIsEditing(false);
+        setSelectedProfilePhoto(null);
+        setPreviewUrl("");
         // Reset to original data if needed
     };
 
@@ -120,19 +302,33 @@ const Profile = () => {
                             <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
                                 <div className="relative">
                                     <Avatar className="h-24 w-24">
-                                        <AvatarImage src="/img/farmer-avatar.jpg" alt="Profile" />
+                                        <AvatarImage
+                                            src={previewUrl || profileData.profilePhotoUrl || "/img/farmer-avatar.jpg"}
+                                            alt="Profile"
+                                        />
                                         <AvatarFallback className="text-2xl">
                                             {profileData.name.split(' ').map(n => n[0]).join('')}
                                         </AvatarFallback>
                                     </Avatar>
                                     {isEditing && (
-                                        <Button
-                                            size="sm"
-                                            variant="secondary"
-                                            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                                        >
-                                            <Camera className="h-4 w-4" />
-                                        </Button>
+                                        <>
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={handleProfilePhotoChange}
+                                                accept="image/*"
+                                                className="hidden"
+                                            />
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                                                onClick={handleProfilePhotoClick}
+                                                type="button"
+                                            >
+                                                <Camera className="h-4 w-4" />
+                                            </Button>
+                                        </>
                                     )}
                                 </div>
 
@@ -715,8 +911,6 @@ const Profile = () => {
                     </div>
                 </div>
             </main>
-
-            <BottomNav activeTab="profile" onTabChange={() => {}} />
         </div>
     );
 };

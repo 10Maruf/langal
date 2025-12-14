@@ -1,7 +1,11 @@
 import CentralSocialFeed from './CentralSocialFeed';
 
-const CustomerSocialFeed = () => {
-  return <CentralSocialFeed />;
+interface CustomerSocialFeedProps {
+  showHeader?: boolean;
+}
+
+const CustomerSocialFeed = ({ showHeader = true }: CustomerSocialFeedProps) => {
+  return <CentralSocialFeed showHeader={showHeader} />;
 };
 
 export default CustomerSocialFeed;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -433,269 +434,272 @@ const WeatherPlanning = () => {
   };
 
   return (
-    <div className="p-4 pb-20 space-y-4">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="p-2 mr-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Cloud className="h-5 w-5 text-primary" />
-            আবহাওয়া ভিত্তিক পরিকল্পনা
-          </CardTitle>
-        </CardHeader>
-      </Card>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="p-4 pb-20 space-y-4 pt-20">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="p-2 mr-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Cloud className="h-5 w-5 text-primary" />
+              আবহাওয়া ভিত্তিক পরিকল্পনা
+            </CardTitle>
+          </CardHeader>
+        </Card>
 
-      {/* Input Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">তথ্য দিন</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Input Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">তথ্য দিন</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">লোকেশন</label>
+                <Input
+                  placeholder="যেমন: নোয়াখালী, ঢাকা"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLocationFromGPS}
+                  className="w-full"
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  GPS দিয়ে লোকেশন নিন
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">ফসলের নাম (ঐচ্ছিক)</label>
+                <Input
+                  placeholder="যেমন: ধান, টমেটো"
+                  value={cropName}
+                  onChange={(e) => setCropName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Season Section */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">লোকেশন</label>
-              <Input
-                placeholder="যেমন: নোয়াখালী, ঢাকা"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+              <label className="text-sm font-medium">বর্তমান মৌসুম</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="মৌসুম অটো সিলেক্ট করুন"
+                  value={currentSeason}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleAutoSelectSeason}
+                  className="whitespace-nowrap"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  অটো সিলেক্ট
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">আবহাওয়া সম্পর্কিত প্রশ্ন</label>
+              <Textarea
+                placeholder="যেমন: এই আবহাওয়ায় কি করব? বৃষ্টি হলে কি সমস্যা হবে?"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="min-h-[80px]"
               />
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleLocationFromGPS}
+                onClick={handleVoiceInput}
                 className="w-full"
               >
-                <MapPin className="h-4 w-4 mr-2" />
-                GPS দিয়ে লোকেশন নিন
+                <Mic className="h-4 w-4 mr-2" />
+                ভয়েস দিয়ে প্রশ্ন করুন
               </Button>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">ফসলের নাম (ঐচ্ছিক)</label>
-              <Input
-                placeholder="যেমন: ধান, টমেটো"
-                value={cropName}
-                onChange={(e) => setCropName(e.target.value)}
-              />
-            </div>
-          </div>
 
-          {/* Season Section */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">বর্তমান মৌসুম</label>
             <div className="flex gap-2">
-              <Input
-                placeholder="মৌসুম অটো সিলেক্ট করুন"
-                value={currentSeason}
-                readOnly
+              <Button
+                onClick={handleWeatherCheck}
                 className="flex-1"
-              />
+                disabled={isLoading}
+              >
+                {isLoading ? "লোড হচ্ছে..." : "আবহাওয়া দেখুন ও সুপারিশ নিন"}
+              </Button>
               <Button
                 variant="outline"
-                onClick={handleAutoSelectSeason}
-                className="whitespace-nowrap"
+                onClick={async () => {
+                  setLocation("Dhaka");
+                  const result = await fetchWeatherData("Dhaka");
+                  console.log("Test result:", result);
+                  if (result) {
+                    setWeather(result);
+                    toast({
+                      title: "টেস্ট সফল",
+                      description: "ঢাকার আবহাওয়া ডেটা পাওয়া গেছে।",
+                    });
+                  } else {
+                    toast({
+                      title: "টেস্ট ব্যর্থ",
+                      description: "API কল করতে সমস্যা হয়েছে।",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                disabled={isLoading}
               >
-                <Calendar className="h-4 w-4 mr-2" />
-                অটো সিলেক্ট
+                টেস্ট
               </Button>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">আবহাওয়া সম্পর্কিত প্রশ্ন</label>
-            <Textarea
-              placeholder="যেমন: এই আবহাওয়ায় কি করব? বৃষ্টি হলে কি সমস্যা হবে?"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="min-h-[80px]"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleVoiceInput}
-              className="w-full"
-            >
-              <Mic className="h-4 w-4 mr-2" />
-              ভয়েস দিয়ে প্রশ্ন করুন
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={handleWeatherCheck}
-              className="flex-1"
-              disabled={isLoading}
-            >
-              {isLoading ? "লোড হচ্ছে..." : "আবহাওয়া দেখুন ও সুপারিশ নিন"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                setLocation("Dhaka");
-                const result = await fetchWeatherData("Dhaka");
-                console.log("Test result:", result);
-                if (result) {
-                  setWeather(result);
-                  toast({
-                    title: "টেস্ট সফল",
-                    description: "ঢাকার আবহাওয়া ডেটা পাওয়া গেছে।",
-                  });
-                } else {
-                  toast({
-                    title: "টেস্ট ব্যর্থ",
-                    description: "API কল করতে সমস্যা হয়েছে।",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              disabled={isLoading}
-            >
-              টেস্ট
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Weather Display */}
-      {weather && (
-        <>
-          {/* Current Weather */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center justify-between">
-                বর্তমান আবহাওয়া - {location ? location : "লোকেশন নেই"}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleWeatherCheck}
-                  disabled={isLoading || !location}
-                  className="h-8 w-8 p-0"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <Thermometer className="h-5 w-5 text-red-500" />
-                  <div>
-                    <div className="font-semibold">{weather.temperature}°C</div>
-                    <div className="text-sm text-muted-foreground">তাপমাত্রা</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Cloud className="h-5 w-5 text-blue-500" />
-                  <div>
-                    <div className="font-semibold">{weather.humidity}%</div>
-                    <div className="text-sm text-muted-foreground">আর্দ্রতা</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CloudRain className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <div className="font-semibold">{weather.rainfall}mm</div>
-                    <div className="text-sm text-muted-foreground">বৃষ্টিপাত</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Wind className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <div className="font-semibold">{weather.windSpeed} km/h</div>
-                    <div className="text-sm text-muted-foreground">বাতাসের গতি</div>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center">
-                <Badge variant="outline" className="text-lg py-2 px-4">
-                  {weather.condition}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 7-Day Forecast */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">৭ দিনের পূর্বাভাস</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                {weather.forecast.map((day, index) => (
-                  <div key={index} className="text-center border rounded-lg p-3">
-                    <div className="text-sm font-medium mb-1">{day.day}</div>
-                    <div className="text-2xl mb-1">{day.icon}</div>
-                    <div className="font-semibold">{day.temp}°C</div>
-                    <div className="text-xs text-muted-foreground">{day.condition}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recommendations */}
-          {recommendations.length > 0 && (
+        {/* Weather Display */}
+        {weather && (
+          <>
+            {/* Current Weather */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center justify-between">
-                  আবহাওয়া ভিত্তিক সুপারিশ
+                  বর্তমান আবহাওয়া - {location ? location : "লোকেশন নেই"}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleLocationFromGPS}
+                    onClick={handleWeatherCheck}
+                    disabled={isLoading || !location}
                     className="h-8 w-8 p-0"
                   >
-                    <MapPin className="h-4 w-4" />
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {recommendations.map((rec, index) => (
-                    <div key={index} className="border-l-4 border-primary pl-4 py-2 bg-primary/5">
-                      <p className="text-sm">{rec}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="h-5 w-5 text-red-500" />
+                    <div>
+                      <div className="font-semibold">{weather.temperature}°C</div>
+                      <div className="text-sm text-muted-foreground">তাপমাত্রা</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Cloud className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <div className="font-semibold">{weather.humidity}%</div>
+                      <div className="text-sm text-muted-foreground">আর্দ্রতা</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CloudRain className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <div className="font-semibold">{weather.rainfall}mm</div>
+                      <div className="text-sm text-muted-foreground">বৃষ্টিপাত</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Wind className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <div className="font-semibold">{weather.windSpeed} km/h</div>
+                      <div className="text-sm text-muted-foreground">বাতাসের গতি</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <Badge variant="outline" className="text-lg py-2 px-4">
+                    {weather.condition}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 7-Day Forecast */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">৭ দিনের পূর্বাভাস</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  {weather.forecast.map((day, index) => (
+                    <div key={index} className="text-center border rounded-lg p-3">
+                      <div className="text-sm font-medium mb-1">{day.day}</div>
+                      <div className="text-2xl mb-1">{day.icon}</div>
+                      <div className="font-semibold">{day.temp}°C</div>
+                      <div className="text-xs text-muted-foreground">{day.condition}</div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* General Agricultural Tips */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">সাধারণ পরামর্শ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <p><strong>সকাল (৬-৮টা):</strong> সেচ ও স্প্রে করার উত্তম সময়</p>
-                <p><strong>দুপুর (১২-৩টা):</strong> তীব্র রোদে কাজ এড়িয়ে চলুন</p>
-                <p><strong>সন্ধ্যা (৪-৬টা):</strong> ফসল পরিদর্শন ও হালকা কাজের সময়</p>
-                <p><strong>বৃষ্টির আগে:</strong> ছত্রাকনাশক স্প্রে করুন</p>
-                <p><strong>বৃষ্টির পরে:</strong> পানি নিষ্কাশনের ব্যবস্থা দেখুন</p>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Recommendations */}
+            {recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    আবহাওয়া ভিত্তিক সুপারিশ
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleLocationFromGPS}
+                      className="h-8 w-8 p-0"
+                    >
+                      <MapPin className="h-4 w-4" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {recommendations.map((rec, index) => (
+                      <div key={index} className="border-l-4 border-primary pl-4 py-2 bg-primary/5">
+                        <p className="text-sm">{rec}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Emergency Contacts */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">জরুরি যোগাযোগ</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p><strong>আবহাওয়া হটলাইন:</strong> ১০৯০</p>
-              <p><strong>কৃষি কল সেন্টার:</strong> ১৬১২ৣ</p>
-              <p><strong>দুর্যোগ ব্যবস্থাপনা:</strong> ১০৯০</p>
-            </CardContent>
-          </Card>
-        </>
-      )}
+            {/* General Agricultural Tips */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">সাধারণ পরামর্শ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <p><strong>সকাল (৬-৮টা):</strong> সেচ ও স্প্রে করার উত্তম সময়</p>
+                  <p><strong>দুপুর (১২-৩টা):</strong> তীব্র রোদে কাজ এড়িয়ে চলুন</p>
+                  <p><strong>সন্ধ্যা (৪-৬টা):</strong> ফসল পরিদর্শন ও হালকা কাজের সময়</p>
+                  <p><strong>বৃষ্টির আগে:</strong> ছত্রাকনাশক স্প্রে করুন</p>
+                  <p><strong>বৃষ্টির পরে:</strong> পানি নিষ্কাশনের ব্যবস্থা দেখুন</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Emergency Contacts */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">জরুরি যোগাযোগ</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p><strong>আবহাওয়া হটলাইন:</strong> ১০৯০</p>
+                <p><strong>কৃষি কল সেন্টার:</strong> ১৬১২ৣ</p>
+                <p><strong>দুর্যোগ ব্যবস্থাপনা:</strong> ১০৯০</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
     </div>
   );
 };

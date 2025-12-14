@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAssetPath } from "@/lib/utils";
 import FarmerRegistration from "@/components/farmer/FarmerRegistration";
+import CustomerRegistration from "@/components/customer/CustomerRegistration";
 
 interface RegisterData {
     // Common fields
@@ -52,6 +53,7 @@ const Register = () => {
     const [activeTab, setActiveTab] = useState<UserType>("farmer");
     const [isLoading, setIsLoading] = useState(false);
     const [showFarmerRegistration, setShowFarmerRegistration] = useState(false);
+    const [showCustomerRegistration, setShowCustomerRegistration] = useState(false);
     const [registerData, setRegisterData] = useState<RegisterData>({
         fullName: "",
         email: "",
@@ -143,17 +145,6 @@ const Register = () => {
             }
         }
 
-        if (activeTab === 'customer') {
-            if (!registerData.businessName || !registerData.businessType || !registerData.tradeLicense) {
-                toast({
-                    title: "ত্রুটি",
-                    description: "ব্যবসায়িক তথ্য পূরণ করুন",
-                    variant: "destructive",
-                });
-                return false;
-            }
-        }
-
         return true;
     };
 
@@ -223,6 +214,8 @@ const Register = () => {
             {/* Show Farmer Registration Component if farmer is selected and farmer registration is enabled */}
             {activeTab === 'farmer' && showFarmerRegistration ? (
                 <FarmerRegistration />
+            ) : activeTab === 'customer' && showCustomerRegistration ? (
+                <CustomerRegistration onBack={() => setShowCustomerRegistration(false)} />
             ) : (
                 <Card className="w-full max-w-2xl">
                     <CardHeader className="text-center">
@@ -297,8 +290,8 @@ const Register = () => {
 
                             {/* Expert and Customer forms remain the same */}
                             <form onSubmit={handleRegister} className="space-y-6 mt-6">
-                                {/* Common Fields for Expert and Customer only */}
-                                {(activeTab === 'expert' || activeTab === 'customer') && (
+                                {/* Common Fields for Expert only */}
+                                {activeTab === 'expert' && (
                                     <>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
@@ -595,46 +588,19 @@ const Register = () => {
                                     <Alert className="border-purple-200 bg-purple-50">
                                         <Users className="h-4 w-4 text-purple-600" />
                                         <AlertDescription className="text-purple-800">
-                                            ক্রেতা হিসেবে নিবন্ধনের জন্য আপনার ব্যবসায়িক তথ্য প্রয়োজন
+                                            ক্রেতা/ব্যবসায়ী হিসেবে নিবন্ধনের জন্য আপনার ব্যক্তিগত তথ্য, ব্যবসার তথ্য এবং OTP যাচাইয়ের মাধ্যমে নিবন্ধন সম্পন্ন করুন।
                                         </AlertDescription>
                                     </Alert>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="businessName">ব্যবসার নাম *</Label>
-                                            <Input
-                                                id="businessName"
-                                                type="text"
-                                                placeholder="আপনার ব্যবসার নাম"
-                                                value={registerData.businessName || ''}
-                                                onChange={(e) => handleInputChange('businessName', e.target.value)}
-                                                className="border-purple-200 focus:border-purple-500"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="businessType">ব্যবসার ধরণ *</Label>
-                                            <Input
-                                                id="businessType"
-                                                type="text"
-                                                placeholder="যেমন: খুচরা, পাইকারি, রেস্তোরাঁ"
-                                                value={registerData.businessType || ''}
-                                                onChange={(e) => handleInputChange('businessType', e.target.value)}
-                                                className="border-purple-200 focus:border-purple-500"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="tradeLicense">ট্রেড লাইসেন্স নম্বর *</Label>
-                                            <Input
-                                                id="tradeLicense"
-                                                type="text"
-                                                placeholder="আপনার ট্রেড লাইসেন্স নম্বর"
-                                                value={registerData.tradeLicense || ''}
-                                                onChange={(e) => handleInputChange('tradeLicense', e.target.value)}
-                                                className="border-purple-200 focus:border-purple-500"
-                                            />
-                                        </div>
+                                    <div className="text-center">
+                                        <Button
+                                            onClick={() => setShowCustomerRegistration(true)}
+                                            className="w-full bg-purple-600 hover:bg-purple-700"
+                                            size="lg"
+                                        >
+                                            <Users className="mr-2 h-4 w-4" />
+                                            ক্রেতা/ব্যবসায়ী নিবন্ধন শুরু করুন
+                                        </Button>
                                     </div>
                                 </TabsContent>
                             </form>
@@ -642,14 +608,11 @@ const Register = () => {
                     </CardContent>
 
                     <CardFooter className="flex flex-col space-y-4">
-                        {/* Only show register button for expert and customer */}
-                        {(activeTab === 'expert' || activeTab === 'customer') && (
+                        {/* Only show register button for expert */}
+                        {activeTab === 'expert' && (
                             <Button
                                 onClick={handleRegister}
-                                className={`w-full ${activeTab === 'expert'
-                                    ? 'bg-blue-600 hover:bg-blue-700'
-                                    : 'bg-purple-600 hover:bg-purple-700'
-                                    }`}
+                                className="w-full bg-blue-600 hover:bg-blue-700"
                                 disabled={isLoading}
                                 size="lg"
                             >

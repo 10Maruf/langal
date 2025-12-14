@@ -9,6 +9,7 @@ import CustomerSocialFeed from "./CustomerSocialFeed";
 import CentralMarketplace from "./CentralMarketplace";
 import CustomerNewsFeed from "./CustomerNewsFeed";
 import CustomerHistory from "./CustomerHistory";
+import WeatherForecast from "./WeatherForecast";
 
 const CustomerDashboard = () => {
     const { user } = useAuth();
@@ -17,15 +18,15 @@ const CustomerDashboard = () => {
     const renderActiveTab = () => {
         switch (activeTab) {
             case "social":
-                return <CustomerSocialFeed />;
+                return <CustomerSocialFeed showHeader={false} />;
             case "marketplace":
-                return <CentralMarketplace />;
+                return <CentralMarketplace showHeader={false} />;
             case "news":
                 return <CustomerNewsFeed />;
-            case "history":
-                return <CustomerHistory />;
+            case "weather":
+                return <WeatherForecast embedded={true} />;
             default:
-                return <CustomerSocialFeed />;
+                return <CustomerSocialFeed showHeader={false} />;
         }
     };
 

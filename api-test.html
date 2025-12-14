@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .result {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007cba;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #005a87;
+        }
+
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Farmer Authentication API Test</h1>
+
+    <div class="section">
+        <h3>1. Health Check</h3>
+        <button onclick="testHealth()">Test Health API</button>
+        <div id="healthResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Send OTP</h3>
+        <input type="text" id="phoneInput" placeholder="Phone Number (01712345678)" value="01712345678">
+        <button onclick="sendOtp()">Send OTP</button>
+        <div id="otpResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>3. Verify OTP</h3>
+        <input type="text" id="otpCode" placeholder="OTP Code" value="123456">
+        <button onclick="verifyOtp()">Verify OTP</button>
+        <div id="verifyResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>4. Get Profile (Protected)</h3>
+        <input type="text" id="tokenInput" placeholder="Bearer Token" style="width: 400px;">
+        <button onclick="getProfile()">Get Profile</button>
+        <div id="profileResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8001/api';
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('healthResult').innerHTML =
+                    `<div class="success">✅ ${JSON.stringify(data, null, 2)}</div>`;
+            } catch (error) {
+                document.getElementById('healthResult').innerHTML =
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function sendOtp() {
+            const phone = document.getElementById('phoneInput').value;
+            try {
+                const response = await fetch(`${API_BASE}/farmer/send-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phone })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('otpResult').innerHTML =
+                        `<div class="success">✅ ${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    document.getElementById('otpResult').innerHTML =
+                        `<div class="error">❌ ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('otpResult').innerHTML =
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function verifyOtp() {
+            const phone = document.getElementById('phoneInput').value;
+            const otpCode = document.getElementById('otpCode').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/farmer/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phone, otp_code: otpCode })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data && data.data.token) {
+                    document.getElementById('tokenInput').value = data.data.token;
+                    document.getElementById('verifyResult').innerHTML =
+                        `<div class="success">✅ ${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    document.getElementById('verifyResult').innerHTML =
+                        `<div class="error">❌ ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('verifyResult').innerHTML =
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function getProfile() {
+            const token = document.getElementById('tokenInput').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/farmer/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('profileResult').innerHTML =
+                        `<div class="success">✅ ${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    document.getElementById('profileResult').innerHTML =
+                        `<div class="error">❌ ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('profileResult').innerHTML =
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-test health on page load
+        window.onload = function () {
+            testHealth();
+        }
+    </script>
+</body>
+
+</html>

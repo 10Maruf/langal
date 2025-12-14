@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -181,205 +182,208 @@ const AgriculturalNews = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-20">
-            {/* Header */}
-            <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate("/")}
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-bold flex items-center gap-2">
-                            <Newspaper className="h-5 w-5 text-blue-600" />
-                            কৃষি সংবাদ
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            সর্বশেষ আপডেট: {new Date().toLocaleTimeString('bn-BD')}
-                        </p>
+        <div className="min-h-screen bg-background">
+            <Header />
+            <div className="pb-20 pt-14">
+                {/* Header */}
+                <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate("/")}
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-xl font-bold flex items-center gap-2">
+                                <Newspaper className="h-5 w-5 text-blue-600" />
+                                কৃষি সংবাদ
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                সর্বশেষ আপডেট: {new Date().toLocaleTimeString('bn-BD')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <TTSButton
+                            text="কৃষি সংবাদ পাতা। এখানে সর্বশেষ কৃষি বিষয়ক সংবাদ দেখতে পাবেন।"
+                            size="icon"
+                            variant="ghost"
+                        />
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={handleRefresh}
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <TTSButton
-                        text="কৃষি সংবাদ পাতা। এখানে সর্বশেষ কৃষি বিষয়ক সংবাদ দেখতে পাবেন।"
-                        size="icon"
-                        variant="ghost"
-                    />
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleRefresh}
-                    >
-                        <RefreshCw className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
 
-            <div className="container mx-auto px-4 py-6 space-y-6">
-                {/* News Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="border-l-4 border-l-red-500">
-                        <CardContent className="p-4">
-                            <div className="flex items-center space-x-3">
-                                <Bell className="h-8 w-8 text-red-600" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">জরুরি সংবাদ</p>
-                                    <p className="font-semibold">
-                                        {newsItems.filter(n => n.priority === 'high').length} টি
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-l-4 border-l-green-500">
-                        <CardContent className="p-4">
-                            <div className="flex items-center space-x-3">
-                                <ExternalLink className="h-8 w-8 text-green-600" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">ভর্তুকি সংবাদ</p>
-                                    <p className="font-semibold">
-                                        {newsItems.filter(n => n.category === 'subsidy').length} টি
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-l-4 border-l-blue-500">
-                        <CardContent className="p-4">
-                            <div className="flex items-center space-x-3">
-                                <Newspaper className="h-8 w-8 text-blue-600" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">মোট সংবাদ</p>
-                                    <p className="font-semibold">{getFilteredNews().length} টি</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Category Filter */}
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex flex-wrap gap-2">
-                            {categories.map(category => {
-                                const Icon = category.icon;
-                                return (
-                                    <button
-                                        key={category.key}
-                                        onClick={() => setSelectedCategory(category.key)}
-                                        className={`px-3 py-2 rounded-full text-sm border transition-colors flex items-center gap-1 ${selectedCategory === category.key
-                                                ? "bg-primary text-primary-foreground border-primary"
-                                                : "bg-background border-border hover:bg-muted"
-                                            }`}
-                                    >
-                                        <Icon className="h-3 w-3" />
-                                        {category.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* News Items */}
-                <div className="space-y-4">
-                    {getFilteredNews().map((item) => (
-                        <Card key={item.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-6">
-                                <div className="space-y-4">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <h3 className="font-bold text-lg leading-tight">{item.title}</h3>
-                                        <div className="flex gap-1 flex-shrink-0">
-                                            <TTSButton
-                                                text={`${item.title}। ${item.summary}। উৎস: ${item.source}। প্রকাশ: ${item.date}`}
-                                                size="icon"
-                                                variant="ghost"
-                                            />
-                                            <Badge className={getPriorityBadgeColor(item.priority)}>
-                                                {getPriorityLabel(item.priority)}
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-muted-foreground leading-relaxed">{item.summary}</p>
-
-                                    {/* Tags */}
-                                    <div className="flex flex-wrap gap-1">
-                                        {item.tags.map((tag, index) => (
-                                            <Badge key={index} variant="outline" className="text-xs">
-                                                {tag}
-                                            </Badge>
-                                        ))}
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-3 border-t">
-                                        <div className="flex items-center gap-4 text-sm">
-                                            <Badge className={getCategoryBadgeColor(item.category)}>
-                                                {getCategoryLabel(item.category)}
-                                            </Badge>
-                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                <Newspaper className="h-3 w-3" />
-                                                {item.source}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm text-muted-foreground flex items-center gap-1">
-                                                <Calendar className="h-3 w-3" />
-                                                {item.date}
-                                            </span>
-
-                                            {item.link && (
-                                                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                                    <ExternalLink className="h-3 w-3" />
-                                                    বিস্তারিত
-                                                </Button>
-                                            )}
-                                        </div>
+                <div className="container mx-auto px-4 py-6 space-y-6">
+                    {/* News Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="border-l-4 border-l-red-500">
+                            <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                    <Bell className="h-8 w-8 text-red-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">জরুরি সংবাদ</p>
+                                        <p className="font-semibold">
+                                            {newsItems.filter(n => n.priority === 'high').length} টি
+                                        </p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
-                    ))}
-                </div>
 
-                {getFilteredNews().length === 0 && (
-                    <div className="text-center py-12">
-                        <Newspaper className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">কোন সংবাদ পাওয়া যায়নি</h3>
-                        <p className="text-muted-foreground">
-                            এই বিভাগে কোন সংবাদ পাওয়া যায়নি
-                        </p>
+                        <Card className="border-l-4 border-l-green-500">
+                            <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                    <ExternalLink className="h-8 w-8 text-green-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">ভর্তুকি সংবাদ</p>
+                                        <p className="font-semibold">
+                                            {newsItems.filter(n => n.category === 'subsidy').length} টি
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-l-4 border-l-blue-500">
+                            <CardContent className="p-4">
+                                <div className="flex items-center space-x-3">
+                                    <Newspaper className="h-8 w-8 text-blue-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">মোট সংবাদ</p>
+                                        <p className="font-semibold">{getFilteredNews().length} টি</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
-                )}
 
-                {/* Subscription Card */}
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="text-center space-y-3">
-                            <h3 className="text-lg font-semibold">সংবাদ সাবস্ক্রিপশন</h3>
-                            <p className="text-muted-foreground text-sm">
-                                গুরুত্বপূর্ণ কৃষি সংবাদ SMS এ পেতে ১৬১২ৃ নম্বরে "NEWS" লিখে পাঠান
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                                <Badge variant="outline" className="py-2 px-4">
-                                    📞 সংবাদ হটলাইন: ১৬১২৩
-                                </Badge>
-                                <Badge variant="outline" className="py-2 px-4">
-                                    📱 SMS: NEWS ১৬১২৩
-                                </Badge>
+                    {/* Category Filter */}
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex flex-wrap gap-2">
+                                {categories.map(category => {
+                                    const Icon = category.icon;
+                                    return (
+                                        <button
+                                            key={category.key}
+                                            onClick={() => setSelectedCategory(category.key)}
+                                            className={`px-3 py-2 rounded-full text-sm border transition-colors flex items-center gap-1 ${selectedCategory === category.key
+                                                ? "bg-primary text-primary-foreground border-primary"
+                                                : "bg-background border-border hover:bg-muted"
+                                                }`}
+                                        >
+                                            <Icon className="h-3 w-3" />
+                                            {category.label}
+                                        </button>
+                                    );
+                                })}
                             </div>
-                            <Button variant="outline" size="sm">
-                                SMS সাবস্ক্রিপশন
-                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* News Items */}
+                    <div className="space-y-4">
+                        {getFilteredNews().map((item) => (
+                            <Card key={item.id} className="hover:shadow-md transition-shadow">
+                                <CardContent className="p-6">
+                                    <div className="space-y-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <h3 className="font-bold text-lg leading-tight">{item.title}</h3>
+                                            <div className="flex gap-1 flex-shrink-0">
+                                                <TTSButton
+                                                    text={`${item.title}। ${item.summary}। উৎস: ${item.source}। প্রকাশ: ${item.date}`}
+                                                    size="icon"
+                                                    variant="ghost"
+                                                />
+                                                <Badge className={getPriorityBadgeColor(item.priority)}>
+                                                    {getPriorityLabel(item.priority)}
+                                                </Badge>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-muted-foreground leading-relaxed">{item.summary}</p>
+
+                                        {/* Tags */}
+                                        <div className="flex flex-wrap gap-1">
+                                            {item.tags.map((tag, index) => (
+                                                <Badge key={index} variant="outline" className="text-xs">
+                                                    {tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-3 border-t">
+                                            <div className="flex items-center gap-4 text-sm">
+                                                <Badge className={getCategoryBadgeColor(item.category)}>
+                                                    {getCategoryLabel(item.category)}
+                                                </Badge>
+                                                <span className="text-muted-foreground flex items-center gap-1">
+                                                    <Newspaper className="h-3 w-3" />
+                                                    {item.source}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {item.date}
+                                                </span>
+
+                                                {item.link && (
+                                                    <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                                        <ExternalLink className="h-3 w-3" />
+                                                        বিস্তারিত
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    {getFilteredNews().length === 0 && (
+                        <div className="text-center py-12">
+                            <Newspaper className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">কোন সংবাদ পাওয়া যায়নি</h3>
+                            <p className="text-muted-foreground">
+                                এই বিভাগে কোন সংবাদ পাওয়া যায়নি
+                            </p>
                         </div>
-                    </CardContent>
-                </Card>
+                    )}
+
+                    {/* Subscription Card */}
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-center space-y-3">
+                                <h3 className="text-lg font-semibold">সংবাদ সাবস্ক্রিপশন</h3>
+                                <p className="text-muted-foreground text-sm">
+                                    গুরুত্বপূর্ণ কৃষি সংবাদ SMS এ পেতে ১৬১২ৃ নম্বরে "NEWS" লিখে পাঠান
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                                    <Badge variant="outline" className="py-2 px-4">
+                                        📞 সংবাদ হটলাইন: ১৬১২৩
+                                    </Badge>
+                                    <Badge variant="outline" className="py-2 px-4">
+                                        📱 SMS: NEWS ১৬১২৩
+                                    </Badge>
+                                </div>
+                                <Button variant="outline" size="sm">
+                                    SMS সাবস্ক্রিপশন
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

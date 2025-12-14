@@ -236,7 +236,7 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
         {/* Action Buttons */}
         <div className="flex gap-2">
           <Button onClick={handleSubmit} className="flex-1">
-            পোস্ট করুন
+            বিজ্ঞাপন দিন
           </Button>
           <Button variant="outline" onClick={onCancel}>
             বাতিল

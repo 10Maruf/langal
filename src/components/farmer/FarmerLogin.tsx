@@ -15,6 +15,9 @@ interface FarmerLoginProps {
     onBackToMainLogin: () => void;
 }
 
+// API Base URL
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000/api';
+
 const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     const [currentStep, setCurrentStep] = useState<LoginStep>('phone');
     const [phone, setPhone] = useState("");
@@ -23,7 +26,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
 
-    const { login } = useAuth();
+    const { login, setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -52,53 +55,68 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
         setIsLoading(true);
 
         try {
-            // For prototype - skip farmer exists check
-            // const farmerExists = await checkFarmerExists(phone);
-
-            // if (!farmerExists) {
-            //     toast({
-            //         title: "ত্রুটি",
-            //         description: "এই নম্বর দিয়ে কোনো কৃষক অ্যাকাউন্ট পাওয়া যায়নি। প্রথমে নিবন্ধন করুন।",
-            //         variant: "destructive",
-            //     });
-            //     return;
-            // }
-
-            // Generate and send OTP (dummy)
-            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-            setGeneratedOtp(otpCode);
-
-            await sendOTP(phone, otpCode);
-
-            toast({
-                title: "OTP পাঠানো হয়েছে",
-                description: `আপনার ${phone} নম্বরে OTP পাঠানো হয়েছে (Prototype Mode)`,
+            // Real API call to send OTP
+            const response = await fetch(`${API_BASE}/farmer/send-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone }),
             });
+            let data: { success?: boolean; data?: { otp_code?: string }; message?: string };
+            try {
+                data = await response.json();
+            } catch {
+                throw new Error('Invalid server response');
+            }
 
-            setOtpSent(true);
-            setCurrentStep('otp');
+            if (response.ok && data?.success) {
+                // Store the generated OTP for demo purposes
+                if (data.data.otp_code) {
+                    setGeneratedOtp(data.data.otp_code);
+                    console.log('Generated OTP:', data.data.otp_code); // For testing
+                }
+
+                toast({
+                    title: "OTP পাঠানো হয়েছে",
+                    description: `আপনার ${phone} নম্বরে OTP পাঠানো হয়েছে`,
+                });
+
+                setOtpSent(true);
+                setCurrentStep('otp');
+            } else {
+                const backendMsg = data?.message;
+                // Specific not-found handling
+                if (response.status === 404 && backendMsg?.includes('No farmer account')) {
+                    toast({
+                        title: 'কৃষকের অ্যাকাউন্ট পাওয়া যায়নি',
+                        description: 'এই নম্বরে কোনো কৃষক নিবন্ধিত নেই। আগে নিবন্ধন করুন অথবা সঠিক নম্বর দিন।',
+                        variant: 'destructive'
+                    });
+                } else if (response.status === 403) {
+                    toast({
+                        title: 'অ্যাকাউন্ট নিষ্ক্রিয়',
+                        description: backendMsg || 'আপনার অ্যাকাউন্ট নিষ্ক্রিয়। সহায়তা নিন।',
+                        variant: 'destructive'
+                    });
+                } else {
+                    toast({
+                        title: 'OTP পাঠাতে সমস্যা',
+                        description: backendMsg || 'সার্ভার থেকে OTP পাঠানো যায়নি। পরে চেষ্টা করুন।',
+                        variant: 'destructive'
+                    });
+                }
+                return; // stop further state changes
+            }
         } catch (error) {
             toast({
                 title: "ত্রুটি",
-                description: "OTP পাঠাতে সমস্যা হয়েছে",
+                description: (error as Error).message || "OTP পাঠাতে সমস্যা হয়েছে",
                 variant: "destructive",
             });
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const checkFarmerExists = async (phoneNumber: string): Promise<boolean> => {
-        // Simulate API call to check if farmer exists
-        // In real implementation, this would check the database
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return true; // Assume farmer exists for demo
-    };
-
-    const sendOTP = async (phoneNumber: string, otpCode: string): Promise<void> => {
-        // Simulate SMS sending
-        console.log(`OTP ${otpCode} sent to ${phoneNumber}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
     };
 
     const handleOtpSubmit = async (e: React.FormEvent) => {
@@ -113,39 +131,79 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
             return;
         }
 
-        // For prototype - accept any OTP input
-        // if (otp !== generatedOtp) {
-        //     toast({
-        //         title: "ত্রুটি",
-        //         description: "ভুল OTP কোড",
-        //         variant: "destructive",
-        //     });
-        //     return;
-        // }
-
         setIsLoading(true);
 
         try {
-            // Login farmer with phone and OTP
-            const success = await loginFarmerWithOtp(phone, otp);
+            // Real API call to verify OTP
+            const response = await fetch(`${API_BASE}/farmer/verify-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phone,
+                    otp_code: otp
+                }),
+            });
+            let data: { success?: boolean; data?: { token?: string; user?: unknown }; message?: string };
+            try { data = await response.json(); } catch { throw new Error('Invalid server response'); }
 
-            if (success) {
-                // Login to AuthContext as farmer
-                await login(phone, otp, 'farmer');
+            if (response.ok && data?.success) {
+                // Store authentication data
+                if (data.data.token) {
+                    localStorage.setItem('auth_token', data.data.token);
+                    localStorage.setItem('user_data', JSON.stringify(data.data.user));
+
+                    // Set user in AuthContext with actual backend data
+                    const backendUser = data.data.user as any;
+                    setAuthUser({
+                        id: backendUser.user_id?.toString() || '',
+                        user_id: backendUser.user_id,
+                        name: backendUser.profile?.full_name || backendUser.full_name || 'কৃষক',
+                        type: 'farmer',
+                        email: backendUser.email || '',
+                        phone: backendUser.phone || phone,
+                        profilePhoto: backendUser.profile?.profile_photo_url_full,
+                        nidNumber: backendUser.profile?.nid_number,
+                        location: backendUser.profile?.address,
+                        location_info: backendUser.location_info || undefined
+                    }, data.data.token);
+                }
 
                 toast({
                     title: "সফল",
-                    description: "সফলভাবে লগইন হয়েছে (Prototype Mode)",
+                    description: "সফলভাবে লগইন হয়েছে",
                 });
+
                 // Redirect to farmer dashboard
                 navigate('/farmer-dashboard');
             } else {
-                throw new Error('Login failed');
+                const backendMsg = data?.message;
+                if (response.status === 400) {
+                    toast({
+                        title: 'ভুল OTP',
+                        description: backendMsg || 'আপনার দেওয়া OTP সঠিক নয়। আবার চেষ্টা করুন।',
+                        variant: 'destructive'
+                    });
+                } else if (response.status === 404) {
+                    toast({
+                        title: 'ব্যবহারকারী পাওয়া যায়নি',
+                        description: backendMsg || 'এই নম্বরের কোনো ব্যবহারকারী নেই।',
+                        variant: 'destructive'
+                    });
+                } else {
+                    toast({
+                        title: 'যাচাই ব্যর্থ',
+                        description: backendMsg || 'OTP যাচাই সম্পন্ন করা যায়নি।',
+                        variant: 'destructive'
+                    });
+                }
+                return;
             }
         } catch (error) {
             toast({
                 title: "ত্রুটি",
-                description: "লগইনে সমস্যা হয়েছে",
+                description: (error as Error).message || "লগইনে সমস্যা হয়েছে",
                 variant: "destructive",
             });
         } finally {
@@ -153,28 +211,37 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
         }
     };
 
-    const loginFarmerWithOtp = async (phoneNumber: string, otpCode: string): Promise<boolean> => {
-        // Simulate farmer login with OTP
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // In real implementation, verify OTP and authenticate farmer
-        return true;
-    };
 
     const handleResendOtp = async () => {
         setIsLoading(true);
 
         try {
-            // Generate new OTP
-            const newOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
-            setGeneratedOtp(newOtpCode);
-
-            await sendOTP(phone, newOtpCode);
-
-            toast({
-                title: "নতুন OTP পাঠানো হয়েছে",
-                description: `আপনার ${phone} নম্বরে নতুন OTP পাঠানো হয়েছে`,
+            // Real API call to resend OTP
+            const response = await fetch(`${API_BASE}/farmer/resend-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone }),
             });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Store the new generated OTP for demo purposes
+                if (data.data.otp_code) {
+                    setGeneratedOtp(data.data.otp_code);
+                    console.log('New OTP:', data.data.otp_code); // For testing
+                }
+
+                toast({
+                    title: "নতুন OTP পাঠানো হয়েছে",
+                    description: `আপনার ${phone} নম্বরে নতুন OTP পাঠানো হয়েছে`,
+                });
+            } else {
+                throw new Error(data.message || 'OTP পাঠাতে সমস্যা হয়েছে');
+            }
         } catch (error) {
             toast({
                 title: "ত্রুটি",

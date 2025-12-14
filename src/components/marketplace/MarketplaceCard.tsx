@@ -1,9 +1,42 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TTSButton } from "@/components/ui/tts-button";
-import { MapPin, Heart, MessageCircle, Star } from "lucide-react";
+import { MapPin, Heart, MessageCircle, Star, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { englishToBangla } from "@/lib/banglaUtils";
+
+// Helper function to get Bengali relative time
+const getBanglaRelativeTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  // Check if same day
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday) {
+    if (diffMins < 1) return "এইমাত্র";
+    if (diffMins < 60) return `${englishToBangla(diffMins)} মিনিট আগে`;
+    return `${englishToBangla(diffHours)} ঘণ্টা আগে`;
+  }
+  if (isYesterday) return "গতকাল";
+  if (diffDays < 7) return `${englishToBangla(diffDays)} দিন আগে`;
+  if (diffWeeks < 4) return `${englishToBangla(diffWeeks)} সপ্তাহ আগে`;
+  if (diffMonths < 12) return `${englishToBangla(diffMonths)} মাস আগে`;
+  return `${englishToBangla(diffYears)} বছর আগে`;
+};
 
 export interface MarketplaceItem {
   id: string;
@@ -12,10 +45,13 @@ export interface MarketplaceItem {
   price: number;
   currency: string;
   category: "machinery" | "crops" | "seeds" | "fertilizer" | "livestock" | "tools" | "other";
+  category_name_bn?: string;
   type: "sell" | "rent" | "buy" | "service";
+  listing_type_bn?: string;
   location: string;
   seller: {
     name: string;
+    avatar?: string;
     rating: number;
     verified: boolean;
   };
@@ -32,14 +68,23 @@ interface MarketplaceCardProps {
 }
 
 export const MarketplaceCard = ({ item, onContact, onSave }: MarketplaceCardProps) => {
+  // Vibrant category colors
   const categoryColors = {
-    machinery: "bg-blue-50 text-blue-700 border-blue-200",
-    crops: "bg-green-50 text-green-700 border-green-200",
-    seeds: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    fertilizer: "bg-purple-50 text-purple-700 border-purple-200",
-    livestock: "bg-orange-50 text-orange-700 border-orange-200",
-    tools: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    other: "bg-gray-50 text-gray-700 border-gray-200"
+    machinery: "bg-blue-100 text-blue-800 border-blue-300 font-medium",
+    crops: "bg-emerald-100 text-emerald-800 border-emerald-300 font-medium",
+    seeds: "bg-amber-100 text-amber-800 border-amber-300 font-medium",
+    fertilizer: "bg-violet-100 text-violet-800 border-violet-300 font-medium",
+    livestock: "bg-orange-100 text-orange-800 border-orange-300 font-medium",
+    tools: "bg-cyan-100 text-cyan-800 border-cyan-300 font-medium",
+    other: "bg-slate-100 text-slate-700 border-slate-300 font-medium"
+  };
+
+  // Type badge colors
+  const typeColors = {
+    sell: "bg-green-500 text-white hover:bg-green-600",
+    rent: "bg-blue-500 text-white hover:bg-blue-600",
+    buy: "bg-rose-500 text-white hover:bg-rose-600",
+    service: "bg-purple-500 text-white hover:bg-purple-600"
   };
 
   const categoryLabels = {
@@ -68,10 +113,10 @@ export const MarketplaceCard = ({ item, onContact, onSave }: MarketplaceCardProp
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className={categoryColors[item.category]}>
-              {categoryLabels[item.category]}
+              {item.category_name_bn || categoryLabels[item.category]}
             </Badge>
-            <Badge variant={item.type === "sell" ? "default" : "outline"}>
-              {typeLabels[item.type]}
+            <Badge className={typeColors[item.type]}>
+              {item.listing_type_bn || typeLabels[item.type]}
             </Badge>
           </div>
           <div className="flex items-center gap-1">
@@ -116,7 +161,7 @@ export const MarketplaceCard = ({ item, onContact, onSave }: MarketplaceCardProp
 
         <div className="flex items-center justify-between mb-2">
           <div className="text-lg font-bold text-primary">
-            ৳{item.price.toLocaleString('bn-BD')}
+            ৳{englishToBangla(item.price.toLocaleString('en-US'))}
             {item.type === "rent" && <span className="text-xs text-muted-foreground">/দিন</span>}
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -127,6 +172,10 @@ export const MarketplaceCard = ({ item, onContact, onSave }: MarketplaceCardProp
 
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={item.seller.avatar} />
+              <AvatarFallback className="text-xs">{item.seller.name?.[0]}</AvatarFallback>
+            </Avatar>
             <span className="font-medium">{item.seller.name}</span>
             {item.seller.verified && <span className="text-green-600">✓</span>}
           </div>
@@ -134,6 +183,12 @@ export const MarketplaceCard = ({ item, onContact, onSave }: MarketplaceCardProp
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             <span>{item.seller.rating}</span>
           </div>
+        </div>
+
+        {/* Posted time in Bengali */}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2 pt-2 border-t">
+          <Clock className="h-3 w-3" />
+          <span>{getBanglaRelativeTime(item.postedAt)}</span>
         </div>
       </CardContent>
 

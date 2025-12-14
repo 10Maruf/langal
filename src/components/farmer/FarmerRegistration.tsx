@@ -10,8 +10,21 @@ import { Loader2, Upload, Camera, IdCard, Phone, Calendar, CheckCircle, ArrowLef
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface InitialData {
+import api from "@/services/api";
+import { AxiosError } from "axios";
+import {
+    banglaToEnglish,
+    englishToBangla,
+    isBanglaText,
+    isBanglaNumber,
+    formatBanglaNumberInput,
+    parseBanglaNumber,
+    farmSizeUnits,
+    farmTypes,
+    validateBanglaInput,
+    validateBanglaNumber
+} from "@/lib/banglaUtils";
+import LocationSelector from "@/components/farmer/LocationSelector"; interface InitialData {
     phone: string;
     nidNumber: string;
     krishiCardNumber: string;
@@ -33,16 +46,32 @@ interface ParsedData {
     motherName: string;
 }
 
+interface LocationData {
+    division: string;
+    division_bn: string;
+    district: string;
+    district_bn: string;
+    upazila: string;
+    upazila_bn: string;
+    post_office: string;
+    post_office_bn: string;
+    postal_code: number;
+    village: string;
+}
+
 interface FarmerFormData {
     fullName: string;
     fatherName: string;
     motherName: string;
     address: string;
     dateOfBirth: string;
-    farmSize: string;
+    farmSize: string; // Will store Bangla number, converted to English before sending
+    farmSizeUnit: 'bigha' | 'katha' | 'acre';
     farmType: string;
-    experience: string;
+    customFarmType: string; // For custom input when "অন্যান্য" is selected
+    experience: string; // Bangla number (years)
     profilePhoto: File | null;
+    location: LocationData | null;
 }
 
 type RegistrationStep = 'initial' | 'documents' | 'form' | 'otp' | 'success';
@@ -82,13 +111,18 @@ const FarmerRegistration = () => {
         address: '',
         dateOfBirth: '',
         farmSize: '',
+        farmSizeUnit: 'bigha',
         farmType: '',
+        customFarmType: '',
         experience: '',
-        profilePhoto: null
+        profilePhoto: null,
+        location: null
     });
 
+    const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
+
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { setAuthUser, login } = useAuth();
     const { toast } = useToast();
     const frontImageRef = useRef<HTMLInputElement>(null);
     const backImageRef = useRef<HTMLInputElement>(null);
@@ -106,20 +140,31 @@ const FarmerRegistration = () => {
             return;
         }
 
+        // Check if at least one of NID or Krishi Card is provided
+        if (!initialData.nidNumber && !initialData.krishiCardNumber) {
+            toast({
+                title: "ত্রুটি",
+                description: "এনআইডি নম্বর অথবা কৃষি কার্ড নম্বর দিতে হবে",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsLoading(true);
 
         try {
             // Simulate verification process
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // For prototype mode - always success
+            // For prototype mode - skip document scanning, go directly to form
             toast({
                 title: "যাচাইকরণ সফল",
-                description: "এখন আপনার কাগজপত্রের ছবি আপলোড করুন (Prototype Mode)",
+                description: "এখন আপনার তথ্য পূরণ করুন",
             });
-            setCurrentStep('documents');
+            setCurrentStep('form'); // Skip 'documents' step, go directly to 'form'
 
         } catch (error) {
+            console.error(error);
             toast({
                 title: "ত্রুটি",
                 description: "যাচাইকরণে সমস্যা হয়েছে",
@@ -174,6 +219,7 @@ const FarmerRegistration = () => {
 
             setCurrentStep('form');
         } catch (error) {
+            console.error(error);
             toast({
                 title: "ত্রুটি",
                 description: "কাগজপত্র পড়তে সমস্যা হয়েছে",
@@ -200,6 +246,7 @@ const FarmerRegistration = () => {
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Validate required fields
         if (!farmerFormData.fullName || !farmerFormData.farmSize || !farmerFormData.farmType ||
             !farmerFormData.experience || !farmerFormData.profilePhoto) {
             toast({
@@ -210,26 +257,93 @@ const FarmerRegistration = () => {
             return;
         }
 
+        // Validate Bangla text inputs
+        const nameError = validateBanglaInput(farmerFormData.fullName, "পূর্ণ নাম");
+        if (nameError) {
+            toast({ title: "ত্রুটি", description: nameError, variant: "destructive" });
+            return;
+        }
+
+        if (farmerFormData.fatherName) {
+            const fatherNameError = validateBanglaInput(farmerFormData.fatherName, "পিতার নাম");
+            if (fatherNameError) {
+                toast({ title: "ত্রুটি", description: fatherNameError, variant: "destructive" });
+                return;
+            }
+        }
+
+        if (farmerFormData.motherName) {
+            const motherNameError = validateBanglaInput(farmerFormData.motherName, "মাতার নাম");
+            if (motherNameError) {
+                toast({ title: "ত্রুটি", description: motherNameError, variant: "destructive" });
+                return;
+            }
+        }
+
+        if (farmerFormData.address) {
+            const addressError = validateBanglaInput(farmerFormData.address, "ঠিকানা");
+            if (addressError) {
+                toast({ title: "ত্রুটি", description: addressError, variant: "destructive" });
+                return;
+            }
+        }
+
+        // Validate Bangla numbers
+        const farmSizeError = validateBanglaNumber(farmerFormData.farmSize, "জমির পরিমাণ");
+        if (farmSizeError) {
+            toast({ title: "ত্রুটি", description: farmSizeError, variant: "destructive" });
+            return;
+        }
+
+        const experienceError = validateBanglaNumber(farmerFormData.experience, "অভিজ্ঞতা");
+        if (experienceError) {
+            toast({ title: "ত্রুটি", description: experienceError, variant: "destructive" });
+            return;
+        }
+
+        // Validate custom farm type if "অন্যান্য" is selected
+        if (farmerFormData.farmType === 'অন্যান্য' && !farmerFormData.customFarmType) {
+            toast({
+                title: "ত্রুটি",
+                description: "চাষের ধরণ উল্লেখ করুন",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            // Generate and send OTP
-            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-            setGeneratedOtp(otpCode);
-
-            // Simulate OTP sending
-            await sendOTP(initialData.phone, otpCode);
-
-            toast({
-                title: "OTP পাঠানো হয়েছে",
-                description: `আপনার ${initialData.phone} নম্বরে OTP পাঠানো হয়েছে`,
+            // Send OTP via API
+            const response = await api.post('/farmer/send-otp', {
+                phone: initialData.phone,
+                purpose: 'register'
             });
 
-            setCurrentStep('otp');
+            if (response.data.success) {
+                toast({
+                    title: "OTP পাঠানো হয়েছে",
+                    description: `আপনার ${initialData.phone} নম্বরে OTP পাঠানো হয়েছে`,
+                });
+
+                // For dev/demo purposes, log the OTP if returned
+                if (response.data.data.otp_code) {
+                    console.log("Dev OTP:", response.data.data.otp_code);
+                    toast({
+                        title: "Dev Mode OTP",
+                        description: `OTP Code: ${response.data.data.otp_code}`,
+                    });
+                }
+
+                setCurrentStep('otp');
+            } else {
+                throw new Error(response.data.message || 'OTP sending failed');
+            }
         } catch (error) {
+            const axiosError = error as AxiosError<{ message: string }>;
             toast({
                 title: "ত্রুটি",
-                description: "OTP পাঠাতে সমস্যা হয়েছে",
+                description: axiosError.response?.data?.message || "OTP পাঠাতে সমস্যা হয়েছে",
                 variant: "destructive",
             });
         } finally {
@@ -237,10 +351,124 @@ const FarmerRegistration = () => {
         }
     };
 
-    const sendOTP = async (phone: string, otpCode: string): Promise<void> => {
-        // Simulate SMS sending
-        console.log(`OTP ${otpCode} sent to ${phone}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    const handleResendOtp = async () => {
+        setIsLoading(true);
+        try {
+            const response = await api.post('/farmer/send-otp', {
+                phone: initialData.phone,
+                purpose: 'register'
+            });
+
+            if (response.data.success) {
+                toast({
+                    title: "OTP পুনরায় পাঠানো হয়েছে",
+                    description: `আপনার ${initialData.phone} নম্বরে নতুন OTP পাঠানো হয়েছে`,
+                });
+
+                if (response.data.data.otp_code) {
+                    console.log("Dev OTP:", response.data.data.otp_code);
+                    toast({
+                        title: "Dev Mode OTP",
+                        description: `OTP Code: ${response.data.data.otp_code}`,
+                    });
+                }
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message: string; data?: { otp_code?: string } }>;
+            toast({
+                title: "ত্রুটি",
+                description: axiosError.response?.data?.message || "OTP পুনরায় পাঠাতে সমস্যা হয়েছে",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const completeRegistration = async (): Promise<void> => {
+        const formData = new FormData();
+
+        // Convert Bangla numbers to English before sending
+        const farmSizeEnglish = banglaToEnglish(farmerFormData.farmSize);
+        const experienceEnglish = banglaToEnglish(farmerFormData.experience);
+
+        // Determine final farm type (use custom if "অন্যান্য" is selected)
+        const finalFarmType = farmerFormData.farmType === 'অন্যান্য'
+            ? farmerFormData.customFarmType
+            : farmerFormData.farmType;
+
+        // Append all text fields
+        formData.append('phone', initialData.phone);
+        formData.append('otp_code', otp);
+        formData.append('fullName', farmerFormData.fullName);
+        formData.append('fatherName', farmerFormData.fatherName || '');
+        formData.append('motherName', farmerFormData.motherName || '');
+        formData.append('address', farmerFormData.address || '');
+        formData.append('dateOfBirth', initialData.dateOfBirth);
+
+        // Send location data (postal code and other location details)
+        if (farmerFormData.location) {
+            formData.append('postal_code', farmerFormData.location.postal_code.toString());
+            formData.append('division', farmerFormData.location.division || '');
+            formData.append('division_bn', farmerFormData.location.division_bn || '');
+            formData.append('district', farmerFormData.location.district || '');
+            formData.append('district_bn', farmerFormData.location.district_bn || '');
+            formData.append('upazila', farmerFormData.location.upazila || '');
+            formData.append('upazila_bn', farmerFormData.location.upazila_bn || '');
+            formData.append('village', farmerFormData.location.village || '');
+        }
+
+        // Send NID or Krishi card based on what was provided
+        if (initialData.nidNumber) {
+            formData.append('nidNumber', initialData.nidNumber);
+        }
+        if (initialData.krishiCardNumber) {
+            formData.append('krishiCardNumber', initialData.krishiCardNumber);
+        }
+
+        // Send farm data with English numbers
+        formData.append('farmSize', farmSizeEnglish);
+        formData.append('farmSizeUnit', farmerFormData.farmSizeUnit);
+        formData.append('farmType', finalFarmType);
+        formData.append('experience', experienceEnglish);
+
+        // Append files
+        if (farmerFormData.profilePhoto) {
+            formData.append('profilePhoto', farmerFormData.profilePhoto);
+            console.log('[FarmerRegistration] Profile photo appended:', farmerFormData.profilePhoto.name, farmerFormData.profilePhoto.size);
+        } else {
+            console.warn('[FarmerRegistration] No profile photo to upload!');
+        }
+
+        // Note: Document images are not yet handled by backend, but we can send them if needed
+        // if (documentData.frontImage) formData.append('documentFront', documentData.frontImage);
+        // if (documentData.backImage) formData.append('documentBack', documentData.backImage);
+
+        console.log('[FarmerRegistration] Sending registration request with FormData');
+
+        // Don't set Content-Type header manually for FormData - axios will set it with proper boundary
+        const response = await api.post('/farmer/register', formData);
+
+        if (response.data.success) {
+            const { user, token } = response.data.data;
+
+            // Map backend user to frontend user format
+            const authUser = {
+                id: user.user_id.toString(),
+                name: user.profile?.full_name || user.phone,
+                type: 'farmer' as const,
+                email: user.email || '',
+                phone: user.phone,
+                profilePhoto: user.profile?.profile_photo_url_full,
+                location: user.profile?.address || 'Bangladesh',
+                location_info: user.location_info || undefined
+            };
+
+            // Set user in context
+            setAuthUser(authUser, token);
+        } else {
+            throw new Error(response.data.message || 'Registration failed');
+        }
     };
 
     const handleOtpSubmit = async (e: React.FormEvent) => {
@@ -255,32 +483,39 @@ const FarmerRegistration = () => {
             return;
         }
 
-        // For prototype - accept any OTP input
-        // if (otp !== generatedOtp) {
-        //     toast({
-        //         title: "ত্রুটি",
-        //         description: "ভুল OTP কোড",
-        //         variant: "destructive",
-        //     });
-        //     return;
-        // }
-
         setIsLoading(true);
 
         try {
-            // Complete registration
+            // Complete registration via API
             await completeRegistration();
 
             toast({
                 title: "নিবন্ধন সম্পন্ন!",
-                description: "আপনার কৃষক অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে (Prototype Mode)",
+                description: "আপনার কৃষক অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে",
             });
 
             setCurrentStep('success');
         } catch (error) {
+            console.error("Registration Error:", error);
+            const axiosError = error as AxiosError<{ message: string; errors?: Record<string, string[]> }>;
+
+            if (axiosError.response) {
+                console.error('Error Response Data:', JSON.stringify(axiosError.response.data, null, 2));
+            }
+
+            let errorMessage = "নিবন্ধন সম্পন্ন করতে সমস্যা হয়েছে";
+
+            if (axiosError.response?.data?.errors) {
+                // Extract the first validation error message
+                const firstErrorKey = Object.keys(axiosError.response.data.errors)[0];
+                errorMessage = axiosError.response.data.errors[firstErrorKey][0];
+            } else if (axiosError.response?.data?.message) {
+                errorMessage = axiosError.response.data.message;
+            }
+
             toast({
                 title: "ত্রুটি",
-                description: "নিবন্ধন সম্পন্ন করতে সমস্যা হয়েছে",
+                description: errorMessage,
                 variant: "destructive",
             });
         } finally {
@@ -288,25 +523,20 @@ const FarmerRegistration = () => {
         }
     };
 
-    const completeRegistration = async (): Promise<void> => {
-        // Simulate registration completion
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // In real implementation, save all data to backend
-        const registrationData = {
-            ...initialData,
-            ...farmerFormData,
-            documents: documentData,
-            verified: true,
-            registrationDate: new Date().toISOString()
-        };
-
-        console.log('Registration completed:', registrationData);
-    };
-
     const handleFileChange = (field: 'frontImage' | 'backImage' | 'profilePhoto', file: File | null) => {
         if (field === 'profilePhoto') {
             setFarmerFormData(prev => ({ ...prev, profilePhoto: file }));
+
+            // Create preview URL
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setProfilePhotoPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                setProfilePhotoPreview(null);
+            }
         } else {
             setDocumentData(prev => ({ ...prev, [field]: file }));
         }
@@ -333,10 +563,10 @@ const FarmerRegistration = () => {
                         return (
                             <div key={step.key} className="flex items-center">
                                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${isCompleted
-                                        ? 'bg-green-500 border-green-500 text-white'
-                                        : isCurrent
-                                            ? 'bg-blue-500 border-blue-500 text-white'
-                                            : 'bg-gray-200 border-gray-300 text-gray-500'
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : isCurrent
+                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                        : 'bg-gray-200 border-gray-300 text-gray-500'
                                     }`}>
                                     <Icon className="w-5 h-5" />
                                 </div>
@@ -363,7 +593,7 @@ const FarmerRegistration = () => {
                 <AlertDescription className="text-blue-800">
                     কৃষক নিবন্ধনের জন্য আপনার মোবাইল নম্বর এবং পরিচয়পত্রের তথ্য প্রয়োজন
                     <br />
-                    <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো তথ্য দিলেই হবে</span>
+                    {/* <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো তথ্য দিলেই হবে</span> */}
                 </AlertDescription>
             </Alert>
 
@@ -559,107 +789,220 @@ const FarmerRegistration = () => {
             <Alert className="border-green-200 bg-green-50">
                 <Camera className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                    কাগজপত্র থেকে তথ্য সংগ্রহ করা হয়েছে। অতিরিক্ত তথ্য পূরণ করুন
+                    সব তথ্য বাংলায় পূরণ করুন। সংখ্যা বাংলায় লিখুন (০-৯)
                 </AlertDescription>
             </Alert>
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="fullName">পূর্ণ নাম *</Label>
+                        <Label htmlFor="fullName">পূর্ণ নাম (বাংলায়) *</Label>
                         <Input
                             id="fullName"
                             type="text"
+                            placeholder="যেমন: মোহাম্মদ রহিম উদ্দিন"
                             value={farmerFormData.fullName}
-                            onChange={(e) => setFarmerFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || isBanglaText(value)) {
+                                    setFarmerFormData(prev => ({ ...prev, fullName: value }));
+                                }
+                            }}
                             required
-                            className="bg-blue-50"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="fatherName">পিতার নাম</Label>
+                        <Label htmlFor="fatherName">পিতার নাম (বাংলায়)</Label>
                         <Input
                             id="fatherName"
                             type="text"
+                            placeholder="যেমন: মোহাম্মদ করিম উদ্দিন"
                             value={farmerFormData.fatherName}
-                            onChange={(e) => setFarmerFormData(prev => ({ ...prev, fatherName: e.target.value }))}
-                            className="bg-blue-50"
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || isBanglaText(value)) {
+                                    setFarmerFormData(prev => ({ ...prev, fatherName: value }));
+                                }
+                            }}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="motherName">মাতার নাম</Label>
+                        <Label htmlFor="motherName">মাতার নাম (বাংলায়)</Label>
                         <Input
                             id="motherName"
                             type="text"
+                            placeholder="যেমন: ফাতেমা খাতুন"
                             value={farmerFormData.motherName}
-                            onChange={(e) => setFarmerFormData(prev => ({ ...prev, motherName: e.target.value }))}
-                            className="bg-blue-50"
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || isBanglaText(value)) {
+                                    setFarmerFormData(prev => ({ ...prev, motherName: value }));
+                                }
+                            }}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="farmSize">জমির পরিমাণ (একর) *</Label>
+                        <Label htmlFor="farmSizeUnit">জমির একক *</Label>
+                        <Select
+                            value={farmerFormData.farmSizeUnit}
+                            onValueChange={(value: 'bigha' | 'katha' | 'acre') =>
+                                setFarmerFormData(prev => ({ ...prev, farmSizeUnit: value }))
+                            }
+                        >
+                            <SelectTrigger id="farmSizeUnit">
+                                <SelectValue placeholder="একক নির্বাচন করুন" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {farmSizeUnits.map(unit => (
+                                    <SelectItem key={unit.value} value={unit.value}>
+                                        {unit.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="farmSize">জমির পরিমাণ (বাংলা সংখ্যায়) *</Label>
                         <Input
                             id="farmSize"
                             type="text"
-                            placeholder="যেমন: ২.৫ একর"
+                            placeholder="যেমন: ২।৫"
                             value={farmerFormData.farmSize}
-                            onChange={(e) => setFarmerFormData(prev => ({ ...prev, farmSize: e.target.value }))}
+                            onChange={(e) => {
+                                const value = formatBanglaNumberInput(e.target.value);
+                                setFarmerFormData(prev => ({ ...prev, farmSize: value }));
+                            }}
                             required
                         />
+                        <p className="text-xs text-gray-500">
+                            বাংলা সংখ্যায় লিখুন: ০১২৩৪৫৬৭৮৯। দশমিক এর জন্য: ।
+                        </p>
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="farmType">চাষের ধরণ *</Label>
-                        <Input
-                            id="farmType"
-                            type="text"
-                            placeholder="যেমন: ধান, সবজি, ফল"
+                        <Select
                             value={farmerFormData.farmType}
-                            onChange={(e) => setFarmerFormData(prev => ({ ...prev, farmType: e.target.value }))}
-                            required
-                        />
+                            onValueChange={(value) =>
+                                setFarmerFormData(prev => ({ ...prev, farmType: value }))
+                            }
+                        >
+                            <SelectTrigger id="farmType">
+                                <SelectValue placeholder="চাষের ধরণ নির্বাচন করুন" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {farmTypes.map(type => (
+                                    <SelectItem key={type} value={type}>
+                                        {type}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
+                {farmerFormData.farmType === 'অন্যান্য' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="customFarmType">চাষের ধরণ উল্লেখ করুন (বাংলায়) *</Label>
+                        <Input
+                            id="customFarmType"
+                            type="text"
+                            placeholder="যেমন: আলু চাষ"
+                            value={farmerFormData.customFarmType}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || isBanglaText(value)) {
+                                    setFarmerFormData(prev => ({ ...prev, customFarmType: value }));
+                                }
+                            }}
+                            required
+                        />
+                    </div>
+                )}
+
                 <div className="space-y-2">
-                    <Label htmlFor="address">ঠিকানা</Label>
-                    <Textarea
-                        id="address"
-                        value={farmerFormData.address}
-                        onChange={(e) => setFarmerFormData(prev => ({ ...prev, address: e.target.value }))}
-                        className="bg-blue-50"
-                        rows={3}
+                    <Label className="text-base font-medium">ঠিকানা *</Label>
+                    <LocationSelector
+                        value={farmerFormData.location}
+                        onChange={(location) => setFarmerFormData(prev => ({ ...prev, location }))}
+                        onAddressChange={(address) => setFarmerFormData(prev => ({ ...prev, address }))}
                     />
+                    {farmerFormData.address && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+                            <p className="text-sm font-medium text-blue-800">সম্পূর্ণ ঠিকানা:</p>
+                            <p className="text-sm text-blue-700">{farmerFormData.address}</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="experience">কৃষিকাজের অভিজ্ঞতা *</Label>
-                    <Textarea
+                    <Label htmlFor="experience">কৃষিকাজের অভিজ্ঞতা (বছর - বাংলা সংখ্যায়) *</Label>
+                    <Input
                         id="experience"
-                        placeholder="আপনার কৃষিকাজের অভিজ্ঞতা বর্ণনা করুন"
+                        type="text"
+                        placeholder="যেমন: ১৫"
                         value={farmerFormData.experience}
-                        onChange={(e) => setFarmerFormData(prev => ({ ...prev, experience: e.target.value }))}
+                        onChange={(e) => {
+                            const value = formatBanglaNumberInput(e.target.value);
+                            setFarmerFormData(prev => ({ ...prev, experience: value }));
+                        }}
                         required
-                        rows={3}
                     />
+                    <p className="text-xs text-gray-500">
+                        কত বছর কৃষিকাজ করছেন বাংলা সংখ্যায় লিখুন (০-৯)
+                    </p>
                 </div>
 
                 <div className="space-y-2">
                     <Label>প্রোফাইল ছবি *</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                        <Camera className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => profilePhotoRef.current?.click()}
-                            className="mb-2"
-                        >
-                            <Upload className="h-4 w-4 mr-2" />
-                            ছবি আপলোড করুন
-                        </Button>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                        {profilePhotoPreview ? (
+                            <div className="space-y-3">
+                                <div className="flex justify-center">
+                                    <img
+                                        src={profilePhotoPreview}
+                                        alt="Profile Preview"
+                                        className="w-40 h-40 object-cover rounded-full border-4 border-green-200"
+                                    />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm text-green-600 font-medium mb-2">
+                                        {farmerFormData.profilePhoto?.name}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setFarmerFormData(prev => ({ ...prev, profilePhoto: null }));
+                                            setProfilePhotoPreview(null);
+                                        }}
+                                    >
+                                        ছবি পরিবর্তন করুন
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center">
+                                <Camera className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => profilePhotoRef.current?.click()}
+                                    className="mb-2"
+                                >
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    ছবি আপলোড করুন
+                                </Button>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    JPG, PNG বা JPEG (সর্বোচ্চ 5MB)
+                                </p>
+                            </div>
+                        )}
                         <input
                             ref={profilePhotoRef}
                             type="file"
@@ -667,9 +1010,6 @@ const FarmerRegistration = () => {
                             className="hidden"
                             onChange={(e) => handleFileChange('profilePhoto', e.target.files?.[0] || null)}
                         />
-                        {farmerFormData.profilePhoto && (
-                            <p className="text-sm text-green-600">{farmerFormData.profilePhoto.name}</p>
-                        )}
                     </div>
                 </div>
 
@@ -677,7 +1017,7 @@ const FarmerRegistration = () => {
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setCurrentStep('documents')}
+                        onClick={() => setCurrentStep('initial')}
                         className="flex-1"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -730,7 +1070,7 @@ const FarmerRegistration = () => {
                         className="text-center text-2xl tracking-widest"
                     />
                     <p className="text-sm text-gray-600 text-center">
-                        OTP পাননি? <Button variant="link" className="p-0">আবার পাঠান</Button>
+                        OTP পাননি? <Button type="button" variant="link" className="p-0" onClick={handleResendOtp} disabled={isLoading}>আবার পাঠান</Button>
                     </p>
                 </div>
 
@@ -788,8 +1128,7 @@ const FarmerRegistration = () => {
             </div>
 
             <Button
-                onClick={async () => {
-                    await login(initialData.phone, '', 'farmer');
+                onClick={() => {
                     navigate('/farmer-dashboard');
                 }}
                 className="w-full bg-green-600 hover:bg-green-700"

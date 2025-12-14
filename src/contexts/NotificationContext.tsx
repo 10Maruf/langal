@@ -1,22 +1,24 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface NotificationItem {
+export interface NotificationItem {
     id: string;
-    type: 'consultation_request' | 'post_interaction' | 'system';
+    type: string;
     title: string;
     message: string;
     time: string;
     read: boolean;
-    farmerName?: string;
-    postId?: string;
+    relatedEntityId?: string;
 }
 
 interface NotificationContextType {
     notifications: NotificationItem[];
     unreadCount: number;
-    addNotification: (notification: Omit<NotificationItem, 'id'>) => void;
-    markAsRead: (id: string) => void;
-    markAllAsRead: () => void;
+    loading: boolean;
+    fetchNotifications: () => Promise<void>;
+    markAsRead: (id: string) => Promise<void>;
+    markAllAsRead: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -30,65 +32,90 @@ export const useNotifications = () => {
 };
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-    const [notifications, setNotifications] = useState<NotificationItem[]>([
-        {
-            id: '1',
-            type: 'consultation_request',
-            title: 'নতুন পরামর্শের অনুরোধ',
-            message: 'আবদুল করিম তার ধানের সমস্যা নিয়ে আপনার পরামর্শ চেয়েছেন',
-            time: '১০ মিনিট আগে',
-            read: false,
-            farmerName: 'আবদুল করিম'
-        },
-        {
-            id: '2',
-            type: 'post_interaction',
-            title: 'আপনার পোস্টে মন্তব্য',
-            message: 'ফাতেমা খাতুন আপনার টমেটো চাষের পোস্টে মন্তব্য করেছেন',
-            time: '৩০ মিনিট আগে',
-            read: false,
-            postId: 'post_123'
-        },
-        {
-            id: '3',
-            type: 'consultation_request',
-            title: 'জরুরি পরামর্শের অনুরোধ',
-            message: 'রহিম উদ্দিন তার ফসলের জরুরি সমস্যার জন্য আপনার সাহায্য চেয়েছেন',
-            time: '১ ঘন্টা আগে',
-            read: false,
-            farmerName: 'রহিম উদ্দিন'
+    const { isAuthenticated } = useAuth();
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    const fetchNotifications = async () => {
+        if (!isAuthenticated) return;
+
+        setLoading(true);
+        try {
+            const response = await api.get('/notifications');
+            if (response.data.success) {
+                const mappedNotifications = response.data.data.data.map((n: any) => ({
+                    id: n.id.toString(),
+                    type: n.notification_type,
+                    title: n.title,
+                    message: n.message,
+                    time: new Date(n.created_at).toLocaleString('bn-BD'),
+                    read: n.is_read === 1 || n.is_read === true,
+                    relatedEntityId: n.related_entity_id
+                }));
+                setNotifications(mappedNotifications);
+
+                // Update unread count
+                const unread = mappedNotifications.filter((n: NotificationItem) => !n.read).length;
+                setUnreadCount(unread);
+            }
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+        } finally {
+            setLoading(false);
         }
-    ]);
-
-    const unreadCount = notifications.filter(notif => !notif.read).length;
-
-    const addNotification = (notification: Omit<NotificationItem, 'id'>) => {
-        const newNotification: NotificationItem = {
-            ...notification,
-            id: Date.now().toString()
-        };
-        setNotifications(prev => [newNotification, ...prev]);
     };
 
-    const markAsRead = (id: string) => {
-        setNotifications(prev =>
-            prev.map(notif =>
-                notif.id === id ? { ...notif, read: true } : notif
-            )
-        );
+    const markAsRead = async (id: string) => {
+        try {
+            // Optimistic update
+            setNotifications(prev =>
+                prev.map(notif =>
+                    notif.id === id ? { ...notif, read: true } : notif
+                )
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
+
+            await api.post(`/notifications/${id}/read`);
+        } catch (error) {
+            console.error('Failed to mark notification as read:', error);
+        }
     };
 
-    const markAllAsRead = () => {
-        setNotifications(prev =>
-            prev.map(notif => ({ ...notif, read: true }))
-        );
+    const markAllAsRead = async () => {
+        try {
+            // Optimistic update
+            setNotifications(prev =>
+                prev.map(notif => ({ ...notif, read: true }))
+            );
+            setUnreadCount(0);
+
+            await api.post('/notifications/mark-all-read');
+        } catch (error) {
+            console.error('Failed to mark all notifications as read:', error);
+        }
     };
+
+    // Fetch notifications on mount and when auth changes
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchNotifications();
+
+            // Poll every minute
+            const interval = setInterval(fetchNotifications, 60000);
+            return () => clearInterval(interval);
+        } else {
+            setNotifications([]);
+            setUnreadCount(0);
+        }
+    }, [isAuthenticated]);
 
     return (
         <NotificationContext.Provider value={{
             notifications,
             unreadCount,
-            addNotification,
+            loading,
+            fetchNotifications,
             markAsRead,
             markAllAsRead
         }}>
