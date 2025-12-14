@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+
+class ImageUploadController extends Controller
+{
+    /**
+     * Upload single or multiple images for marketplace listings
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function uploadMarketplaceImages(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'images' => 'required',
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120', // 5MB max per image
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $uploadedPaths = [];
+
+        try {
+            $images = $request->file('images');
+            
+            // Handle single image upload
+            if (!is_array($images)) {
+                $images = [$images];
+            }
+
+            foreach ($images as $image) {
+                // Generate unique filename
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+                
+                // Store in storage/app/public/marketplace
+                $path = $image->storeAs('marketplace', $filename, 'public');
+                
+                // Return public URL
+                $uploadedPaths[] = [
+                    'path' => $path,
+                    'url' => Storage::url($path),
+                    'full_url' => url(Storage::url($path)),
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Images uploaded successfully',
+                'data' => $uploadedPaths,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Image upload failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an image from storage
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteMarketplaceImage(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'path' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $path = $request->input('path');
+
+        // Security: ensure path is within marketplace directory
+        if (!str_starts_with($path, 'marketplace/')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid image path',
+            ], 400);
+        }
+
+        try {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Image deleted successfully',
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Image not found',
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Delete failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all images for a specific listing
+     * 
+     * @param int $listingId
+     * @return JsonResponse
+     */
+    public function getListingImages(int $listingId): JsonResponse
+    {
+        // This would query the database for the listing's images
+        // For now, return placeholder response
+        return response()->json([
+            'success' => true,
+            'data' => [],
+        ]);
+    }
+}
