@@ -96,23 +96,117 @@
 - npm বা yarn
 - Git
 
-### স্থানীয় সেটআপ
+### 🚀 টিম মেম্বারদের জন্য সেটআপ গাইড
+
+#### ১. Repository Fork/Clone করুন
 
 ```bash
-# রিপোজিটরি ক্লোন করুন
-git clone https://github.com/10Maruf/langol-krishi-sahayak.git
+# ফর্ক করার পর আপনার রিপোজিটরি ক্লোন করুন
+git clone https://github.com/YOUR_USERNAME/langal.git
+
+# অথবা original repository clone করুন
+git clone https://github.com/10Maruf/langal.git
 
 # প্রজেক্ট ডিরেক্টরিতে যান
-cd langol-krishi-sahayak
+cd langal
+```
 
-# ডিপেন্ডেন্সি ইনস্টল করুন
+#### ২. Frontend Setup
+
+```bash
+# Frontend dependencies install করুন
 npm install
 
-# ডেভেলপমেন্ট সার্ভার চালু করুন
+# .env ফাইল তৈরি করুন
+cp .env.example .env
+
+# .env ফাইলে API keys যোগ করুন (নিচে দেখুন)
+```
+
+#### ৩. Backend Setup (Laravel)
+
+```bash
+# Backend directory তে যান
+cd langal-backend
+
+# Composer dependencies install করুন
+composer install
+
+# .env ফাইল তৈরি করুন
+cp .env.example .env
+
+# Application key generate করুন
+php artisan key:generate
+
+# Database তৈরি করুন (XAMPP/MySQL)
+# MySQL-এ "langol_krishi_sahayak" নামে database তৈরি করুন
+
+# .env ফাইলে database config করুন:
+# DB_DATABASE=langol_krishi_sahayak
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# Database migrations run করুন
+php artisan migrate
+
+# Database seeding (optional)
+php artisan db:seed
+
+# Laravel backend start করুন
+php artisan serve
+# Backend চলবে: http://127.0.0.1:8000
+```
+
+#### ৪. Environment Variables Setup
+
+**Frontend (.env):**
+```env
+VITE_API_BASE=http://127.0.0.1:8000/api
+VITE_API_URL=http://127.0.0.1:8000
+VITE_HUGGINGFACE_API_KEY=your_huggingface_key
+VITE_GEMINI_API_KEY=your_gemini_key
+```
+
+**Backend (langal-backend/.env):**
+```env
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=langol_krishi_sahayak
+DB_USERNAME=root
+DB_PASSWORD=
+
+OPENAI_API_KEY=your_openai_key
+UNSPLASH_ACCESS_KEY=your_unsplash_key
+HUGGINGFACE_API_KEY=your_huggingface_key
+```
+
+#### ৫. চালু করুন
+
+**Terminal 1 - Backend:**
+```bash
+cd langal-backend
+php artisan serve
+```
+
+**Terminal 2 - Frontend:**
+```bash
 npm run dev
 ```
 
-অ্যাপ্লিকেশনটি এখন `http://localhost:5173` এ চলবে।
+✅ Frontend: `http://localhost:5173`  
+✅ Backend: `http://127.0.0.1:8000`
+
+#### 🔑 API Keys কোথায় পাবেন?
+
+- **OpenAI**: https://platform.openai.com/api-keys
+- **Hugging Face**: https://huggingface.co/settings/tokens
+- **Gemini**: https://makersuite.google.com/app/apikey
+- **Unsplash**: https://unsplash.com/oauth/applications
+
+**⚠️ Important:** `.env` ফাইল কখনো commit করবেন না! এটা `.gitignore` এ আছে।
 
 ### বিল্ড করার জন্য
 
