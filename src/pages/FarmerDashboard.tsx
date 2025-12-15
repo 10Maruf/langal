@@ -23,7 +23,8 @@ import {
     ChevronRight,
     Bell,
     Sprout,
-    Clock
+    Clock,
+    CheckCircle
 } from "lucide-react";
 import {
     fetchWeatherOneCall,
