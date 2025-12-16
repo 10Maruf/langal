@@ -159,7 +159,7 @@ class DataOperatorAuthController extends Controller
                 'postal_code' => $postalCode,
                 'nid_number' => $request->nidNumber,
                 'profile_photo_url' => $profilePhotoPath,
-                'verification_status' => 'verified',
+                'verification_status' => 'pending',
             ]);
 
             // Create Data Operator entry
@@ -400,7 +400,7 @@ class DataOperatorAuthController extends Controller
                     if ($profile->profile_photo_url) {
                         Storage::disk('public')->delete($profile->profile_photo_url);
                     }
-                    
+
                     $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
                     $profile->profile_photo_url = $profilePhotoPath;
                 }
@@ -516,8 +516,8 @@ class DataOperatorAuthController extends Controller
                         'user_id' => $user->user_id,
                         'full_name' => $profile->full_name,
                         'phone_number' => $user->phone,
-                        'profile_photo_url_full' => $profile->profile_photo_url 
-                            ? url('storage/' . $profile->profile_photo_url) 
+                        'profile_photo_url_full' => $profile->profile_photo_url
+                            ? url('storage/' . $profile->profile_photo_url)
                             : null,
                         'date_of_birth' => $profile->date_of_birth,
                         'nid_number' => $profile->nid_number,
@@ -608,8 +608,8 @@ class DataOperatorAuthController extends Controller
                         'user_id' => $user->user_id,
                         'full_name' => $profile->full_name,
                         'phone_number' => $user->phone,
-                        'profile_photo_url_full' => $profile->profile_photo_url 
-                            ? url('storage/' . $profile->profile_photo_url) 
+                        'profile_photo_url_full' => $profile->profile_photo_url
+                            ? url('storage/' . $profile->profile_photo_url)
                             : null,
                         'date_of_birth' => $profile->date_of_birth,
                         'nid_number' => $profile->nid_number,
@@ -697,8 +697,8 @@ class DataOperatorAuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $request->verification_status === 'approved' 
-                    ? 'Profile approved successfully' 
+                'message' => $request->verification_status === 'approved'
+                    ? 'Profile approved successfully'
                     : 'Profile rejected successfully',
                 'data' => [
                     'user_id' => $user->user_id,

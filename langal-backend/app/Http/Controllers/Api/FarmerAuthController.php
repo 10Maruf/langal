@@ -128,13 +128,13 @@ class FarmerAuthController extends Controller
         $user->update(['updated_at' => now()]);
 
         $userData = $user->load(['profile', 'farmer'])->toArray();
-        
+
         // Add full location info from location table based on postal_code
         if ($user->profile && $user->profile->postal_code) {
             $location = \DB::table('location')
                 ->where('postal_code', $user->profile->postal_code)
                 ->first();
-            
+
             if ($location) {
                 $userData['location_info'] = [
                     'village' => $user->profile->village ?? null,
@@ -219,7 +219,7 @@ class FarmerAuthController extends Controller
                 'hasFile' => $request->hasFile('profilePhoto'),
                 'allFiles' => array_keys($request->allFiles()),
             ]);
-            
+
             if ($request->hasFile('profilePhoto')) {
                 $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos', 'public');
                 \Log::info('Profile photo uploaded', ['path' => $profilePhotoPath]);
@@ -231,7 +231,7 @@ class FarmerAuthController extends Controller
             $village = $request->village ?? null;
             $postalCode = $request->postal_code ?? null;
             $address = $request->address ?? null;
-            
+
             // If postal_code provided, fetch location data and format address
             if ($postalCode && empty($address)) {
                 $locationData = DB::table('location')->where('postal_code', $postalCode)->first();
@@ -245,7 +245,7 @@ class FarmerAuthController extends Controller
                     $address = implode(', ', $addressParts);
                 }
             }
-            
+
             // Create UserProfile
             UserProfile::create([
                 'user_id' => $user->user_id,
@@ -258,7 +258,7 @@ class FarmerAuthController extends Controller
                 'postal_code' => $postalCode,
                 'nid_number' => $request->nidNumber ?? null,
                 'profile_photo_url' => $profilePhotoPath,
-                'verification_status' => 'verified',
+                'verification_status' => 'pending',
             ]);
 
             // Create Farmer Details
@@ -282,13 +282,13 @@ class FarmerAuthController extends Controller
             $token = $user->createToken('farmer-app', ['farmer'])->plainTextToken;
 
             $userData = $user->load(['profile', 'farmer'])->toArray();
-            
+
             // Add full location info from location table based on postal_code
             if ($postalCode) {
                 $locationInfo = \DB::table('location')
                     ->where('postal_code', $postalCode)
                     ->first();
-                
+
                 if ($locationInfo) {
                     $userData['location_info'] = [
                         'village' => $village ?? null,
@@ -322,19 +322,19 @@ class FarmerAuthController extends Controller
     public function profile(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         if (!$user) {
              return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
         $userData = $user->load(['profile', 'farmer'])->toArray();
-        
+
         // Add full location info from location table based on postal_code
         if ($user->profile && $user->profile->postal_code) {
             $location = \DB::table('location')
                 ->where('postal_code', $user->profile->postal_code)
                 ->first();
-            
+
             if ($location) {
                 $userData['location_info'] = [
                     'village' => $user->profile->village ?? null,
@@ -361,7 +361,7 @@ class FarmerAuthController extends Controller
     public function updateProfile(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         DB::beginTransaction();
         try {
             // Update User table (email, phone)
@@ -376,18 +376,18 @@ class FarmerAuthController extends Controller
             // Update User Profile table
             if ($user->profile) {
                 $profileData = [];
-                
+
                 if ($request->has('full_name')) {
                     $profileData['full_name'] = $request->full_name;
                 }
                 if ($request->has('address')) {
                     $profileData['address'] = $request->address;
                 }
-                
+
                 // Handle profile photo upload
                 if ($request->hasFile('profile_photo')) {
                     $file = $request->file('profile_photo');
-                    
+
                     // Delete old photo if exists
                     if ($user->profile->profile_photo_url) {
                         $oldPhotoPath = storage_path('app/public/' . $user->profile->profile_photo_url);
@@ -395,12 +395,12 @@ class FarmerAuthController extends Controller
                             unlink($oldPhotoPath);
                         }
                     }
-                    
+
                     // Store new photo
                     $path = $file->store('profile_photos', 'public');
                     $profileData['profile_photo_url'] = $path;
                 }
-                
+
                 if (!empty($profileData)) {
                     $user->profile->update($profileData);
                 }
@@ -409,7 +409,7 @@ class FarmerAuthController extends Controller
             // Update Farmer Details
             if ($user->farmer) {
                 $farmerData = [];
-                
+
                 if ($request->has('farm_size')) {
                     $farmerData['farm_size'] = (float)$request->farm_size;
                 }
@@ -419,27 +419,27 @@ class FarmerAuthController extends Controller
                 if ($request->has('experience_years')) {
                     $farmerData['experience_years'] = (int)$request->experience_years;
                 }
-                
+
                 // Update additional info (JSON)
                 if ($request->has('additional_info')) {
                     $currentInfo = $user->farmer->additional_info ?? [];
-                    
+
                     // Parse JSON string if it comes as string (from FormData)
                     $additionalInfo = $request->additional_info;
                     if (is_string($additionalInfo)) {
                         $additionalInfo = json_decode($additionalInfo, true);
                     }
-                    
+
                     $farmerData['additional_info'] = array_merge($currentInfo, $additionalInfo ?? []);
                 }
-                
+
                 if (!empty($farmerData)) {
                     $user->farmer->update($farmerData);
                 }
             }
 
             DB::commit();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully',
@@ -451,12 +451,12 @@ class FarmerAuthController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Update failed: ' . $e->getMessage()
             ], 500);
         }
     }
-    
+
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();

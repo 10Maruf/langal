@@ -374,6 +374,7 @@ const ExpertRegistration = ({ onBackToMainRegister }: ExpertRegistrationProps) =
             requestFormData.append('fatherName', formData.fatherName);
             requestFormData.append('motherName', formData.motherName);
             requestFormData.append('address', formData.address);
+            requestFormData.append('village', formData.location?.village || '');
             requestFormData.append('postalCode', formData.location?.postal_code?.toString() || '');
             requestFormData.append('otp_code', otp);
             

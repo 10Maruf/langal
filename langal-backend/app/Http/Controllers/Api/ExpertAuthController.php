@@ -277,6 +277,7 @@ class ExpertAuthController extends Controller
                 'father_name' => $request->fatherName,
                 'mother_name' => $request->motherName,
                 'address' => $request->address ?? null,
+                'village' => $request->village ?? null,
                 'postal_code' => $request->postalCode ?? null,
                 'verification_status' => 'pending',
                 'profile_photo_url' => $profilePhotoPath,
