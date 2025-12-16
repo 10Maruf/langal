@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ConsultantBottomNav } from "@/components/layout/ConsultantBottomNav";
-import { ConsultantHeader } from "@/components/layout/ConsultantHeader";
+import { Header } from "@/components/layout/Header";
 import ConsultantSocialFeed from "./ConsultantSocialFeed";
 import ConsultantCrops from "./ConsultantCrops";
 import ConsultantDiagnosis from "./ConsultantDiagnosis";
@@ -41,7 +41,7 @@ const ConsultantDashboard = () => {
     return (
         <div className="min-h-screen bg-background">
             {/* Header */}
-            <ConsultantHeader onProfileClick={handleProfileClick} />
+            <Header />
 
             {/* Content */}
             <div className="pt-14 pb-16">

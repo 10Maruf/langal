@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -98,6 +98,15 @@ const CustomerRegistration = ({ onBack }: CustomerRegistrationProps) => {
     const { toast } = useToast();
     const profilePhotoRef = useRef<HTMLInputElement>(null);
     const nidPhotoRef = useRef<HTMLInputElement>(null);
+
+    // Memoized callbacks to prevent infinite re-renders
+    const handleLocationChange = useCallback((location: LocationData) => {
+        setFormData(prev => ({ ...prev, location }));
+    }, []);
+
+    const handleAddressChange = useCallback((address: string) => {
+        setFormData(prev => ({ ...prev, address }));
+    }, []);
 
     // Load business types on mount
     useEffect(() => {
@@ -569,8 +578,8 @@ const CustomerRegistration = ({ onBack }: CustomerRegistrationProps) => {
 
             <LocationSelector
                 value={formData.location}
-                onChange={(location) => setFormData(prev => ({ ...prev, location }))}
-                onAddressChange={(address) => setFormData(prev => ({ ...prev, address }))}
+                onChange={handleLocationChange}
+                onAddressChange={handleAddressChange}
             />
 
             {formData.address && (

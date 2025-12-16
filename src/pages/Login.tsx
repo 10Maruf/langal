@@ -10,6 +10,7 @@ import { Loader2, Users, User, UserCheck, Database, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAssetPath } from "@/lib/utils";
 import FarmerLogin from "@/components/farmer/FarmerLogin";
+import ExpertLogin from "@/components/expert/ExpertLogin";
 import api from "@/services/api";
 
 const Login = () => {
@@ -19,6 +20,7 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<UserType>("farmer");
     const [showFarmerLogin, setShowFarmerLogin] = useState(false);
+    const [showExpertLogin, setShowExpertLogin] = useState(false);
     const { login, setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -160,6 +162,8 @@ const Login = () => {
             {/* Show Farmer Login Component if farmer is selected */}
             {activeTab === 'farmer' && showFarmerLogin ? (
                 <FarmerLogin onBackToMainLogin={() => setShowFarmerLogin(false)} />
+            ) : activeTab === 'expert' && showExpertLogin ? (
+                <ExpertLogin onBackToMainLogin={() => setShowExpertLogin(false)} />
             ) : (
                 <Card className="w-full max-w-md">
                     <CardHeader className="text-center">
@@ -230,7 +234,15 @@ const Login = () => {
                                 <TabsContent value="expert" className="space-y-4 mt-0">
                                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                                         <h3 className="font-semibold text-blue-800">কৃষি বিশেষজ্ঞ হিসেবে লগইন</h3>
-                                        <p className="text-sm text-blue-600">কৃষকদের পরামর্শ ও সহায়তা প্রদান করুন</p>
+                                        <p className="text-sm text-blue-600 mb-3">মোবাইল নম্বর দিয়ে OTP এর মাধ্যমে লগইন করুন</p>
+                                        <Button
+                                            type="button"
+                                            onClick={() => setShowExpertLogin(true)}
+                                            className="w-full bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            <UserCheck className="mr-2 h-4 w-4" />
+                                            বিশেষজ্ঞ লগইন
+                                        </Button>
                                     </div>
                                 </TabsContent>
 
@@ -270,59 +282,13 @@ const Login = () => {
                                     </div>
                                 </TabsContent>
 
-                                {/* Only show email/password fields for expert */}
-                                {activeTab === 'expert' && (
-                                    <>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="email">ইমেইল</Label>
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                placeholder="আপনার ইমেইল দিন"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="password">পাসওয়ার্ড</Label>
-                                            <Input
-                                                id="password"
-                                                type="password"
-                                                placeholder="আপনার পাসওয়ার্ড দিন"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                )}
+                                {/* Only show email/password fields for expert - REMOVED, now using OTP */}
                             </form>
                         </Tabs>
                     </CardContent>
 
                     <CardFooter className="flex flex-col space-y-4">
-                        {/* Expert login button */}
-                        {activeTab === 'expert' && (
-                            <Button
-                                onClick={handleLogin}
-                                className="w-full bg-blue-600 hover:bg-blue-700"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        লগইন হচ্ছে...
-                                    </>
-                                ) : (
-                                    <>
-                                        {getUserTypeIcon(activeTab)}
-                                        <span className="ml-2">{getUserTypeLabel(activeTab)} হিসেবে লগইন</span>
-                                    </>
-                                )}
-                            </Button>
-                        )}
+                        {/* Expert login button - REMOVED, now using OTP flow */}
 
                         {/* Customer login button - Purple */}
                         {activeTab === 'customer' && (

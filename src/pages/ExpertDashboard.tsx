@@ -98,56 +98,8 @@ const ExpertDashboard = () => {
                         </p>
                     </div>
 
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center">
-                                    <Users className="h-8 w-8 text-blue-600" />
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-muted-foreground">মোট কৃষক</p>
-                                        <p className="text-2xl font-bold">১২৫</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center">
-                                    <MessageSquare className="h-8 w-8 text-green-600" />
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-muted-foreground">পরামর্শ</p>
-                                        <p className="text-2xl font-bold">৮৪</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center">
-                                    <TrendingUp className="h-8 w-8 text-orange-600" />
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-muted-foreground">সফলতার হার</p>
-                                        <p className="text-2xl font-bold">৯২%</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center">
-                                    <Calendar className="h-8 w-8 text-purple-600" />
-                                    <div className="ml-4">
-                                        <p className="text-sm font-medium text-muted-foreground">আজকের কাজ</p>
-                                        <p className="text-2xl font-bold">৭</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    {/* Stats Cards - Removed as per requirement */}
+                    {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"> ... </div> */}
 
                     <Tabs defaultValue="consultations" className="space-y-4">
                         <TabsList className="grid w-full grid-cols-5">

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Test</title>
+</head>
+<body>
+    <h1>Profile Image Test</h1>
+    
+    <h2>Test 1: Direct URL</h2>
+    <img src="http://127.0.0.1:8000/storage/expert/profiles/ZJlKMVeQFiBo3BEggSmKGlUcB1Rx0MmZu8ruVXhD.png" 
+         style="max-width: 200px;" 
+         onload="console.log('Image 1 loaded')" 
+         onerror="console.log('Image 1 failed')">
+    
+    <h2>Test 2: Certificate</h2>
+    <img src="http://127.0.0.1:8000/storage/expert/certifications/QJt4YRo5lh9Uwt5V6HIXSY93VZq3vi3ChXFmWltz.png" 
+         style="max-width: 200px;" 
+         onload="console.log('Image 2 loaded')" 
+         onerror="console.log('Image 2 failed')">
+    
+    <script>
+        console.log('Testing image URLs...');
+    </script>
+</body>
+</html>

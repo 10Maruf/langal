@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Star, Calendar, MapPin, Phone, Mail, GraduationCap, Award, Users, CheckCircle, ArrowLeft } from "lucide-react";
+import { Camera, Star, Calendar, MapPin, Phone, Mail, GraduationCap, Award, Users, CheckCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/services/api";
 
 interface ConsultantProfileProps {
     onBack?: () => void;
@@ -19,34 +20,79 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
     const { user } = useAuth();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Profile data - in real app this would come from API
+    // Profile data - fetch from API
     const [profileData, setProfileData] = useState({
-        name: user?.name || "ডঃ আহমদ হাসান",
-        email: user?.email || "ahmad.hasan@agriculture.gov.bd",
-        phone: "01712345678",
-        nidNumber: "1234567890123",
-        qualification: "কৃষি বিজ্ঞানে পিএইচডি",
-        specialization: "ফসলের রোগবালাই",
-        experience: "15",
-        institution: "বাংলাদেশ কৃষি বিশ্ববিদ্যালয়, ময়মনসিংহ",
-        district: "ময়মনসিংহ",
-        division: "ময়মনসিংহ",
-        bio: "কৃষি ক্ষেত্রে ১৫ বছরের অভিজ্ঞতা সম্পন্ন একজন বিশেষজ্ঞ। ফসলের রোগবালাই নির্ণয় এবং চিকিৎসায় পারদর্শী।",
-        languages: ["বাংলা", "ইংরেজি"],
-        availability: "সকাল ৯টা - বিকাল ৫টা",
-        consultationFee: "500",
-        profilePhoto: ""
+        name: "",
+        email: "",
+        phone: "",
+        nidNumber: "",
+        qualification: "",
+        specialization: "",
+        experience: "",
+        institution: "",
+        district: "",
+        division: "",
+        bio: "",
+        languages: ["বাংলা"],
+        availability: "",
+        consultationFee: "",
+        profilePhoto: "",
+        address: "",
+        dateOfBirth: "",
+        fatherName: "",
+        motherName: ""
     });
 
-    const [stats] = useState({
-        totalConsultations: 234,
-        completedDiagnosis: 189,
-        avgRating: 4.8,
-        helpedFarmers: 156,
-        articlesPublished: 23,
-        yearsExperience: 15
-    });
+    // Fetch profile data on mount
+    useEffect(() => {
+        fetchProfileData();
+    }, []);
+
+    const fetchProfileData = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/expert/profile');
+            
+            if (response.data.success) {
+                const data = response.data.data;
+                const userProfile = data.user?.profile;
+                const expertProfile = data.user?.expert;
+
+                setProfileData({
+                    name: userProfile?.full_name || "",
+                    email: data.user?.email || "",
+                    phone: data.user?.phone || "",
+                    nidNumber: userProfile?.nid_number || "",
+                    qualification: expertProfile?.qualification || "",
+                    specialization: expertProfile?.specialization || "",
+                    experience: expertProfile?.experience_years?.toString() || "",
+                    institution: expertProfile?.institution || "",
+                    district: "",
+                    division: "",
+                    bio: expertProfile?.bio || "",
+                    languages: ["বাংলা"],
+                    availability: "",
+                    consultationFee: expertProfile?.consultation_fee?.toString() || "",
+                    profilePhoto: userProfile?.profile_photo || "",
+                    address: userProfile?.address || "",
+                    dateOfBirth: userProfile?.date_of_birth || "",
+                    fatherName: userProfile?.father_name || "",
+                    motherName: userProfile?.mother_name || ""
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            toast({
+                title: "ত্রুটি",
+                description: "প্রোফাইল লোড করতে সমস্যা হয়েছে",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSave = () => {
         // In real app, save to API
@@ -89,7 +135,12 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                 </div>
             </div>
 
-            <div className="p-4 space-y-6">
+            {isLoading ? (
+                <div className="flex justify-center items-center min-h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <div className="p-4 space-y-6">
                 {/* Profile Header */}
                 <Card>
                     <CardContent className="p-6">
@@ -124,55 +175,18 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-4 text-sm">
-                                <div className="flex items-center gap-1">
-                                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                                    <span className="font-medium">{stats.avgRating}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Users className="h-4 w-4 text-blue-500" />
-                                    <span>{stats.helpedFarmers} কৃষক</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                    <span>{stats.totalConsultations} পরামর্শ</span>
-                                </div>
-                            </div>
-
                             <div className="flex gap-2">
                                 <Badge variant="secondary" className="flex items-center gap-1">
                                     <Award className="h-3 w-3" />
                                     যাচাইকৃত বিশেষজ্ঞ
                                 </Badge>
                                 <Badge variant="outline">
-                                    {stats.yearsExperience} বছর অভিজ্ঞতা
+                                    {profileData.experience} বছর অভিজ্ঞতা
                                 </Badge>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-
-                {/* Statistics */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <Card>
-                        <CardContent className="p-4 text-center">
-                            <div className="text-2xl font-bold text-blue-600">{stats.totalConsultations}</div>
-                            <div className="text-sm text-muted-foreground">মোট পরামর্শ</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-4 text-center">
-                            <div className="text-2xl font-bold text-green-600">{stats.completedDiagnosis}</div>
-                            <div className="text-sm text-muted-foreground">রোগ নির্ণয়</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-4 text-center">
-                            <div className="text-2xl font-bold text-purple-600">{stats.articlesPublished}</div>
-                            <div className="text-sm text-muted-foreground">প্রকাশিত লেখা</div>
-                        </CardContent>
-                    </Card>
-                </div>
 
                 {/* Profile Information */}
                 <Card>
@@ -386,7 +400,8 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                         )}
                     </CardContent>
                 </Card>
-            </div>
+                </div>
+            )}
         </div>
     );
 };

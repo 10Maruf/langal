@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\FarmerAuthController;
 use App\Http\Controllers\Api\CustomerAuthController;
+use App\Http\Controllers\Api\ExpertAuthController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\LocationController;
@@ -34,17 +35,17 @@ Route::get('/health', function () {
 // User count route
 Route::get('/users/count', function (Request $request) {
     $type = $request->query('type', 'farmer');
-    
+
     $query = \App\Models\User::query();
-    
+
     if ($type === 'farmer') {
         $query->whereHas('farmer');
     } elseif ($type === 'customer') {
         $query->whereHas('customerBusiness');
     }
-    
+
     $count = $query->count();
-    
+
     return response()->json([
         'success' => true,
         'type' => $type,
@@ -71,7 +72,7 @@ Route::prefix('farmer')->group(function () {
     Route::post('/register', [FarmerAuthController::class, 'register']);
     Route::post('/resend-otp', [FarmerAuthController::class, 'resendOtp']);
     Route::get('/otp-status', [FarmerAuthController::class, 'otpStatus']);
-    
+
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/profile', [FarmerAuthController::class, 'profile']);
@@ -100,6 +101,30 @@ Route::prefix('customer')->group(function () {
     });
 });
 
+// Expert Authentication & Profile Routes
+Route::prefix('expert')->group(function () {
+    // Public routes (no authentication required)
+    Route::post('/login', [ExpertAuthController::class, 'login']);
+    Route::post('/send-otp', [ExpertAuthController::class, 'sendOtp']);
+    Route::post('/verify-otp', [ExpertAuthController::class, 'verifyOtp']);
+    Route::post('/register', [ExpertAuthController::class, 'register']);
+    Route::post('/resend-otp', [ExpertAuthController::class, 'resendOtp']);
+
+    // Protected routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/profile', [ExpertAuthController::class, 'createProfile']);
+        Route::put('/profile', [ExpertAuthController::class, 'updateProfile']);
+        Route::get('/profile', [ExpertAuthController::class, 'getProfile']);
+        Route::post('/logout', [ExpertAuthController::class, 'logout']);
+    });
+});
+
+// Public Expert Routes (No authentication required)
+Route::prefix('experts')->group(function () {
+    Route::get('/', [ExpertAuthController::class, 'getAllExperts']);
+    Route::get('/{expert_id}', [ExpertAuthController::class, 'getExpertById']);
+});
+
 // Test route for authenticated farmer
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -115,7 +140,7 @@ Route::prefix('marketplace')->group(function () {
     Route::get('/{id}', [MarketplaceController::class, 'show']);
     Route::post('/{id}/view', [MarketplaceController::class, 'incrementView']);
     Route::post('/{id}/contact', [MarketplaceController::class, 'incrementContact']);
-    
+
     // Protected routes (require authentication)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [MarketplaceController::class, 'store']);
@@ -150,7 +175,7 @@ Route::prefix('recommendations')->group(function () {
     Route::get('/crop-types', [CropRecommendationController::class, 'getCropTypes']);
     Route::post('/generate', [CropRecommendationController::class, 'generate']);
     Route::get('/crop-image', [CropRecommendationController::class, 'getCropImage']);
-    
+
     // Protected routes (require authentication)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/history', [CropRecommendationController::class, 'history']);
