@@ -523,10 +523,10 @@ class ExpertAuthController extends Controller
                     $path = $request->file('profilePhoto')->store('expert/profiles', 'public');
                     $userProfile->profile_photo_url = $path;
                 }
-                
+
                 if ($request->has('name')) $userProfile->full_name = $request->name;
                 if ($request->has('address')) $userProfile->address = $request->address;
-                
+
                 $userProfile->save();
             }
 
