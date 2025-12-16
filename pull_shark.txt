@@ -1,2 +1,0 @@
-This file is created to trigger a Pull Request for the Pull Shark badge.
-Happy coding!
