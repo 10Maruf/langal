@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,14 @@ interface DataOperatorLoginProps {
     onBackToMainLogin: () => void;
 }
 
+// Clear old session data
+const clearOldSession = () => {
+    console.log('Clearing old session data...');
+    localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    sessionStorage.clear();
+};
+
 const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
     const [mobileNumber, setMobileNumber] = useState("");
     const [password, setPassword] = useState("");
@@ -22,6 +30,11 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
     const { setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
+
+    // Clear old session on component mount
+    useEffect(() => {
+        clearOldSession();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,6 +72,10 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
                     location: user.profile?.address,
                     location_info: user.location_info || undefined
                 };
+
+                console.log('DataOperatorLogin - Backend user:', user);
+                console.log('DataOperatorLogin - Mapped authUser:', authUser);
+                console.log('DataOperatorLogin - User type:', authUser.type);
 
                 // Set user in context
                 setAuthUser(authUser, token);

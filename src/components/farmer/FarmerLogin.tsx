@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,14 @@ interface FarmerLoginProps {
 // API Base URL
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000/api';
 
+// Clear old session data
+const clearOldSession = () => {
+    console.log('Clearing old session data...');
+    localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    sessionStorage.clear();
+};
+
 const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     const [currentStep, setCurrentStep] = useState<LoginStep>('phone');
     const [phone, setPhone] = useState("");
@@ -29,6 +37,11 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     const { login, setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
+
+    // Clear old session on component mount
+    useEffect(() => {
+        clearOldSession();
+    }, []);
 
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
