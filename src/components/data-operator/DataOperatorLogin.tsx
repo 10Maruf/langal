@@ -9,6 +9,7 @@ import { Loader2, Phone, Lock, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import api from "@/services/api";
+import DataOperatorForgotPassword from "./DataOperatorForgotPassword";
 
 interface DataOperatorLoginProps {
     onBackToMainLogin: () => void;
@@ -18,6 +19,7 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
     const [mobileNumber, setMobileNumber] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
 
     const { setAuthUser } = useAuth();
     const navigate = useNavigate();
@@ -98,6 +100,11 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
         }
     };
 
+    // Show forgot password component
+    if (showForgotPassword) {
+        return <DataOperatorForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
             <Card className="w-full max-w-md">
@@ -131,7 +138,17 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password">পাসওয়ার্ড *</Label>
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="password">পাসওয়ার্ড *</Label>
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    className="p-0 h-auto text-sm text-blue-600 hover:text-blue-700"
+                                    onClick={() => setShowForgotPassword(true)}
+                                >
+                                    পাসওয়ার্ড ভুলে গেছেন?
+                                </Button>
+                            </div>
                             <Input
                                 id="password"
                                 type="password"

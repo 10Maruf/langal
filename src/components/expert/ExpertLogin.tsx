@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Phone, ArrowLeft, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ExpertForgotPassword from "./ExpertForgotPassword";
 
 interface ExpertLoginProps {
     onBackToMainLogin: () => void;
@@ -19,6 +20,7 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
 
     const { setAuthUser } = useAuth();
     const navigate = useNavigate();
@@ -45,17 +47,17 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     phone,
                     password
                 }),
             });
-            
+
             let data: { success?: boolean; data?: { token?: string; user?: any }; message?: string };
-            try { 
-                data = await response.json(); 
-            } catch { 
-                throw new Error('Invalid server response'); 
+            try {
+                data = await response.json();
+            } catch {
+                throw new Error('Invalid server response');
             }
 
             if (response.ok && data?.success) {
@@ -127,6 +129,11 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
         }
     };
 
+    // Show forgot password component
+    if (showForgotPassword) {
+        return <ExpertForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
+    }
+
     return (
         <Card className="w-full max-w-md">
             <CardHeader className="text-center">
@@ -155,7 +162,17 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="password">পাসওয়ার্ড *</Label>
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="password">পাসওয়ার্ড *</Label>
+                            <Button
+                                type="button"
+                                variant="link"
+                                className="p-0 h-auto text-sm text-blue-600 hover:text-blue-700"
+                                onClick={() => setShowForgotPassword(true)}
+                            >
+                                পাসওয়ার্ড ভুলে গেছেন?
+                            </Button>
+                        </div>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <Input

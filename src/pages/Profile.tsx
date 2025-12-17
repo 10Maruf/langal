@@ -10,7 +10,6 @@ import {
     User,
     MapPin,
     Phone,
-    Mail,
     Calendar,
     CreditCard,
     Briefcase,
@@ -22,7 +21,15 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    AlertCircle
+    AlertCircle,
+    Leaf,
+    TreeDeciduous,
+    Home,
+    IdCard,
+    FileText,
+    Tractor,
+    LandPlot,
+    Timer
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -48,8 +55,11 @@ const Profile = () => {
         dateOfBirth: "",
         occupation: "কৃষক",
         farmSize: "",
+        farmSizeUnit: "bigha" as 'bigha' | 'katha' | 'acre',
         crops: "",
         experience: "",
+        landOwnership: "",
+        krishiCardNumber: "",
         bio: "",
         profilePhotoUrl: "",
         verificationStatus: "pending" as 'pending' | 'approved' | 'rejected'
@@ -78,8 +88,11 @@ const Profile = () => {
                         verificationStatus: profile.verification_status || "pending",
                         occupation: additionalInfo.occupation || "কৃষক",
                         farmSize: farmer.farm_size ? String(farmer.farm_size) : "",
+                        farmSizeUnit: farmer.farm_size_unit || "bigha",
                         crops: farmer.farm_type || "",
                         experience: farmer.experience_years ? String(farmer.experience_years) : "",
+                        landOwnership: farmer.land_ownership || "",
+                        krishiCardNumber: farmer.krishi_card_number || "",
                         bio: additionalInfo.bio || ""
                     }));
                 }
@@ -151,12 +164,14 @@ const Profile = () => {
             const formData = new FormData();
 
             formData.append('full_name', profileData.name);
-            formData.append('email', profileData.email);
             formData.append('phone', profileData.phone);
             formData.append('address', profileData.address);
             formData.append('farm_size', profileData.farmSize || '0');
+            formData.append('farm_size_unit', profileData.farmSizeUnit);
             formData.append('farm_type', profileData.crops);
             formData.append('experience_years', profileData.experience || '0');
+            formData.append('land_ownership', profileData.landOwnership);
+            formData.append('krishi_card_number', profileData.krishiCardNumber);
             formData.append('additional_info', JSON.stringify({
                 bio: profileData.bio,
                 occupation: profileData.occupation
@@ -188,8 +203,14 @@ const Profile = () => {
                     profilePhotoUrl: profile.profile_photo_url_full || "",
                     occupation: additionalInfo.occupation || "কৃষক",
                     farmSize: farmer.farm_size ? String(farmer.farm_size) : "",
+                    farmSizeUnit: farmer.farm_size_unit || "bigha",
                     crops: farmer.farm_type || "",
                     experience: farmer.experience_years ? String(farmer.experience_years) : "",
+<<<<<<< HEAD
+=======
+                    landOwnership: farmer.land_ownership || "",
+                    krishiCardNumber: farmer.krishi_card_number || "",
+>>>>>>> upstream/main
                     bio: additionalInfo.bio || ""
                 }));
 
@@ -213,11 +234,15 @@ const Profile = () => {
                 });
                 setIsEditing(false);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error updating profile:", error);
+
+            // Get error message from server response if available
+            const errorMessage = error?.response?.data?.message || "প্রোফাইল আপডেট করতে সমস্যা হয়েছে";
+
             toast({
                 title: "ত্রুটি",
-                description: "প্রোফাইল আপডেট করতে সমস্যা হয়েছে",
+                description: errorMessage,
                 variant: "destructive",
             });
         }
@@ -352,8 +377,17 @@ const Profile = () => {
                                     </div>
                                     <p className="text-muted-foreground">{profileData.occupation}</p>
                                     <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
-                                        <Badge variant="secondary">{profileData.experience} অভিজ্ঞতা</Badge>
-                                        <Badge variant="outline">{profileData.farmSize}</Badge>
+                                        {profileData.experience && (
+                                            <Badge variant="secondary">{profileData.experience} বছর অভিজ্ঞতা</Badge>
+                                        )}
+                                        {profileData.farmSize && (
+                                            <Badge variant="outline">
+                                                {profileData.farmSize} {profileData.farmSizeUnit === 'bigha' ? 'বিঘা' : profileData.farmSizeUnit === 'katha' ? 'কাঠা' : 'একর'} জমি
+                                            </Badge>
+                                        )}
+                                        {profileData.crops && (
+                                            <Badge variant="outline">{profileData.crops}</Badge>
+                                        )}
                                     </div>
                                 </div>
 
@@ -383,193 +417,285 @@ const Profile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                         {/* Personal Information */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center">
-                                    <User className="h-5 w-5 mr-2" />
+                        <Card className="border-l-4 border-l-emerald-500">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center text-emerald-700">
+                                    <div className="p-2 bg-emerald-100 rounded-lg mr-3">
+                                        <User className="h-5 w-5 text-emerald-600" />
+                                    </div>
                                     ব্যক্তিগত তথ্য
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">নাম</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="name"
-                                            value={profileData.name}
-                                            onChange={(e) => handleInputChange('name', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium">{profileData.name}</p>
-                                    )}
+                                {/* Name */}
+                                <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                                    <User className="h-5 w-5 text-emerald-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="name" className="text-xs text-emerald-600 font-medium">নাম</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="name"
+                                                value={profileData.name}
+                                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                                className="mt-1"
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.name || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="dob">জন্ম তারিখ</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="dob"
-                                            value={profileData.dateOfBirth}
-                                            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium flex items-center">
-                                            <Calendar className="h-4 w-4 mr-2" />
-                                            {profileData.dateOfBirth}
-                                        </p>
-                                    )}
+                                {/* Date of Birth */}
+                                <div className="flex items-center p-3 bg-pink-50 rounded-lg">
+                                    <Calendar className="h-5 w-5 text-pink-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="dob" className="text-xs text-pink-600 font-medium">জন্ম তারিখ</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="dob"
+                                                type="date"
+                                                value={profileData.dateOfBirth}
+                                                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                                                className="mt-1"
+                                                disabled
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.dateOfBirth || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="nid">জাতীয় পরিচয়পত্র নম্বর</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="nid"
-                                            value={profileData.nid}
-                                            onChange={(e) => handleInputChange('nid', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium flex items-center">
-                                            <CreditCard className="h-4 w-4 mr-2" />
-                                            {profileData.nid}
-                                        </p>
-                                    )}
+                                {/* NID */}
+                                <div className="flex items-center p-3 bg-cyan-50 rounded-lg">
+                                    <CreditCard className="h-5 w-5 text-cyan-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="nid" className="text-xs text-cyan-600 font-medium">জাতীয় পরিচয়পত্র নম্বর</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="nid"
+                                                value={profileData.nid}
+                                                onChange={(e) => handleInputChange('nid', e.target.value)}
+                                                className="mt-1"
+                                                disabled
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.nid || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="occupation">পেশা</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="occupation"
-                                            value={profileData.occupation}
-                                            onChange={(e) => handleInputChange('occupation', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium flex items-center">
-                                            <Briefcase className="h-4 w-4 mr-2" />
-                                            {profileData.occupation}
-                                        </p>
-                                    )}
+                                {/* Occupation */}
+                                <div className="flex items-center p-3 bg-violet-50 rounded-lg">
+                                    <Briefcase className="h-5 w-5 text-violet-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="occupation" className="text-xs text-violet-600 font-medium">পেশা</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="occupation"
+                                                value={profileData.occupation}
+                                                onChange={(e) => handleInputChange('occupation', e.target.value)}
+                                                className="mt-1"
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.occupation}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Contact Information */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center">
-                                    <Phone className="h-5 w-5 mr-2" />
+                        <Card className="border-l-4 border-l-blue-500">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center text-blue-700">
+                                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                                        <Phone className="h-5 w-5 text-blue-600" />
+                                    </div>
                                     যোগাযোগের তথ্য
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="phone">মোবাইল নম্বর</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="phone"
-                                            value={profileData.phone}
-                                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium flex items-center">
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            {profileData.phone}
-                                        </p>
-                                    )}
+                                <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                                    <Phone className="h-5 w-5 text-blue-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="phone" className="text-xs text-blue-600 font-medium">মোবাইল নম্বর</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="phone"
+                                                value={profileData.phone}
+                                                onChange={(e) => handleInputChange('phone', e.target.value)}
+                                                className="mt-1"
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.phone}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">ইমেইল</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={profileData.email}
-                                            onChange={(e) => handleInputChange('email', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium flex items-center">
-                                            <Mail className="h-4 w-4 mr-2" />
-                                            {profileData.email}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="address">ঠিকানা</Label>
-                                    {isEditing ? (
-                                        <Textarea
-                                            id="address"
-                                            value={profileData.address}
-                                            onChange={(e) => handleInputChange('address', e.target.value)}
-                                            rows={3}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium flex items-start">
-                                            <MapPin className="h-4 w-4 mr-2 mt-0.5" />
-                                            {profileData.address}
-                                        </p>
-                                    )}
+                                <div className="flex items-start p-3 bg-gray-50 rounded-lg">
+                                    <MapPin className="h-5 w-5 text-red-500 mr-3 mt-0.5" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="address" className="text-xs text-gray-600 font-medium">ঠিকানা</Label>
+                                        {isEditing ? (
+                                            <Textarea
+                                                id="address"
+                                                value={profileData.address}
+                                                onChange={(e) => handleInputChange('address', e.target.value)}
+                                                rows={3}
+                                                className="mt-1"
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-medium text-gray-800">{profileData.address || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Farm Information */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>কৃষি তথ্য</CardTitle>
+                        <Card className="border-l-4 border-l-green-500">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center text-green-700">
+                                    <div className="p-2 bg-green-100 rounded-lg mr-3">
+                                        <Leaf className="h-5 w-5 text-green-600" />
+                                    </div>
+                                    কৃষি তথ্য
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="farmSize">জমির পরিমাণ</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="farmSize"
-                                            value={profileData.farmSize}
-                                            onChange={(e) => handleInputChange('farmSize', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium">{profileData.farmSize}</p>
-                                    )}
+                                {/* Farm Size */}
+                                <div className="flex items-center p-3 bg-green-50 rounded-lg">
+                                    <LandPlot className="h-5 w-5 text-green-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="farmSize" className="text-xs text-green-600 font-medium">জমির পরিমাণ</Label>
+                                        {isEditing ? (
+                                            <div className="flex gap-2 mt-1">
+                                                <Input
+                                                    id="farmSize"
+                                                    type="number"
+                                                    value={profileData.farmSize}
+                                                    onChange={(e) => handleInputChange('farmSize', e.target.value)}
+                                                    placeholder="জমির পরিমাণ"
+                                                    className="flex-1"
+                                                />
+                                                <select
+                                                    value={profileData.farmSizeUnit}
+                                                    onChange={(e) => handleInputChange('farmSizeUnit', e.target.value)}
+                                                    className="px-3 py-2 border rounded-md bg-background"
+                                                >
+                                                    <option value="bigha">বিঘা</option>
+                                                    <option value="katha">কাঠা</option>
+                                                    <option value="acre">একর</option>
+                                                </select>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {profileData.farmSize ? `${profileData.farmSize} ${profileData.farmSizeUnit === 'bigha' ? 'বিঘা' : profileData.farmSizeUnit === 'katha' ? 'কাঠা' : 'একর'}` : 'উল্লেখ করা হয়নি'}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="crops">ফসলের ধরন</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="crops"
-                                            value={profileData.crops}
-                                            onChange={(e) => handleInputChange('crops', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium">{profileData.crops}</p>
-                                    )}
+                                {/* Crops */}
+                                <div className="flex items-center p-3 bg-amber-50 rounded-lg">
+                                    <TreeDeciduous className="h-5 w-5 text-amber-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="crops" className="text-xs text-amber-600 font-medium">ফসলের ধরন</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="crops"
+                                                value={profileData.crops}
+                                                onChange={(e) => handleInputChange('crops', e.target.value)}
+                                                placeholder="যেমন: ধান, গম, সবজি"
+                                                className="mt-1"
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.crops || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="experience">কৃষি অভিজ্ঞতা</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            id="experience"
-                                            value={profileData.experience}
-                                            onChange={(e) => handleInputChange('experience', e.target.value)}
-                                        />
-                                    ) : (
-                                        <p className="text-sm font-medium">{profileData.experience}</p>
-                                    )}
+                                {/* Experience */}
+                                <div className="flex items-center p-3 bg-purple-50 rounded-lg">
+                                    <Timer className="h-5 w-5 text-purple-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="experience" className="text-xs text-purple-600 font-medium">কৃষি অভিজ্ঞতা</Label>
+                                        {isEditing ? (
+                                            <div className="flex gap-2 items-center mt-1">
+                                                <Input
+                                                    id="experience"
+                                                    type="number"
+                                                    value={profileData.experience}
+                                                    onChange={(e) => handleInputChange('experience', e.target.value)}
+                                                    placeholder="বছর"
+                                                    className="flex-1"
+                                                />
+                                                <span className="text-sm text-muted-foreground">বছর</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {profileData.experience ? `${profileData.experience} বছর` : 'উল্লেখ করা হয়নি'}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Land Ownership */}
+                                <div className="flex items-center p-3 bg-orange-50 rounded-lg">
+                                    <Home className="h-5 w-5 text-orange-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="landOwnership" className="text-xs text-orange-600 font-medium">জমির মালিকানা</Label>
+                                        {isEditing ? (
+                                            <select
+                                                value={profileData.landOwnership}
+                                                onChange={(e) => handleInputChange('landOwnership', e.target.value)}
+                                                className="w-full px-3 py-2 border rounded-md bg-background mt-1"
+                                            >
+                                                <option value="">নির্বাচন করুন</option>
+                                                <option value="নিজস্ব">নিজস্ব</option>
+                                                <option value="লীজ">লীজ</option>
+                                                <option value="বর্গা">বর্গা</option>
+                                                <option value="মিশ্র">মিশ্র (নিজস্ব + বর্গা)</option>
+                                            </select>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.landOwnership || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Krishi Card */}
+                                <div className="flex items-center p-3 bg-teal-50 rounded-lg">
+                                    <IdCard className="h-5 w-5 text-teal-600 mr-3" />
+                                    <div className="flex-1">
+                                        <Label htmlFor="krishiCardNumber" className="text-xs text-teal-600 font-medium">কৃষি কার্ড নম্বর</Label>
+                                        {isEditing ? (
+                                            <Input
+                                                id="krishiCardNumber"
+                                                value={profileData.krishiCardNumber}
+                                                onChange={(e) => handleInputChange('krishiCardNumber', e.target.value)}
+                                                placeholder="কৃষি কার্ড নম্বর (যদি থাকে)"
+                                                className="mt-1"
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-800">{profileData.krishiCardNumber || 'উল্লেখ করা হয়নি'}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Bio */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>আমার সম্পর্কে</CardTitle>
+                        <Card className="border-l-4 border-l-indigo-500">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center text-indigo-700">
+                                    <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                                        <FileText className="h-5 w-5 text-indigo-600" />
+                                    </div>
+                                    আমার সম্পর্কে
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="space-y-2">
-                                    <Label htmlFor="bio">বিবরণ</Label>
+                                <div className="p-3 bg-indigo-50 rounded-lg">
                                     {isEditing ? (
                                         <Textarea
                                             id="bio"
@@ -577,9 +703,12 @@ const Profile = () => {
                                             onChange={(e) => handleInputChange('bio', e.target.value)}
                                             rows={4}
                                             placeholder="আপনার সম্পর্কে কিছু লিখুন..."
+                                            className="bg-white"
                                         />
                                     ) : (
-                                        <p className="text-sm">{profileData.bio}</p>
+                                        <p className="text-sm text-gray-700 leading-relaxed">
+                                            {profileData.bio || 'আপনার সম্পর্কে কিছু লেখা হয়নি। সম্পাদনা করে যোগ করুন।'}
+                                        </p>
                                     )}
                                 </div>
                             </CardContent>

@@ -93,6 +93,10 @@ Route::prefix('customer')->group(function () {
     Route::post('/login', [CustomerAuthController::class, 'login']);
     Route::post('/register', [CustomerAuthController::class, 'register']);
     Route::post('/resend-otp', [CustomerAuthController::class, 'resendOtp']);
+    
+    // Forgot Password routes
+    Route::post('/forgot-password/send-otp', [CustomerAuthController::class, 'forgotPasswordSendOtp']);
+    Route::post('/forgot-password/reset', [CustomerAuthController::class, 'forgotPasswordReset']);
 
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {
@@ -111,6 +115,10 @@ Route::prefix('expert')->group(function () {
     Route::post('/verify-otp', [ExpertAuthController::class, 'verifyOtp']);
     Route::post('/register', [ExpertAuthController::class, 'register']);
     Route::post('/resend-otp', [ExpertAuthController::class, 'resendOtp']);
+    
+    // Forgot Password routes
+    Route::post('/forgot-password/send-otp', [ExpertAuthController::class, 'forgotPasswordSendOtp']);
+    Route::post('/forgot-password/reset', [ExpertAuthController::class, 'forgotPasswordReset']);
 
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {
@@ -133,6 +141,10 @@ Route::prefix('data-operator')->group(function () {
     Route::post('/send-otp', [DataOperatorAuthController::class, 'sendOtp']);
     Route::post('/register', [DataOperatorAuthController::class, 'register']);
     Route::post('/login', [DataOperatorAuthController::class, 'login']);
+    
+    // Forgot Password routes
+    Route::post('/forgot-password/send-otp', [DataOperatorAuthController::class, 'forgotPasswordSendOtp']);
+    Route::post('/forgot-password/reset', [DataOperatorAuthController::class, 'forgotPasswordReset']);
 
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {

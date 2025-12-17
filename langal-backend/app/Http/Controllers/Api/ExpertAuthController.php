@@ -708,4 +708,110 @@ class ExpertAuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Send OTP for Password Reset
+     * POST /api/expert/forgot-password/send-otp
+     */
+    public function forgotPasswordSendOtp(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string|min:11|max:15',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $phone = $request->phone;
+
+        // Check if expert exists
+        $user = User::where('phone', $phone)->where('user_type', 'expert')->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'এই ফোন নম্বর দিয়ে কোনো বিশেষজ্ঞ অ্যাকাউন্ট পাওয়া যায়নি।',
+            ], 404);
+        }
+
+        // Send OTP for password reset
+        $result = $this->otpService->sendOtp($phone, 'password_reset');
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'পাসওয়ার্ড রিসেট করতে OTP পাঠানো হয়েছে',
+            'data' => [
+                'otp_id' => $result['otp_id'],
+                'expires_in' => $result['expires_in'],
+                'phone' => $phone,
+                'otp_code' => $result['otp_code'] ?? null, // For dev mode
+            ],
+        ]);
+    }
+
+    /**
+     * Verify OTP and Reset Password
+     * POST /api/expert/forgot-password/reset
+     */
+    public function forgotPasswordReset(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string|min:11|max:15',
+            'otp_code' => 'required|string|size:6',
+            'new_password' => 'required|string|min:6',
+            'confirm_password' => 'required|string|same:new_password',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $phone = $request->phone;
+        $otpCode = $request->otp_code;
+
+        // Verify OTP
+        $result = $this->otpService->verifyOtp($phone, $otpCode, 'password_reset');
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'OTP যাচাইকরণ ব্যর্থ হয়েছে',
+            ], 400);
+        }
+
+        // Find user and update password
+        $user = User::where('phone', $phone)->where('user_type', 'expert')->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'বিশেষজ্ঞ পাওয়া যায়নি',
+            ], 404);
+        }
+
+        // Update password
+        $user->password_hash = bcrypt($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন লগইন করুন।',
+        ]);
+    }
 }
