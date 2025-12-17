@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAssetPath } from "@/lib/utils";
 import FarmerLogin from "@/components/farmer/FarmerLogin";
 import ExpertLogin from "@/components/expert/ExpertLogin";
+import CustomerForgotPassword from "@/components/customer/CustomerForgotPassword";
 import api from "@/services/api";
 
 const Login = () => {
@@ -21,6 +22,7 @@ const Login = () => {
     const [activeTab, setActiveTab] = useState<UserType>("farmer");
     const [showFarmerLogin, setShowFarmerLogin] = useState(false);
     const [showExpertLogin, setShowExpertLogin] = useState(false);
+    const [showCustomerForgotPassword, setShowCustomerForgotPassword] = useState(false);
     const { login, setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -164,6 +166,8 @@ const Login = () => {
                 <FarmerLogin onBackToMainLogin={() => setShowFarmerLogin(false)} />
             ) : activeTab === 'expert' && showExpertLogin ? (
                 <ExpertLogin onBackToMainLogin={() => setShowExpertLogin(false)} />
+            ) : showCustomerForgotPassword ? (
+                <CustomerForgotPassword onBackToLogin={() => setShowCustomerForgotPassword(false)} />
             ) : (
                 <Card className="w-full max-w-md">
                     <CardHeader className="text-center">
@@ -269,7 +273,17 @@ const Login = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="customerPassword">পাসওয়ার্ড</Label>
+                                        <div className="flex justify-between items-center">
+                                            <Label htmlFor="customerPassword">পাসওয়ার্ড</Label>
+                                            <Button
+                                                type="button"
+                                                variant="link"
+                                                className="p-0 h-auto text-sm text-purple-600 hover:text-purple-700"
+                                                onClick={() => setShowCustomerForgotPassword(true)}
+                                            >
+                                                পাসওয়ার্ড ভুলে গেছেন?
+                                            </Button>
+                                        </div>
                                         <Input
                                             id="customerPassword"
                                             type="password"
