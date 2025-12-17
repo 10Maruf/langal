@@ -72,11 +72,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is an expert
+     */
+    public function isExpert(): bool
+    {
+        return $this->user_type === 'expert';
+    }
+
+    /**
      * Relationship with farmer profile
      */
     public function farmer()
     {
         return $this->hasOne(Farmer::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Relationship with expert qualifications
+     */
+    public function expert()
+    {
+        return $this->hasOne(Expert::class, 'user_id', 'user_id');
     }
 
     /**
@@ -93,6 +109,14 @@ class User extends Authenticatable
     public function profile()
     {
         return $this->hasOne(UserProfile::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Get combined profile name
+     */
+    public function userProfile()
+    {
+        return $this->profile();
     }
 
     /**

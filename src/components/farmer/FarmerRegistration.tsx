@@ -461,8 +461,7 @@ const FarmerRegistration = () => {
                 phone: user.phone,
                 profilePhoto: user.profile?.profile_photo_url_full,
                 location: user.profile?.address || 'Bangladesh',
-                location_info: user.location_info || undefined,
-                verificationStatus: user.profile?.verification_status || 'pending'
+                location_info: user.location_info || undefined
             };
 
             // Set user in context

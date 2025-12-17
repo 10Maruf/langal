@@ -20,8 +20,6 @@ interface ConsultationRequest {
     type: "voice" | "video" | "text";
     requestedAt: string;
     scheduledAt?: string;
-    rating?: number;
-    feedback?: string;
 }
 
 const ConsultantConsultations = () => {
@@ -70,9 +68,7 @@ const ConsultantConsultations = () => {
             status: "completed",
             type: "voice",
             requestedAt: "2024-01-14T15:45:00Z",
-            scheduledAt: "2024-01-15T18:00:00Z",
-            rating: 5,
-            feedback: "খুবই ভালো পরামর্শ পেয়েছি। ধন্যবাদ।"
+            scheduledAt: "2024-01-15T18:00:00Z"
         }
     ]);
 
@@ -296,29 +292,6 @@ const ConsultantConsultations = () => {
                                             <p className="text-sm text-blue-600">
                                                 {new Date(consultation.scheduledAt).toLocaleString('bn-BD')}
                                             </p>
-                                        </div>
-                                    )}
-
-                                    {consultation.rating && (
-                                        <div>
-                                            <h4 className="font-medium text-sm mb-1">রেটিং:</h4>
-                                            <div className="flex items-center gap-1">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star
-                                                        key={i}
-                                                        className={`h-4 w-4 ${i < consultation.rating! ? "text-yellow-400 fill-current" : "text-gray-300"
-                                                            }`}
-                                                    />
-                                                ))}
-                                                <span className="text-sm text-muted-foreground ml-2">
-                                                    ({consultation.rating}/5)
-                                                </span>
-                                            </div>
-                                            {consultation.feedback && (
-                                                <p className="text-sm mt-2 bg-green-50 p-2 rounded">
-                                                    "{consultation.feedback}"
-                                                </p>
-                                            )}
                                         </div>
                                     )}
 
