@@ -28,14 +28,12 @@ const DataOperatorAuth = () => {
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                             <div className="flex items-center gap-2">
-                                <img
-                                    src={getAssetPath("/logo.png")}
-                                    alt="Logo"
-                                    className="h-10 w-10"
-                                />
+                                <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center">
+                                    <UserCheck className="h-6 w-6 text-orange-600" />
+                                </div>
                                 <div>
                                     <h1 className="text-2xl font-bold">ডাটা অপারেটর</h1>
-                                    <p className="text-orange-100 text-sm">Data Operator Portal</p>
+                                    <p className="text-orange-100 text-sm">Data Operator</p>
                                 </div>
                             </div>
                         </div>
