@@ -39,21 +39,29 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
     const [showPostManager, setShowPostManager] = useState(false);
     const [feedFilter, setFeedFilter] = useState("all");
     const [isLoading, setIsLoading] = useState(true);
+    const [likingPosts, setLikingPosts] = useState<Set<string>>(new Set());
 
     // Initialize service and load posts
     useEffect(() => {
-        socialFeedService.initializeDummyData();
         loadPosts();
-    }, []);
+    }, [user]); // Reload when user changes
 
     // Load posts based on filter
-    const loadPosts = () => {
+    const loadPosts = async () => {
         setIsLoading(true);
-        setTimeout(() => {
-            const filteredPosts = socialFeedService.getPosts(feedFilter, user?.type);
-            setPosts(filteredPosts);
+        try {
+            const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
+            const fetchedPosts = await socialFeedService.getPosts(1, 10, userId);
+            // Filter locally for now since backend doesn't support filtering yet
+            const filtered = feedFilter === "all" 
+                ? fetchedPosts 
+                : fetchedPosts.filter(p => p.type === feedFilter);
+            setPosts(filtered);
+        } catch (error) {
+            console.error("Failed to load posts", error);
+        } finally {
             setIsLoading(false);
-        }, 300);
+        }
     };
 
     // Reload posts when filter changes
@@ -62,45 +70,96 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
     }, [feedFilter, user?.type]);
 
     // Handle new post creation
-    const handleCreatePost = (postData: any) => {
-        const authorInfo = {
-            name: user?.name || "ব্যবহারকারী",
-            avatar: "/placeholder.svg",
-            location: getLocationByUserType(),
-            verified: user?.type === "expert",
-            isExpert: user?.type === "expert",
-            userType: user?.type || "farmer"
-        };
-
-        const newPost = socialFeedService.createPost(postData, authorInfo);
-        setPosts([newPost, ...posts]);
-        setShowCreatePost(false);
-
-        toast({
-            title: "পোস্ট করা হয়েছে",
-            description: "আপনার পোস্ট সফলভাবে প্রকাশিত হয়েছে।",
-        });
-    };
-
-    // Handle post like
-    const handleLike = (post: SocialPost) => {
-        const updatedPost = socialFeedService.toggleLike(post.id);
-        if (updatedPost) {
-            setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
-        }
-    };
-
-    // Handle post share
-    const handleShare = (post: SocialPost) => {
-        const updatedPost = socialFeedService.sharePost(post.id);
-        if (updatedPost) {
-            setPosts(posts.map(p => p.id === post.id ? updatedPost : p));
+    const handleCreatePost = async (postData: any) => {
+        const newPost = await socialFeedService.createPost(postData);
+        if (newPost) {
+            setPosts([newPost, ...posts]);
+            setShowCreatePost(false);
             toast({
-                title: "শেয়ার করা হয়েছে",
-                description: "পোস্টটি আপনার টাইমলাইনে শেয়ার করা হয়েছে।",
+                title: "পোস্ট করা হয়েছে",
+                description: "আপনার পোস্ট সফলভাবে প্রকাশিত হয়েছে।",
             });
         }
     };
+
+    // Handle post like
+    const handleLike = async (post: SocialPost) => {
+        const userId = user?.user_id || (user?.id ? parseInt(user.id) : null);
+        if (!userId) return;
+        
+        // Prevent multiple simultaneous like requests for the same post
+        if (likingPosts.has(post.id)) return;
+        
+        // Mark this post as being liked
+        setLikingPosts(prev => new Set(prev).add(post.id));
+        
+        // Optimistic update
+        const newLikedState = !post.liked;
+        const newLikesCount = post.likes + (newLikedState ? 1 : -1);
+        
+        setPosts(posts.map(p => {
+            if (p.id === post.id) {
+                return {
+                    ...p,
+                    liked: newLikedState,
+                    likes: newLikesCount
+                };
+            }
+            return p;
+        }));
+        
+        try {
+            const result = await socialFeedService.toggleLike(post.id, userId);
+            
+            // Sync with server response
+            if (result.success) {
+                setPosts(prevPosts => prevPosts.map(p => {
+                    if (p.id === post.id) {
+                        return {
+                            ...p,
+                            liked: result.liked,
+                            likes: result.liked ? newLikesCount : (newLikedState ? newLikesCount - 2 : newLikesCount)
+                        };
+                    }
+                    return p;
+                }));
+            } else {
+                // Revert on failure
+                setPosts(prevPosts => prevPosts.map(p => {
+                    if (p.id === post.id) {
+                        return {
+                            ...p,
+                            liked: post.liked,
+                            likes: post.likes
+                        };
+                    }
+                    return p;
+                }));
+            }
+        } catch (error) {
+            console.error('Error toggling like:', error);
+            // Revert on error
+            setPosts(prevPosts => prevPosts.map(p => {
+                if (p.id === post.id) {
+                    return {
+                        ...p,
+                        liked: post.liked,
+                        likes: post.likes
+                    };
+                }
+                return p;
+            }));
+        } finally {
+            // Remove from liking set
+            setLikingPosts(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(post.id);
+                return newSet;
+            });
+        }
+    };
+
+
 
     // Handle marketplace click
     const handleMarketplaceClick = (post: SocialPost) => {
@@ -112,8 +171,9 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
     };
 
     // Handle post delete
-    const handleDeletePost = (postId: string) => {
-        const success = socialFeedService.deletePost(postId, user?.name || "");
+    const handleDeletePost = async (postId: string) => {
+        const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
+        const success = await socialFeedService.deletePost(postId, userId);
         if (success) {
             setPosts(posts.filter(p => p.id !== postId));
             toast({
@@ -124,10 +184,18 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
     };
 
     // Handle post update
-    const handleUpdatePost = (postId: string, updates: Partial<SocialPost>) => {
-        const updatedPost = socialFeedService.updatePost(postId, updates, user?.name || "");
-        if (updatedPost) {
-            setPosts(posts.map(p => p.id === postId ? updatedPost : p));
+    const handleUpdatePost = async (postId: string, updates: Partial<SocialPost>) => {
+        // If only updating reported/reports, just update locally (API already called)
+        if ('reported' in updates && Object.keys(updates).length <= 2) {
+            setPosts(posts.map(p => p.id === postId ? { ...p, ...updates } : p));
+            return;
+        }
+        
+        const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
+        const result = await socialFeedService.updatePost(postId, updates, userId);
+        if (result) {
+            // Update locally with the changes
+            setPosts(posts.map(p => p.id === postId ? { ...p, ...updates } : p));
         }
     };
 
@@ -280,7 +348,7 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
                                     <EnhancedPostCard
                                         post={post}
                                         onLike={handleLike}
-                                        onShare={handleShare}
+
                                         onMarketplaceClick={handleMarketplaceClick}
                                         onDelete={handleDeletePost}
                                         onUpdate={handleUpdatePost}
@@ -293,7 +361,10 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
 
                 {/* Create Post Dialog */}
                 <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>নতুন পোস্ট তৈরি করুন</DialogTitle>
+                        </DialogHeader>
                         <CreatePost
                             onPost={handleCreatePost}
                             onCancel={() => setShowCreatePost(false)}
@@ -303,7 +374,10 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
 
                 {/* Personal Post Manager Dialog */}
                 <Dialog open={showPostManager} onOpenChange={setShowPostManager}>
-                    <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>আমার পোস্ট ম্যানেজার</DialogTitle>
+                        </DialogHeader>
                         <PersonalPostManager onClose={() => setShowPostManager(false)} />
                     </DialogContent>
                 </Dialog>

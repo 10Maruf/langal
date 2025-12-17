@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\CropRecommendationController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\TTSController;
 use App\Http\Controllers\TTSDebugController;
 
@@ -150,17 +151,17 @@ Route::prefix('data-operator')->group(function () {
         Route::get('/profile', [DataOperatorAuthController::class, 'profile']);
         Route::post('/update-profile', [DataOperatorAuthController::class, 'updateProfile']);
         Route::post('/logout', [DataOperatorAuthController::class, 'logout']);
-        
+
         // Profile verification routes
         Route::get('/farmers', [DataOperatorAuthController::class, 'getFarmers']);
         Route::get('/customers', [DataOperatorAuthController::class, 'getCustomers']);
         Route::post('/verify-profile', [DataOperatorAuthController::class, 'verifyProfile']);
-        
+
         // Field data collection routes
         Route::get('/field-reports', [DataOperatorAuthController::class, 'getFieldReports']);
         Route::post('/field-reports', [DataOperatorAuthController::class, 'createFieldReport']);
         Route::delete('/field-reports/{reportId}', [DataOperatorAuthController::class, 'deleteFieldReport']);
-        
+
         // Soil test reports routes
         Route::get('/soil-tests', [DataOperatorAuthController::class, 'getSoilTestReports']);
         Route::post('/soil-tests', [DataOperatorAuthController::class, 'createSoilTestReport']);
@@ -209,6 +210,28 @@ Route::prefix('locations')->group(function () {
     Route::get('/upazilas', [LocationController::class, 'getUpazilas']); // ?district_bn=ঢাকা
     Route::get('/post-offices', [LocationController::class, 'getPostOffices']); // ?upazila_bn=সাভার
     Route::get('/search', [LocationController::class, 'search']); // ?query=ঢাকা
+});
+
+// Social Feed Routes
+Route::prefix('social')->group(function () {
+    // Public routes
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/{id}/comments', [PostController::class, 'getComments']);
+
+    // Protected routes (require authentication)
+    // Note: For now we are not enforcing auth middleware for testing, but in production it should be enabled
+    // Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/posts', [PostController::class, 'store']);
+        Route::put('/posts/{id}', [PostController::class, 'update']);
+        Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+        Route::post('/posts/{id}/like', [PostController::class, 'toggleLike']);
+        Route::post('/posts/{id}/report', [PostController::class, 'reportPost']);
+        Route::post('/posts/{id}/comments', [PostController::class, 'addComment']);
+        Route::post('/posts/{postId}/comments/{commentId}/report', [PostController::class, 'reportComment']);
+
+        // Image upload for posts
+        Route::post('/upload-images', [ImageUploadController::class, 'uploadPostImages']);
+    // });
 });
 
 // Crop Recommendation Routes (AI-based)
