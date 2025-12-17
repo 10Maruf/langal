@@ -206,11 +206,8 @@ const Profile = () => {
                     farmSizeUnit: farmer.farm_size_unit || "bigha",
                     crops: farmer.farm_type || "",
                     experience: farmer.experience_years ? String(farmer.experience_years) : "",
-<<<<<<< HEAD
-=======
                     landOwnership: farmer.land_ownership || "",
                     krishiCardNumber: farmer.krishi_card_number || "",
->>>>>>> upstream/main
                     bio: additionalInfo.bio || ""
                 }));
 
