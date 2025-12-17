@@ -24,14 +24,14 @@ export interface SocialPost {
     author: PostAuthor;
     content: string;
     images: string[];
-    tags: string[];
     type: PostType;
     marketplaceLink?: MarketplaceLink;
     likes: number;
     comments: number;
-    shares: number;
+    reports?: number;
     postedAt: string;
     liked?: boolean;
+    reported?: boolean;
     isOwnPost?: boolean;
 }
 
@@ -102,6 +102,11 @@ export const POST_REPORT_REASONS: PostReportReason[] = [
         id: "copyright",
         label: "কপিরাইট লঙ্ঘন",
         description: "অন্যের বুদ্ধিবৃত্তিক সম্পদ চুরি"
+    },
+    {
+        id: "other",
+        label: "অন্যান্য",
+        description: "অন্য কোনো সমস্যা"
     }
 ];
 
@@ -126,6 +131,11 @@ export const COMMENT_REPORT_REASONS: CommentReportReason[] = [
         id: "false_advice",
         label: "ভুল পরামর্শ",
         description: "ক্ষতিকর বা ভুল কৃষি পরামর্শ"
+    },
+    {
+        id: "other",
+        label: "অন্যান্য",
+        description: "অন্য কোনো সমস্যা"
     }
 ];
 

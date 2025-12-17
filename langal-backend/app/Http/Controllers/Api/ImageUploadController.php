@@ -138,4 +138,56 @@ class ImageUploadController extends Controller
             'data' => [],
         ]);
     }
+
+    /**
+     * Upload images for social feed posts
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function uploadPostImages(Request $request): JsonResponse
+    {
+        // Check if any files were uploaded
+        if (!$request->hasFile('images')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No images provided',
+                'errors' => ['images' => ['No image files were uploaded']],
+            ], 422);
+        }
+
+        $uploadedUrls = [];
+
+        try {
+            $images = $request->file('images');
+            
+            // Handle single image upload
+            if (!is_array($images)) {
+                $images = [$images];
+            }
+
+            foreach ($images as $image) {
+                // Generate unique filename
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+                
+                // Store in storage/app/public/posts
+                $path = $image->storeAs('posts', $filename, 'public');
+                
+                // Return full URL for frontend use
+                $uploadedUrls[] = url(Storage::url($path));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Images uploaded successfully',
+                'urls' => $uploadedUrls,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Image upload failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
