@@ -15,20 +15,21 @@ import {
     Eye,
     Heart,
     MessageCircle,
-    Share2,
     TrendingUp,
     Users,
     Zap,
     UserCheck,
     Plus,
     Calendar,
-    BarChart3
+    BarChart3,
+    Flag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SocialPost } from "@/types/social";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { socialFeedService } from "@/services/socialFeedService";
+import { EnhancedPostCard } from "./EnhancedPostCard";
 
 interface PersonalPostManagerProps {
     onClose?: () => void;
@@ -45,17 +46,25 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
     const [filterType, setFilterType] = useState("all");
     const [editingPost, setEditingPost] = useState<SocialPost | null>(null);
     const [editedContent, setEditedContent] = useState("");
+    const [editedType, setEditedType] = useState("general");
+    const [editedImages, setEditedImages] = useState<string[]>([]);
+    const [newImages, setNewImages] = useState<File[]>([]);
+    const [isUploadingEdit, setIsUploadingEdit] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
     const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
     const [activeTab, setActiveTab] = useState("posts");
 
     // Load user's posts
     useEffect(() => {
-        if (user) {
-            const userPosts = socialFeedService.getUserPosts(user.name);
-            setMyPosts(userPosts);
-            setFilteredPosts(userPosts);
-        }
+        const loadUserPosts = async () => {
+            if (user) {
+                const userId = user.user_id || parseInt(user.id);
+                const userPosts = await socialFeedService.getUserPosts(user.id, userId);
+                setMyPosts(userPosts);
+                setFilteredPosts(userPosts);
+            }
+        };
+        loadUserPosts();
     }, [user]);
 
     // Filter posts based on search and type
@@ -70,8 +79,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
         // Filter by search query
         if (searchQuery) {
             filtered = filtered.filter(post => 
-                post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                post.content.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
 
@@ -82,35 +90,91 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
     const handleEditPost = (post: SocialPost) => {
         setEditingPost(post);
         setEditedContent(post.content);
+        setEditedType(post.type);
+        setEditedImages(post.images || []);
+        setNewImages([]);
+    };
+
+    // Handle image upload for edit
+    const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setNewImages([...newImages, ...Array.from(e.target.files)]);
+        }
+    };
+
+    // Remove existing image from edit
+    const removeExistingImage = (index: number) => {
+        setEditedImages(editedImages.filter((_, i) => i !== index));
+    };
+
+    // Remove new image from edit
+    const removeNewImage = (index: number) => {
+        setNewImages(newImages.filter((_, i) => i !== index));
     };
 
     // Save edited post
-    const handleSaveEdit = () => {
+    const handleSaveEdit = async () => {
         if (editingPost) {
-            const updatedPost = socialFeedService.updatePost(
-                editingPost.id,
-                { content: editedContent },
-                user?.name || ""
-            );
-            
-            if (updatedPost) {
-                setMyPosts(myPosts.map(p => 
-                    p.id === editingPost.id ? updatedPost : p
-                ));
-                setEditingPost(null);
-                setEditedContent("");
+            setIsUploadingEdit(true);
+            try {
+                let finalImages = [...editedImages];
                 
+                // Upload new images if any
+                if (newImages.length > 0) {
+                    const formData = new FormData();
+                    newImages.forEach((img) => {
+                        formData.append('images[]', img);
+                    });
+                    
+                    const response = await fetch('http://localhost:8000/api/social/upload-images', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        finalImages = [...finalImages, ...data.urls];
+                    }
+                }
+
+                const updatedPost = await socialFeedService.updatePost(
+                    editingPost.id,
+                    { 
+                        content: editedContent,
+                        type: editedType as any,
+                        images: finalImages
+                    }
+                );
+                
+                if (updatedPost) {
+                    setMyPosts(myPosts.map(p => 
+                        p.id === editingPost.id ? updatedPost : p
+                    ));
+                    setEditingPost(null);
+                    setEditedContent("");
+                    setNewImages([]);
+                    
+                    toast({
+                        title: "পোস্ট আপডেট হয়েছে",
+                        description: "আপনার পোস্ট সফলভাবে আপডেট করা হয়েছে।",
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating post:', error);
                 toast({
-                    title: "পোস্ট আপডেট হয়েছে",
-                    description: "আপনার পোস্ট সফলভাবে আপডেট করা হয়েছে।",
+                    title: "ত্রুটি",
+                    description: "পোস্ট আপডেট করতে সমস্যা হয়েছে।",
+                    variant: "destructive"
                 });
+            } finally {
+                setIsUploadingEdit(false);
             }
         }
     };
 
     // Handle post delete
-    const handleDeletePost = (postId: string) => {
-        const success = socialFeedService.deletePost(postId, user?.name || "");
+    const handleDeletePost = async (postId: string) => {
+        const success = await socialFeedService.deletePost(postId);
         
         if (success) {
             setMyPosts(myPosts.filter(p => p.id !== postId));
@@ -123,26 +187,88 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
         }
     };
 
+    // Handle post like
+    const handleLike = async (post: SocialPost) => {
+        if (!user) return;
+        
+        const newLikedState = !post.liked;
+        const newLikesCount = post.likes + (newLikedState ? 1 : -1);
+
+        // Optimistic update
+        const updatePosts = (posts: SocialPost[]) => 
+            posts.map(p => p.id === post.id 
+                ? { ...p, liked: newLikedState, likes: newLikesCount }
+                : p
+            );
+
+        setMyPosts(updatePosts(myPosts));
+        setFilteredPosts(updatePosts(filteredPosts));
+        if (selectedPost && selectedPost.id === post.id) {
+            setSelectedPost({ ...selectedPost, liked: newLikedState, likes: newLikesCount });
+        }
+
+        // API call
+        const userId = user.user_id || parseInt(user.id);
+        const result = await socialFeedService.toggleLike(post.id, userId);
+        
+        if (!result.success) {
+            // Revert if failed
+            const revertPosts = (posts: SocialPost[]) => 
+                posts.map(p => p.id === post.id 
+                    ? { ...p, liked: !newLikedState, likes: post.likes }
+                    : p
+                );
+            setMyPosts(revertPosts(myPosts));
+            setFilteredPosts(revertPosts(filteredPosts));
+             if (selectedPost && selectedPost.id === post.id) {
+                setSelectedPost({ ...selectedPost, liked: !newLikedState, likes: post.likes });
+            }
+        } else {
+            // Ensure state matches backend
+            if (result.liked !== newLikedState) {
+                const syncPosts = (posts: SocialPost[]) => 
+                    posts.map(p => p.id === post.id 
+                        ? { ...p, liked: result.liked, likes: post.likes + (result.liked ? 1 : -1) } // Approximate count adjustment
+                        : p
+                    );
+                setMyPosts(syncPosts(myPosts));
+                setFilteredPosts(syncPosts(filteredPosts));
+                if (selectedPost && selectedPost.id === post.id) {
+                    setSelectedPost({ ...selectedPost, liked: result.liked, likes: post.likes + (result.liked ? 1 : -1) });
+                }
+            }
+        }
+    };
+
+    // Handle post update from EnhancedPostCard
+    const handleUpdatePost = (postId: string, updates: Partial<SocialPost>) => {
+        const updatePosts = (posts: SocialPost[]) => 
+            posts.map(p => p.id === postId ? { ...p, ...updates } : p);
+        
+        setMyPosts(updatePosts(myPosts));
+        setFilteredPosts(updatePosts(filteredPosts));
+        if (selectedPost && selectedPost.id === postId) {
+            setSelectedPost({ ...selectedPost, ...updates });
+        }
+    };
+
     // Get post statistics
     const getPostStats = () => {
-        const totalLikes = myPosts.reduce((sum, post) => sum + post.likes, 0);
-        const totalComments = myPosts.reduce((sum, post) => sum + post.comments, 0);
-        const totalShares = myPosts.reduce((sum, post) => sum + post.shares, 0);
-        const averageEngagement = myPosts.length > 0
-            ? Math.round((totalLikes + totalComments + totalShares) / myPosts.length)
-            : 0;
+        const totalReports = myPosts.reduce((sum, post) => sum + (post.reports || 0), 0);
 
-        const mostLikedPost = myPosts.length > 0
-            ? myPosts.reduce((max, post) => post.likes > max.likes ? post : max, myPosts[0])
+        // জনপ্রিয় পোস্ট = সবচেয়ে বেশি engagement (likes + comments)
+        const mostPopularPost = myPosts.length > 0
+            ? myPosts.reduce((max, post) => {
+                const maxEngagement = max.likes + max.comments;
+                const postEngagement = post.likes + post.comments;
+                return postEngagement > maxEngagement ? post : max;
+            }, myPosts[0])
             : null;
 
         return {
             totalPosts: myPosts.length,
-            totalLikes,
-            totalComments,
-            totalShares,
-            averageEngagement,
-            mostLikedPost,
+            totalReports,
+            mostPopularPost,
             postsByType: {
                 general: myPosts.filter(p => p.type === "general").length,
                 marketplace: myPosts.filter(p => p.type === "marketplace").length,
@@ -201,10 +327,9 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="posts">পোস্ট তালিকা</TabsTrigger>
                     <TabsTrigger value="analytics">পরিসংখ্যান</TabsTrigger>
-                    <TabsTrigger value="settings">সেটিংস</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="posts" className="space-y-4">
@@ -301,16 +426,34 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                             }
                                         </p>
                                         
-                                        {post.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1">
-                                                {post.tags.map((tag, index) => (
-                                                    <Badge key={index} variant="outline" className="text-xs">
-                                                        #{tag}
-                                                    </Badge>
+                                        {/* Post Images */}
+                                        {post.images && post.images.length > 0 && (
+                                            <div className={`grid gap-2 ${
+                                                post.images.length === 1 ? 'grid-cols-1' :
+                                                post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                                            }`}>
+                                                {post.images.slice(0, 3).map((image, index) => (
+                                                    <div key={index} className="relative aspect-square">
+                                                        <img 
+                                                            src={image} 
+                                                            alt="" 
+                                                            className="w-full h-full object-cover rounded-lg"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).style.display = 'none';
+                                                            }}
+                                                        />
+                                                        {post.images.length > 3 && index === 2 && (
+                                                            <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                                                                <span className="text-white font-bold text-lg">
+                                                                    +{post.images.length - 3}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ))}
                                             </div>
                                         )}
-
+                                        
                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                             <div className="flex items-center gap-1">
                                                 <Heart className="h-4 w-4" />
@@ -319,10 +462,6 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                             <div className="flex items-center gap-1">
                                                 <MessageCircle className="h-4 w-4" />
                                                 <span>{post.comments}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Share2 className="h-4 w-4" />
-                                                <span>{post.shares}</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -334,7 +473,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
 
                 <TabsContent value="analytics" className="space-y-4">
                     {/* Overview Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Card>
                             <CardContent className="p-6">
                                 <div className="flex items-center">
@@ -352,94 +491,88 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                         <Card>
                             <CardContent className="p-6">
                                 <div className="flex items-center">
-                                    <div className="p-2 bg-red-100 rounded-full mr-4">
-                                        <Heart className="h-6 w-6 text-red-600" />
+                                    <div className="p-2 bg-orange-100 rounded-full mr-4">
+                                        <Flag className="h-6 w-6 text-orange-600" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-muted-foreground">মোট লাইক</p>
-                                        <p className="text-2xl font-bold">{stats.totalLikes}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-green-100 rounded-full mr-4">
-                                        <MessageCircle className="h-6 w-6 text-green-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-muted-foreground">মোট মন্তব্য</p>
-                                        <p className="text-2xl font-bold">{stats.totalComments}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-purple-100 rounded-full mr-4">
-                                        <BarChart3 className="h-6 w-6 text-purple-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-muted-foreground">গড় এনগেজমেন্ট</p>
-                                        <p className="text-2xl font-bold">{stats.averageEngagement}</p>
+                                        <p className="text-sm font-medium text-muted-foreground">মোট রিপোর্ট</p>
+                                        <p className="text-2xl font-bold">{stats.totalReports}</p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
 
-                    {/* Post Types Distribution */}
+                    {/* Posts by Type */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>পোস্টের ধরণ অনুযায়ী বিভাজন</CardTitle>
+                            <CardTitle>পোস্টের ধরন অনুযায়ী</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-3">
-                                {Object.entries(stats.postsByType).map(([type, count]) => (
-                                    <div key={type} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <Badge variant="secondary" className={typeColors[type as keyof typeof typeColors]}>
-                                                {typeLabels[type as keyof typeof typeLabels]}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold">{count}</span>
-                                            <span className="text-sm text-muted-foreground">
-                                                ({stats.totalPosts > 0 ? Math.round((count / stats.totalPosts) * 100) : 0}%)
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <div className="p-4 bg-blue-50 rounded-lg text-center">
+                                    <p className="text-2xl font-bold text-blue-700">{stats.postsByType.general}</p>
+                                    <p className="text-sm text-blue-600">সাধারণ</p>
+                                </div>
+                                <div className="p-4 bg-green-50 rounded-lg text-center">
+                                    <p className="text-2xl font-bold text-green-700">{stats.postsByType.marketplace}</p>
+                                    <p className="text-sm text-green-600">বাজার</p>
+                                </div>
+                                <div className="p-4 bg-yellow-50 rounded-lg text-center">
+                                    <p className="text-2xl font-bold text-yellow-700">{stats.postsByType.question}</p>
+                                    <p className="text-sm text-yellow-600">প্রশ্ন</p>
+                                </div>
+                                <div className="p-4 bg-purple-50 rounded-lg text-center">
+                                    <p className="text-2xl font-bold text-purple-700">{stats.postsByType.advice}</p>
+                                    <p className="text-sm text-purple-600">পরামর্শ</p>
+                                </div>
+                                <div className="p-4 bg-indigo-50 rounded-lg text-center">
+                                    <p className="text-2xl font-bold text-indigo-700">{stats.postsByType.expert_advice}</p>
+                                    <p className="text-sm text-indigo-600">বিশেষজ্ঞ</p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Most Liked Post */}
-                    {stats.mostLikedPost && (
+                    {/* Most Popular Post */}
+                    {stats.mostPopularPost && (stats.mostPopularPost.likes > 0 || stats.mostPopularPost.comments > 0) && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>সবচেয়ে জনপ্রিয় পোস্ট</CardTitle>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5 text-green-600" />
+                                    জনপ্রিয় পোস্ট
+                                </CardTitle>
+                                <CardDescription>
+                                    সবচেয়ে বেশি engagement (লাইক + মন্তব্য) পাওয়া পোস্ট
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="p-4 bg-muted rounded-lg">
-                                    <p className="text-sm mb-2">
-                                        {stats.mostLikedPost.content.length > 200
-                                            ? stats.mostLikedPost.content.substring(0, 200) + "..."
-                                            : stats.mostLikedPost.content
+                                <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <Badge variant="secondary" className={typeColors[stats.mostPopularPost.type]}>
+                                            {typeLabels[stats.mostPopularPost.type]}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                            {formatTime(stats.mostPopularPost.postedAt)}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm mb-3">
+                                        {stats.mostPopularPost.content.length > 200
+                                            ? stats.mostPopularPost.content.substring(0, 200) + "..."
+                                            : stats.mostPopularPost.content
                                         }
                                     </p>
-                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                            <Heart className="h-4 w-4" />
-                                            <span>{stats.mostLikedPost.likes} লাইক</span>
+                                    <div className="flex items-center gap-4 text-sm">
+                                        <div className="flex items-center gap-1 text-red-600">
+                                            <Heart className="h-4 w-4 fill-current" />
+                                            <span className="font-medium">{stats.mostPopularPost.likes} লাইক</span>
                                         </div>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1 text-blue-600">
                                             <MessageCircle className="h-4 w-4" />
-                                            <span>{stats.mostLikedPost.comments} মন্তব্য</span>
+                                            <span className="font-medium">{stats.mostPopularPost.comments} মন্তব্য</span>
+                                        </div>
+                                        <div className="ml-auto text-green-600 font-semibold">
+                                            মোট: {stats.mostPopularPost.likes + stats.mostPopularPost.comments} engagement
                                         </div>
                                     </div>
                                 </div>
@@ -448,61 +581,100 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                     )}
                 </TabsContent>
 
-                <TabsContent value="settings" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>পোস্ট সেটিংস</CardTitle>
-                            <CardDescription>
-                                আপনার পোস্ট সংক্রান্ত পছন্দসমূহ কনফিগার করুন
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h4 className="font-medium">স্বয়ংক্রিয় ব্যাকআপ</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        আপনার পোস্টগুলি স্বয়ংক্রিয়ভাবে ব্যাকআপ করুন
-                                    </p>
-                                </div>
-                                <Button variant="outline" size="sm">
-                                    সক্রিয় করুন
-                                </Button>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h4 className="font-medium">ডেটা এক্সপোর্ট</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        আপনার সকল পোস্ট ডাউনলোড করুন
-                                    </p>
-                                </div>
-                                <Button variant="outline" size="sm">
-                                    এক্সপোর্ট করুন
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
             </Tabs>
 
             {/* Edit Post Dialog */}
-            <Dialog open={!!editingPost} onOpenChange={() => setEditingPost(null)}>
-                <DialogContent className="max-w-2xl">
+            <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>পোস্ট সম্পাদনা করুন</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
+                        <Select value={editedType} onValueChange={setEditedType}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="পোস্টের ধরন নির্বাচন করুন" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="general">সাধারণ</SelectItem>
+                                <SelectItem value="marketplace">বাজার</SelectItem>
+                                <SelectItem value="question">প্রশ্ন</SelectItem>
+                                <SelectItem value="advice">পরামর্শ</SelectItem>
+                                <SelectItem value="expert_advice">বিশেষজ্ঞ পরামর্শ</SelectItem>
+                            </SelectContent>
+                        </Select>
+
                         <Textarea
                             value={editedContent}
                             onChange={(e) => setEditedContent(e.target.value)}
-                            className="min-h-[200px] resize-none"
-                            placeholder="আপনার পোস্টের বিষয়বস্তু লিখুন..."
+                            placeholder="আপনার পোস্ট লিখুন..."
+                            className="min-h-[100px]"
                         />
+
+                        {/* Existing Images */}
+                        {editedImages.length > 0 && (
+                            <div className="space-y-2">
+                                <span className="text-sm font-medium">বর্তমান ছবি:</span>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {editedImages.map((img, index) => (
+                                        <div key={index} className="relative aspect-square">
+                                            <img 
+                                                src={img} 
+                                                alt="" 
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
+                                            <button
+                                                onClick={() => removeExistingImage(index)}
+                                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* New Images Preview */}
+                        {newImages.length > 0 && (
+                            <div className="space-y-2">
+                                <span className="text-sm font-medium">নতুন ছবি:</span>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {newImages.map((img, index) => (
+                                        <div key={index} className="relative aspect-square">
+                                            <img 
+                                                src={URL.createObjectURL(img)} 
+                                                alt="" 
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
+                                            <button
+                                                onClick={() => removeNewImage(index)}
+                                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Add Image Button */}
+                        <label className="flex items-center gap-2 text-sm font-medium cursor-pointer text-primary hover:underline">
+                            <span>+ ছবি যোগ করুন</span>
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={handleEditImageUpload}
+                                className="hidden"
+                            />
+                        </label>
+
                         <div className="flex gap-2">
-                            <Button onClick={handleSaveEdit}>
-                                সংরক্ষণ করুন
+                            <Button onClick={handleSaveEdit} disabled={isUploadingEdit}>
+                                {isUploadingEdit ? 'আপলোড হচ্ছে...' : 'সংরক্ষণ করুন'}
                             </Button>
-                            <Button variant="outline" onClick={() => setEditingPost(null)}>
+                            <Button variant="outline" onClick={() => setEditingPost(null)} disabled={isUploadingEdit}>
                                 বাতিল
                             </Button>
                         </div>
@@ -535,47 +707,21 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
 
             {/* Post Preview Dialog */}
             <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto p-0">
+                    <DialogHeader className="p-6 pb-0">
                         <DialogTitle>পোস্ট প্রিভিউ</DialogTitle>
                     </DialogHeader>
                     {selectedPost && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className={typeColors[selectedPost.type]}>
-                                    {typeLabels[selectedPost.type]}
-                                </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                    {formatTime(selectedPost.postedAt)}
-                                </span>
-                            </div>
-                            <div className="p-4 bg-muted rounded-lg">
-                                <p className="text-sm leading-relaxed">{selectedPost.content}</p>
-                                
-                                {selectedPost.tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-3">
-                                        {selectedPost.tags.map((tag, index) => (
-                                            <Badge key={index} variant="outline" className="text-xs">
-                                                #{tag}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                    <Heart className="h-4 w-4" />
-                                    <span>{selectedPost.likes} লাইক</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <MessageCircle className="h-4 w-4" />
-                                    <span>{selectedPost.comments} মন্তব্য</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Share2 className="h-4 w-4" />
-                                    <span>{selectedPost.shares} শেয়ার</span>
-                                </div>
-                            </div>
+                        <div className="p-4">
+                            <EnhancedPostCard 
+                                post={selectedPost}
+                                onLike={handleLike}
+                                onDelete={(postId) => {
+                                    handleDeletePost(postId);
+                                    setSelectedPost(null);
+                                }}
+                                onUpdate={handleUpdatePost}
+                            />
                         </div>
                     )}
                 </DialogContent>

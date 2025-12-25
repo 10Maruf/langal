@@ -362,6 +362,25 @@ class FarmerAuthController extends Controller
     {
         $user = $request->user();
 
+        // Validate unique fields before updating
+        $validator = Validator::make($request->all(), [
+            'krishi_card_number' => 'nullable|string|unique:farmer_details,krishi_card_number,' . ($user->farmer->farmer_id ?? 'null') . ',farmer_id',
+            'phone' => 'nullable|string|unique:users,phone,' . $user->user_id . ',user_id',
+            'email' => 'nullable|email|unique:users,email,' . $user->user_id . ',user_id',
+        ], [
+            'krishi_card_number.unique' => 'এই কৃষি কার্ড নম্বরটি অন্য একজন কৃষকের নামে নিবন্ধিত আছে',
+            'phone.unique' => 'এই মোবাইল নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হয়েছে',
+            'email.unique' => 'এই ইমেইলটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হয়েছে',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         DB::beginTransaction();
         try {
             // Update User table (email, phone)
@@ -413,11 +432,21 @@ class FarmerAuthController extends Controller
                 if ($request->has('farm_size')) {
                     $farmerData['farm_size'] = (float)$request->farm_size;
                 }
+                if ($request->has('farm_size_unit')) {
+                    $farmerData['farm_size_unit'] = $request->farm_size_unit;
+                }
                 if ($request->has('farm_type')) {
                     $farmerData['farm_type'] = $request->farm_type;
                 }
                 if ($request->has('experience_years')) {
                     $farmerData['experience_years'] = (int)$request->experience_years;
+                }
+                if ($request->has('land_ownership')) {
+                    $farmerData['land_ownership'] = $request->land_ownership ?: null;
+                }
+                if ($request->has('krishi_card_number')) {
+                    // Set to null if empty to avoid duplicate constraint issues
+                    $farmerData['krishi_card_number'] = $request->krishi_card_number ?: null;
                 }
 
                 // Update additional info (JSON)

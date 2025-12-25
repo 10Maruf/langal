@@ -32,6 +32,7 @@ interface AuthContextType {
     logout: () => void;
     setAuthUser: (user: User, token: string) => void;
     isAuthenticated: boolean;
+    isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +48,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // Check if user is stored in localStorage
@@ -67,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 localStorage.removeItem('auth_token');
             }
         }
+        setIsLoading(false);
     }, []);
 
     const setAuthUser = (user: User, token: string) => {
@@ -121,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, setAuthUser, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, login, register, logout, setAuthUser, isAuthenticated, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

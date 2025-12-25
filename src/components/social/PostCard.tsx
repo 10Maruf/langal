@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TTSButton } from "@/components/ui/tts-button";
-import { Heart, MessageCircle, Share2, MoreHorizontal, MapPin, ExternalLink, UserCheck } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, MapPin, ExternalLink, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SocialPost {
@@ -17,7 +17,6 @@ export interface SocialPost {
   };
   content: string;
   images: string[];
-  tags: string[];
   type: "general" | "marketplace" | "question" | "advice" | "expert_advice";
   marketplaceLink?: {
     title: string;
@@ -26,7 +25,6 @@ export interface SocialPost {
   };
   likes: number;
   comments: number;
-  shares: number;
   postedAt: string;
   liked?: boolean;
 }
@@ -35,7 +33,6 @@ interface PostCardProps {
   post: SocialPost;
   onLike: (post: SocialPost) => void;
   onComment: (post: SocialPost) => void;
-  onShare: (post: SocialPost) => void;
   onMarketplaceClick?: (post: SocialPost) => void;
 }
 
@@ -43,7 +40,6 @@ export const PostCard = ({
   post,
   onLike,
   onComment,
-  onShare,
   onMarketplaceClick
 }: PostCardProps) => {
   const typeColors = {
@@ -127,16 +123,7 @@ export const PostCard = ({
       <CardContent className="space-y-3">
         <p className="text-sm leading-relaxed">{post.content}</p>
 
-        {/* Tags */}
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {post.tags.map((tag, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                #{tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+
 
         {/* Images */}
         {post.images.length > 0 && (
@@ -226,15 +213,7 @@ export const PostCard = ({
               <span className="text-xs">{post.comments}</span>
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onShare(post)}
-              className="h-8 px-2"
-            >
-              <Share2 className="h-4 w-4 mr-1" />
-              <span className="text-xs">{post.shares}</span>
-            </Button>
+
           </div>
         </div>
       </CardFooter>

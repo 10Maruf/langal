@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Image, Tag, MapPin, ShoppingCart, X, UserCheck } from "lucide-react";
+import { Image, MapPin, ShoppingCart, X, UserCheck, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
 
 interface CreatePostProps {
   onPost: (postData: any) => void;
@@ -18,44 +19,84 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState(user?.type === 'expert' ? "expert_advice" : "general");
-  const [tags, setTags] = useState<string[]>([]);
-  const [currentTag, setCurrentTag] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [marketplaceData, setMarketplaceData] = useState({
     title: "",
     price: "",
     category: ""
   });
 
-  const handleAddTag = () => {
-    if (currentTag.trim() && !tags.includes(currentTag.trim())) {
-      setTags([...tags, currentTag.trim()]);
-      setCurrentTag("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setImages([...images, ...Array.from(e.target.files)]);
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setImages(prevImages => [...prevImages, ...newFiles]);
+      // Reset input so same files can be selected again if needed
+      e.target.value = '';
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!content.trim()) return;
 
-    const postData = {
-      content,
-      type: postType,
-      tags,
-      images: images.map(img => URL.createObjectURL(img)), // In real app, upload to server
-      marketplaceLink: postType === "marketplace" ? marketplaceData : undefined
-    };
+    // Get user_id from either user_id or id field
+    const userId = user?.user_id || (user?.id ? parseInt(user.id) : null);
+    
+    if (!userId) {
+      console.error('User ID not found');
+      return;
+    }
 
-    onPost(postData);
+    setIsUploading(true);
+
+    try {
+      // Upload images to server first
+      let uploadedImageUrls: string[] = [];
+      
+      if (images.length > 0) {
+        const formData = new FormData();
+        images.forEach((img) => {
+          formData.append('images[]', img);
+        });
+
+        const uploadResponse = await axios.post(
+          'http://localhost:8000/api/social/upload-images',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+
+        if (uploadResponse.data.success) {
+          uploadedImageUrls = uploadResponse.data.urls;
+        }
+      }
+
+      const postData = {
+        user_id: userId,
+        content,
+        type: postType,
+        images: uploadedImageUrls,
+        marketplaceLink: postType === "marketplace" ? marketplaceData : undefined
+      };
+
+      onPost(postData);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      // Still try to post without images
+      const postData = {
+        user_id: userId,
+        content,
+        type: postType,
+        images: [],
+        marketplaceLink: postType === "marketplace" ? marketplaceData : undefined
+      };
+      onPost(postData);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -166,38 +207,6 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
           </div>
         )}
 
-        {/* Tags */}
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <Input
-              placeholder="ট্যাগ যোগ করুন..."
-              value={currentTag}
-              onChange={(e) => setCurrentTag(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
-              className="flex-1"
-            />
-            <Button variant="outline" size="sm" onClick={handleAddTag}>
-              <Tag className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  #{tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Image Upload */}
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
@@ -235,10 +244,17 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} className="flex-1">
-            বিজ্ঞাপন দিন
+          <Button onClick={handleSubmit} className="flex-1" disabled={isUploading || !content.trim()}>
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                আপলোড হচ্ছে...
+              </>
+            ) : (
+              'পোস্ট করুন'
+            )}
           </Button>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={isUploading}>
             বাতিল
           </Button>
         </div>
