@@ -477,6 +477,8 @@ class DataOperatorAuthController extends Controller
                     $query->select(
                         'user_id',
                         'full_name',
+                        'father_name',
+                        'mother_name',
                         'profile_photo_url',
                         'date_of_birth',
                         'nid_number',
@@ -515,14 +517,14 @@ class DataOperatorAuthController extends Controller
                     return [
                         'user_id' => $user->user_id,
                         'full_name' => $profile->full_name,
+                        'father_name' => $profile->father_name ?? null,
+                        'mother_name' => $profile->mother_name ?? null,
                         'phone_number' => $user->phone,
                         'profile_photo_url_full' => $profile->profile_photo_url
                             ? url('storage/' . $profile->profile_photo_url)
                             : null,
                         'date_of_birth' => $profile->date_of_birth,
                         'nid_number' => $profile->nid_number,
-                        'father_name' => $profile->father_name ?? null,
-                        'mother_name' => $profile->mother_name ?? null,
                         'village' => $profile->village,
                         'division' => $locationInfo['division'] ?? null,
                         'district' => $locationInfo['district'] ?? null,
@@ -604,19 +606,35 @@ class DataOperatorAuthController extends Controller
                         }
                     }
 
+                    // Get business details
+                    $businessDetails = $user->customerBusiness;
+
                     return [
                         'user_id' => $user->user_id,
                         'full_name' => $profile->full_name,
+                        'father_name' => $profile->father_name,
+                        'mother_name' => $profile->mother_name,
                         'phone_number' => $user->phone,
                         'profile_photo_url_full' => $profile->profile_photo_url
                             ? url('storage/' . $profile->profile_photo_url)
                             : null,
+                        'nid_photo_url_full' => $profile->nid_photo_url
+                            ? url('storage/' . $profile->nid_photo_url)
+                            : null,
                         'date_of_birth' => $profile->date_of_birth,
                         'nid_number' => $profile->nid_number,
+                        'village' => $profile->village,
+                        'postal_code' => $profile->postal_code,
                         'division' => $locationInfo['division'] ?? null,
                         'district' => $locationInfo['district'] ?? null,
                         'upazila' => $locationInfo['upazila'] ?? null,
-                        'address' => $profile->village ?? null, // Using village field as address
+                        'address' => $profile->address,
+                        'business_name' => $businessDetails?->business_name,
+                        'business_type' => $businessDetails?->business_type,
+                        'custom_business_type' => $businessDetails?->custom_business_type,
+                        'trade_license_number' => $businessDetails?->trade_license_number,
+                        'business_address' => $businessDetails?->business_address,
+                        'established_year' => $businessDetails?->established_year,
                         'verification_status' => $profile->verification_status ?? 'pending',
                         'verified_at' => $profile->verified_at,
                         'verified_by' => $profile->verified_by,
@@ -642,7 +660,123 @@ class DataOperatorAuthController extends Controller
     }
 
     /**
-     * Verify farmer/customer profile (Approve/Reject)
+     * Get all experts/consultants for verification
+     */
+    public function getExperts(Request $request): JsonResponse
+    {
+        // Verify user is actually a data operator
+        if ($request->user()->user_type !== 'data_operator') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only data operators can access expert list.',
+            ], 403);
+        }
+
+        try {
+            $experts = User::where('user_type', 'expert')
+                ->with(['profile' => function ($query) {
+                    $query->select(
+                        'user_id',
+                        'full_name',
+                        'profile_photo_url',
+                        'date_of_birth',
+                        'nid_number',
+                        'postal_code',
+                        'verification_status',
+                        'verified_at',
+                        'verified_by'
+                    );
+                }, 'expert' => function ($query) {
+                    $query->select(
+                        'user_id',
+                        'qualification',
+                        'specialization',
+                        'experience_years',
+                        'institution',
+                        'license_number',
+                        'certification_document',
+                        'is_government_approved',
+                        'rating',
+                        'total_consultations'
+                    );
+                }])
+                ->get()
+                ->map(function ($user) {
+                    $profile = $user->profile;
+                    $expertInfo = $user->expert;
+                    
+                    if (!$profile) {
+                        return null;
+                    }
+
+                    // Get location info
+                    $locationInfo = null;
+                    if ($profile->postal_code) {
+                        $location = DB::table('location')
+                            ->where('postal_code', $profile->postal_code)
+                            ->first();
+
+                        if ($location) {
+                            $locationInfo = [
+                                'division' => $location->division_bn,
+                                'district' => $location->district_bn,
+                                'upazila' => $location->upazila_bn,
+                                'post_office' => $location->post_office_bn,
+                            ];
+                        }
+                    }
+
+                    return [
+                        'user_id' => $user->user_id,
+                        'full_name' => $profile->full_name,
+                        'phone_number' => $user->phone,
+                        'profile_photo_url_full' => $profile->profile_photo_url
+                            ? url('storage/' . $profile->profile_photo_url)
+                            : null,
+                        'date_of_birth' => $profile->date_of_birth,
+                        'nid_number' => $profile->nid_number,
+                        'division' => $locationInfo['division'] ?? null,
+                        'district' => $locationInfo['district'] ?? null,
+                        'upazila' => $locationInfo['upazila'] ?? null,
+                        'post_office' => $locationInfo['post_office'] ?? null,
+                        // Expert specific fields
+                        'qualification' => $expertInfo?->qualification ?? null,
+                        'specialization' => $expertInfo?->specialization ?? null,
+                        'experience_years' => $expertInfo && $expertInfo->experience_years ? (int)$expertInfo->experience_years : null,
+                        'institution' => $expertInfo?->institution ?? null,
+                        'license_number' => $expertInfo?->license_number ?? null,
+                        'certification_document_url' => $expertInfo && $expertInfo->certification_document 
+                            ? url('storage/' . $expertInfo->certification_document) 
+                            : null,
+                        'is_government_approved' => (bool)($expertInfo?->is_government_approved ?? false),
+                        'rating' => $expertInfo && $expertInfo->rating ? (float)$expertInfo->rating : 0.0,
+                        'total_consultations' => $expertInfo && $expertInfo->total_consultations ? (int)$expertInfo->total_consultations : 0,
+                        'verification_status' => $profile->verification_status ?? 'pending',
+                        'verified_at' => $profile->verified_at,
+                        'verified_by' => $profile->verified_by,
+                    ];
+                })
+                ->filter() // Remove null values
+                ->values(); // Re-index array
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Experts fetched successfully',
+                'data' => $experts,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Get Experts Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch experts: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify farmer/customer/expert profile (Approve/Reject)
      */
     public function verifyProfile(Request $request): JsonResponse
     {
@@ -669,7 +803,7 @@ class DataOperatorAuthController extends Controller
 
         try {
             $user = User::where('user_id', $request->user_id)
-                ->whereIn('user_type', ['farmer', 'customer'])
+                ->whereIn('user_type', ['farmer', 'customer', 'expert'])
                 ->first();
 
             if (!$user) {

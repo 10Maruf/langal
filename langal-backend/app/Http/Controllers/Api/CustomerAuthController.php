@@ -277,7 +277,7 @@ class CustomerAuthController extends Controller
             'businessType' => 'required|string',
             'customBusinessType' => 'nullable|string|max:100',
             'tradeLicenseNumber' => 'nullable|string|max:30',
-            'establishedYear' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'establishedYear' => 'nullable|integer|min:1901|max:' . date('Y'),
 
             // Files
             'profilePhoto' => 'nullable|image|max:5120', // 5MB max

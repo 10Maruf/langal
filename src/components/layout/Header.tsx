@@ -150,7 +150,7 @@ export const Header = () => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-0 h-8 w-8 rounded-full">
+                <Button variant="ghost" size="sm" className="p-0 h-8 w-8 rounded-full relative">
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={getProfilePhotoUrl(user?.profilePhoto)}
@@ -160,6 +160,21 @@ export const Header = () => {
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
+                  {user?.verificationStatus === 'approved' && (
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full p-0.5 ring-2 ring-background">
+                      <CheckCircle className="h-3 w-3 text-white" />
+                    </div>
+                  )}
+                  {user?.verificationStatus === 'pending' && (
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-yellow-500 rounded-full p-0.5 ring-2 ring-background">
+                      <Clock className="h-3 w-3 text-white" />
+                    </div>
+                  )}
+                  {user?.verificationStatus === 'rejected' && (
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 ring-2 ring-background">
+                      <XCircle className="h-3 w-3 text-white" />
+                    </div>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -170,7 +185,7 @@ export const Header = () => {
                       user?.type === 'expert' ? 'কৃষি বিশেষজ্ঞ' :
                         user?.type === 'customer' ? 'ক্রেতা' : ''}
                   </div>
-                  {user?.type === 'farmer' && user?.verificationStatus && (
+                  {user?.verificationStatus && (
                     <div className="mt-1">
                       {user.verificationStatus === 'approved' && (
                         <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs">
@@ -182,6 +197,12 @@ export const Header = () => {
                         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 text-xs">
                           <Clock className="mr-1 h-3 w-3" />
                           যাচাই মুলতবি
+                        </Badge>
+                      )}
+                      {user.verificationStatus === 'rejected' && (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">
+                          <XCircle className="mr-1 h-3 w-3" />
+                          প্রত্যাখ্যাত
                         </Badge>
                       )}
                     </div>

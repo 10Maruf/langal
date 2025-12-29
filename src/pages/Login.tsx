@@ -62,6 +62,20 @@ const Login = () => {
                 if (response.data.success) {
                     const { user, token } = response.data.data;
 
+                    // Check verification status first - BEFORE setting auth user
+                    const verificationStatus = user.profile?.verification_status || 'pending';
+
+                    // Block rejected users from logging in
+                    if (verificationStatus === 'rejected') {
+                        toast({
+                            title: "প্রোফাইল প্রত্যাখ্যাত",
+                            description: "আপনার প্রোফাইল প্রত্যাখ্যাত হয়েছে। সঠিক তথ্য দিয়ে পুনরায় রেজিস্ট্রেশনের জন্য অনুগ্রহ করে নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।",
+                            variant: "destructive",
+                        });
+                        setIsLoading(false);
+                        return;
+                    }
+
                     // Map backend user to frontend user format
                     const authUser = {
                         id: user.user_id.toString(),
@@ -74,6 +88,7 @@ const Login = () => {
                         location: user.profile?.address || 'Bangladesh',
                         location_info: user.location_info || undefined,
                         businessName: user.customer_business?.business_name,
+                        verificationStatus: verificationStatus
                     };
 
                     // Set user in context

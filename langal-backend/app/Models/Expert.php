@@ -19,6 +19,8 @@ class Expert extends Model
         'experience_years',
         'institution',
         'consultation_fee',
+        'rating',
+        'total_consultations',
         'is_government_approved',
         'license_number',
         'certification_document',
@@ -29,6 +31,8 @@ class Expert extends Model
         return [
             'experience_years' => 'integer',
             'consultation_fee' => 'decimal:2',
+            'rating' => 'float',
+            'total_consultations' => 'integer',
             'is_government_approved' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

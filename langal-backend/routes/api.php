@@ -155,6 +155,7 @@ Route::prefix('data-operator')->group(function () {
         // Profile verification routes
         Route::get('/farmers', [DataOperatorAuthController::class, 'getFarmers']);
         Route::get('/customers', [DataOperatorAuthController::class, 'getCustomers']);
+        Route::get('/experts', [DataOperatorAuthController::class, 'getExperts']);
         Route::post('/verify-profile', [DataOperatorAuthController::class, 'verifyProfile']);
 
         // Field data collection routes

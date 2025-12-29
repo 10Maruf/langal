@@ -61,13 +61,27 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
             }
 
             if (response.ok && data?.success) {
+                // Check verification status first
+                const backendUser = data.data.user;
+                const verificationStatus = backendUser.profile?.verification_status || 'pending';
+
+                // Block rejected users from logging in
+                if (verificationStatus === 'rejected') {
+                    toast({
+                        title: "প্রোফাইল প্রত্যাখ্যাত",
+                        description: "আপনার প্রোফাইল প্রত্যাখ্যাত হয়েছে। সঠিক তথ্য দিয়ে পুনরায় রেজিস্ট্রেশনের জন্য অনুগ্রহ করে নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।",
+                        variant: "destructive",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Store authentication data
                 if (data.data?.token) {
                     localStorage.setItem('auth_token', data.data.token);
                     localStorage.setItem('user_data', JSON.stringify(data.data.user));
 
                     // Set user in AuthContext with actual backend data
-                    const backendUser = data.data.user;
                     setAuthUser({
                         id: backendUser.user_id?.toString() || '',
                         user_id: backendUser.user_id,
@@ -78,7 +92,8 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                         profilePhoto: backendUser.profile?.profile_photo_url_full,
                         nidNumber: backendUser.profile?.nid_number,
                         location: backendUser.profile?.address,
-                        expertProfile: backendUser.expert || undefined
+                        expertProfile: backendUser.expert || undefined,
+                        verificationStatus: verificationStatus
                     }, data.data.token);
                 }
 

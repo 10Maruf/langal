@@ -20,7 +20,11 @@ import {
     FileText,
     Loader2,
     X,
-    IdCard
+    IdCard,
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    XCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -327,12 +331,34 @@ const CustomerProfile = () => {
 
     const getVerificationBadge = () => {
         switch (profileData.verificationStatus) {
-            case 'verified':
-                return <Badge className="bg-green-100 text-green-800">✓ যাচাইকৃত</Badge>;
+            case 'approved':
+                return (
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        যাচাইকৃত
+                    </Badge>
+                );
             case 'rejected':
-                return <Badge variant="destructive">প্রত্যাখ্যাত</Badge>;
+                return (
+                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                        <XCircle className="mr-1 h-3 w-3" />
+                        প্রত্যাখ্যাত
+                    </Badge>
+                );
+            case 'pending':
+                return (
+                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                        <Clock className="mr-1 h-3 w-3" />
+                        মুলতবি
+                    </Badge>
+                );
             default:
-                return <Badge variant="secondary">যাচাই অপেক্ষমান</Badge>;
+                return (
+                    <Badge variant="secondary">
+                        <Clock className="mr-1 h-3 w-3" />
+                        যাচাই অপেক্ষমান
+                    </Badge>
+                );
         }
     };
 
@@ -377,6 +403,25 @@ const CustomerProfile = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Rejection Alert */}
+                    {profileData.verificationStatus === 'rejected' && (
+                        <div className="lg:col-span-3 mb-4">
+                            <Card className="border-red-200 bg-red-50">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-start">
+                                        <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="text-sm font-medium text-red-800">প্রোফাইল প্রত্যাখ্যাত</h4>
+                                            <p className="text-sm text-red-700 mt-1">
+                                                আপনার প্রোফাইল প্রত্যাখ্যাত হয়েছে। সঠিক তথ্য দিয়ে প্রোফাইল সংশোধনের জন্য অনুগ্রহ করে নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
                     {/* Profile Card - Left Side */}
                     <div className="lg:col-span-1">
                         <Card>
