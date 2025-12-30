@@ -28,27 +28,20 @@ class SendCropReminders extends Command
      */
     public function handle()
     {
-        $this->info('Starting crop reminder notifications...');
+        $this->info('Starting crop reminder notifications (Optimized)...');
 
-        // Get all active crops
-        $activeCrops = FarmerSelectedCrop::where('status', 'active')
-            ->whereNotNull('cultivation_plan')
-            ->whereNotNull('start_date')
+        // 1. Process crops that are due for notification
+        $dueCrops = FarmerSelectedCrop::where('status', 'active')
+            ->where('notifications_enabled', true)
+            ->where('next_notification_date', '<=', now()->toDateString())
             ->get();
 
         $notificationsSent = 0;
 
-        foreach ($activeCrops as $crop) {
+        foreach ($dueCrops as $crop) {
             try {
-                // Check for missed notifications first
-                $missedCount = $this->sendMissedReminders($crop);
-                $notificationsSent += $missedCount;
-                
-                // Then send today's notification
-                $sent = $this->checkAndSendReminder($crop);
-                if ($sent) {
-                    $notificationsSent++;
-                }
+                $this->processCropNotification($crop);
+                $notificationsSent++;
             } catch (\Exception $e) {
                 Log::error('Failed to send crop reminder', [
                     'crop_id' => $crop->selection_id,
@@ -57,119 +50,132 @@ class SendCropReminders extends Command
             }
         }
 
-        $this->info("Sent {$notificationsSent} notifications.");
+        // 2. Self-healing: Initialize next_notification_date for legacy records
+        $legacyCrops = FarmerSelectedCrop::where('status', 'active')
+            ->where('notifications_enabled', true)
+            ->whereNull('next_notification_date')
+            ->whereNotNull('cultivation_plan')
+            ->whereNotNull('start_date')
+            ->get();
+
+        $initializedCount = 0;
+        foreach ($legacyCrops as $crop) {
+            if ($this->initializeNextNotificationDate($crop)) {
+                $initializedCount++;
+            }
+        }
+
+        $this->info("Sent {$notificationsSent} notifications. Initialized {$initializedCount} legacy records.");
         return Command::SUCCESS;
     }
 
-    private function sendMissedReminders(FarmerSelectedCrop $crop): int
+    private function processCropNotification(FarmerSelectedCrop $crop)
     {
-        if (!$crop->cultivation_plan || !is_array($crop->cultivation_plan)) {
-            return 0;
-        }
-
         $startDate = new \DateTime($crop->start_date);
         $today = new \DateTime();
-        $lastNotification = $crop->last_notification_at 
-            ? new \DateTime($crop->last_notification_at) 
-            : null;
-        
-        // If last notification was sent today, skip missed check
-        if ($lastNotification && $lastNotification->format('Y-m-d') === $today->format('Y-m-d')) {
-            return 0;
-        }
+        $today->setTime(0, 0, 0); // Normalize to start of day
 
-        $elapsedDays = $startDate->diff($today)->days;
-        $missedCount = 0;
+        // Start checking from the scheduled date
+        // If next_notification_date is null, default to today (safety fallback)
+        $checkDate = $crop->next_notification_date 
+            ? new \DateTime($crop->next_notification_date) 
+            : (clone $today);
+            
+        $checkDate->setTime(0, 0, 0);
 
-        // Get the last notification day
-        $lastNotificationDay = $lastNotification 
-            ? $startDate->diff($lastNotification)->days 
-            : -1;
+        // Safety break to prevent infinite loops or spamming too many notifications
+        $loopCount = 0;
+        $maxLoops = 10; 
 
-        // Check each phase between last notification and today
-        foreach ($crop->cultivation_plan as $phase) {
-            if (!isset($phase['days'])) continue;
+        // Loop to catch up on all missed notifications up to today
+        while ($checkDate <= $today && $loopCount < $maxLoops) {
+            $loopCount++;
+            
+            // Calculate which "Day X" this date corresponds to (Day 1 = Start Date)
+            $dayDiff = $startDate->diff($checkDate)->days;
+            $currentDayNum = $dayDiff + 1; 
 
-            if (preg_match('/Day (\d+)/', $phase['days'], $matches)) {
-                $phaseDay = (int) $matches[1];
+            $phaseFound = null;
+            $nextPhaseDate = null;
+            $minDiffToNext = 9999;
 
-                // If this phase was between last notification and today, send it
-                if ($phaseDay > $lastNotificationDay && $phaseDay <= $elapsedDays) {
-                    // Check if already sent
-                    $alreadySent = DB::table('notifications')
-                        ->where('recipient_id', $crop->farmer_id)
-                        ->where('notification_type', 'crop_reminder')
-                        ->where('related_entity_id', (string) $crop->selection_id)
-                        ->where('message', 'like', '%' . $phase['phase'] . '%')
-                        ->exists();
+            if (is_array($crop->cultivation_plan)) {
+                foreach ($crop->cultivation_plan as $phase) {
+                    if (!isset($phase['days'])) continue;
 
-                    if (!$alreadySent) {
-                        $this->sendNotification($crop, $phase, $phaseDay, true, true);
-                        $missedCount++;
-                        $this->line("📋 Recovered missed notification for Day {$phaseDay}");
+                    if (preg_match('/Day (\d+)/i', $phase['days'], $matches)) {
+                        $phaseDay = (int)$matches[1];
+                        
+                        // Check if this phase matches the date we are processing
+                        if ($phaseDay == $currentDayNum) {
+                            $phaseFound = $phase;
+                        }
+                        
+                        // Find the NEXT phase after the current check date
+                        if ($phaseDay > $currentDayNum) {
+                            $diff = $phaseDay - $currentDayNum;
+                            if ($diff < $minDiffToNext) {
+                                $minDiffToNext = $diff;
+                                $nextPhaseDate = (clone $checkDate)->modify("+{$diff} days");
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        return $missedCount;
+            // Send notification if a phase was scheduled for this date
+            if ($phaseFound) {
+                $isMissed = $checkDate < $today;
+                $this->sendNotification($crop, $phaseFound, $currentDayNum, !$isMissed, $isMissed);
+            }
+
+            // Prepare for next iteration
+            if ($nextPhaseDate) {
+                $checkDate = $nextPhaseDate;
+                $crop->next_notification_date = $checkDate;
+                $crop->save(); // Save progress step-by-step
+            } else {
+                // No more future phases found, mark as completed
+                $crop->next_notification_date = null;
+                $crop->save();
+                break; 
+            }
+        }
     }
 
-    private function checkAndSendReminder(FarmerSelectedCrop $crop): bool
+    private function initializeNextNotificationDate(FarmerSelectedCrop $crop): bool
     {
-        if (!$crop->cultivation_plan || !is_array($crop->cultivation_plan)) {
-            return false;
-        }
-
         $startDate = new \DateTime($crop->start_date);
         $today = new \DateTime();
         $elapsedDays = $startDate->diff($today)->days;
+        
+        $nextDate = null;
+        $minDiff = 9999;
 
-        // Check each phase in cultivation plan
-        foreach ($crop->cultivation_plan as $phase) {
-            if (!isset($phase['days'])) continue;
-
-            // Parse day range (e.g., "Day 10-20", "Day 1-30")
-            if (preg_match('/Day (\d+)/', $phase['days'], $matches)) {
-                $phaseDay = (int) $matches[1];
-
-                // Send notification 1 day before the phase starts
-                $reminderDay = $phaseDay - 1;
-
-                if ($elapsedDays == $reminderDay) {
-                    // Check if notification already sent for this phase
-                    $alreadySent = DB::table('notifications')
-                        ->where('recipient_id', $crop->farmer_id)
-                        ->where('notification_type', 'crop_reminder')
-                        ->where('related_entity_id', (string) $crop->selection_id)
-                        ->where('message', 'like', '%' . $phase['phase'] . '%')
-                        ->where('created_at', '>=', $today->format('Y-m-d'))
-                        ->exists();
-
-                    if (!$alreadySent) {
-                        $this->sendNotification($crop, $phase, $phaseDay);
-                        return true;
-                    }
-                }
-
-                // Send notification on the phase day itself
-                if ($elapsedDays == $phaseDay) {
-                    $alreadySent = DB::table('notifications')
-                        ->where('recipient_id', $crop->farmer_id)
-                        ->where('notification_type', 'crop_reminder')
-                        ->where('related_entity_id', (string) $crop->selection_id)
-                        ->where('message', 'like', '%আজ ' . $phase['phase'] . '%')
-                        ->where('created_at', '>=', $today->format('Y-m-d'))
-                        ->exists();
-
-                    if (!$alreadySent) {
-                        $this->sendNotification($crop, $phase, $phaseDay, true);
-                        return true;
+        if (is_array($crop->cultivation_plan)) {
+            foreach ($crop->cultivation_plan as $phase) {
+                if (!isset($phase['days'])) continue;
+                if (preg_match('/Day (\d+)/i', $phase['days'], $matches)) {
+                    $phaseDay = (int)$matches[1];
+                    
+                    // Find the first phase that is in the future or today
+                    if ($phaseDay >= $elapsedDays) {
+                        $diff = $phaseDay - $elapsedDays;
+                        if ($diff < $minDiff) {
+                            $minDiff = $diff;
+                            $nextDate = (clone $today)->modify("+{$diff} days");
+                        }
                     }
                 }
             }
         }
 
+        if ($nextDate) {
+            $crop->next_notification_date = $nextDate;
+            $crop->save();
+            return true;
+        }
+        
         return false;
     }
 

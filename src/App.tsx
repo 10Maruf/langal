@@ -43,11 +43,39 @@ import AgriculturalNews from "./pages/AgriculturalNews";
 import FarmerDashboard from "./pages/FarmerDashboard";
 import CentralMarketplace from "./pages/CentralMarketplace";
 import TTSDemo from "./pages/TTSDemo";
+import { syncOfflineSelections } from "@/services/recommendationService";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 // Get the base path for GitHub Pages
 const basename = import.meta.env.PROD ? "/langal-prototype" : "";
+
+const OfflineSyncHandler = () => {
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const handleSync = async () => {
+      if (isAuthenticated && navigator.onLine) {
+        const syncedCount = await syncOfflineSelections();
+        if (syncedCount && syncedCount > 0) {
+          toast({
+            title: "সিঙ্ক সম্পন্ন",
+            description: `${syncedCount}টি অফলাইন ডাটা সার্ভারে সেভ হয়েছে।`,
+          });
+        }
+      }
+    };
+
+    handleSync();
+    window.addEventListener('online', handleSync);
+    return () => window.removeEventListener('online', handleSync);
+  }, [isAuthenticated, toast]);
+
+  return null;
+};
 
 const App = () => {
   const [showIntro, setShowIntro] = useState(true);
@@ -75,10 +103,11 @@ const App = () => {
           <NotificationProvider>
             <Toaster />
             <Sonner />
+            <OfflineSyncHandler />
             {showIntro && !hasShownIntro && (
               <IntroAnimation onComplete={handleIntroComplete} duration={3500} />
             )}
-            <BrowserRouter 
+            <BrowserRouter
               basename={basename}
               future={{
                 v7_startTransition: true,

@@ -169,8 +169,38 @@ const FarmerDashboard = () => {
             }
         };
 
+        // Load offline crops
+        const loadOfflineCrops = () => {
+            try {
+                const offlineData = localStorage.getItem('offline_crop_selections');
+                if (offlineData) {
+                    const parsed = JSON.parse(offlineData);
+                    if (Array.isArray(parsed)) {
+                        // Transform offline data to match display format
+                        const offlineCrops = parsed.flatMap((selection: any) =>
+                            selection.crops.map((crop: any) => ({
+                                selection_id: `offline-${Date.now()}-${Math.random()}`,
+                                crop_name_bn: crop.name_bn,
+                                status: 'offline',
+                                image_url: crop.image?.url,
+                                start_date: selection.start_date || new Date().toISOString(),
+                                progress_percentage: 0,
+                                is_offline: true
+                            }))
+                        );
+
+                        setSelectedCrops(prev => [...prev, ...offlineCrops]);
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading offline crops:", e);
+            }
+        };
+
         if (user) {
-            fetchSelectedCrops();
+            fetchSelectedCrops().then(() => {
+                loadOfflineCrops();
+            });
         }
     }, [user]);
 
@@ -549,10 +579,11 @@ const FarmerDashboard = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            <Badge variant="outline" className="mt-2 text-[10px] w-full justify-center">
-                                                {crop.status === 'planned' ? 'পরিকল্পিত' :
-                                                    crop.status === 'active' ? 'চলমান' :
-                                                        crop.status === 'completed' ? 'সম্পন্ন' : 'বাতিল'}
+                                            <Badge variant="outline" className={`mt-2 text-[10px] w-full justify-center ${crop.is_offline ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : ''}`}>
+                                                {crop.is_offline ? 'অফলাইন (সিঙ্ক বাকি)' :
+                                                    crop.status === 'planned' ? 'পরিকল্পিত' :
+                                                        crop.status === 'active' ? 'চলমান' :
+                                                            crop.status === 'completed' ? 'সম্পন্ন' : 'বাতিল'}
                                             </Badge>
                                         </CardContent>
                                     </Card>

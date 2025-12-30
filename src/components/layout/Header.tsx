@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Search, LogOut, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Bell, Search, LogOut, CheckCircle, XCircle, Clock, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,24 +33,15 @@ const getProfilePhotoUrl = (photoPath: string | undefined): string | undefined =
 
 export const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // Get notifications for all authenticated users
-  let unreadCount = 0;
-  let notifications: any[] = [];
-  let markAsRead: ((id: number) => void) | undefined;
-
-  if (isAuthenticated) {
-    try {
-      const notificationContext = useNotifications();
-      unreadCount = notificationContext.unreadCount;
-      notifications = notificationContext.notifications;
-      markAsRead = notificationContext.markAsRead;
-    } catch (error) {
-      // NotificationContext not available
-      unreadCount = 0;
-      notifications = [];
-    }
-  }
+  const {
+    notifications = [],
+    unreadCount = 0,
+    markAsRead,
+    markAllAsRead
+  } = isAuthenticated ? useNotifications() : {} as any;
 
   const handleLogout = () => {
     logout();
@@ -103,11 +95,27 @@ export const Header = () => {
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel className="flex items-center justify-between">
                     <span>নোটিফিকেশন</span>
-                    {unreadCount > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {unreadCount} নতুন
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {unreadCount} নতুন
+                        </Badge>
+                      )}
+                      {unreadCount > 0 && markAllAsRead && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          title="সবগুলো পঠিত হিসেবে চিহ্নিত করুন"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            markAllAsRead();
+                          }}
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                    </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="max-h-[400px] overflow-y-auto">
@@ -116,7 +124,7 @@ export const Header = () => {
                         কোন নোটিফিকেশন নেই
                       </div>
                     ) : (
-                      notifications.slice(0, 10).map((notification) => (
+                      notifications.slice(0, visibleCount).map((notification: any) => (
                         <DropdownMenuItem
                           key={notification.id}
                           className={`flex flex-col items-start p-3 cursor-pointer ${!notification.read ? 'bg-blue-50 hover:bg-blue-100' : ''
@@ -134,10 +142,16 @@ export const Header = () => {
                       ))
                     )}
                   </div>
-                  {notifications.length > 10 && (
+                  {notifications.length > visibleCount && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-center text-xs text-primary">
+                      <DropdownMenuItem
+                        className="text-center text-xs text-primary cursor-pointer justify-center"
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setVisibleCount(prev => prev + 5);
+                        }}
+                      >
                         আরও দেখুন...
                       </DropdownMenuItem>
                     </>
