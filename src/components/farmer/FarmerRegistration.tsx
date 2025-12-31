@@ -76,7 +76,11 @@ interface FarmerFormData {
 
 type RegistrationStep = 'initial' | 'documents' | 'form' | 'otp' | 'success';
 
-const FarmerRegistration = () => {
+interface FarmerRegistrationProps {
+    onBack?: () => void;
+}
+
+const FarmerRegistration = ({ onBack }: FarmerRegistrationProps) => {
     const [currentStep, setCurrentStep] = useState<RegistrationStep>('initial');
     const [isLoading, setIsLoading] = useState(false);
     const [otp, setOtp] = useState('');
@@ -683,6 +687,16 @@ const FarmerRegistration = () => {
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                     )}
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onBack ? onBack() : navigate('/register')}
+                    className="w-full"
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    ফিরে যান
                 </Button>
             </form>
         </div>

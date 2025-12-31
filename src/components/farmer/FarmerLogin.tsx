@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Phone, CheckCircle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAssetPath } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type LoginStep = 'phone' | 'otp';
@@ -324,16 +325,6 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                         </>
                     )}
                 </Button>
-
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onBackToMainLogin}
-                    className="w-full"
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    অন্য ধরনের লগইন
-                </Button>
             </form>
         </div>
     );
@@ -409,8 +400,26 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     );
 
     return (
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md backdrop-blur-md bg-white/80 border border-white/50 shadow-xl">
             <CardHeader className="text-center">
+                <div className="flex justify-start mb-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onBackToMainLogin}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        ফিরে যান
+                    </Button>
+                </div>
+                <div className="flex flex-col items-center justify-center mb-4">
+                    <img src={getAssetPath("/img/Asset 3.png")} alt="logo" className="h-16 w-16 mb-2" />
+                    <h1 className="text-2xl font-bold text-primary mb-2">লাঙল</h1>
+                    <p className="text-sm text-gray-700 font-medium px-3 py-1 bg-green-50 rounded-md border-l-4 border-green-500">
+                        কৃষকের ডিজিটাল হাতিয়ার
+                    </p>
+                </div>
                 <CardTitle className="text-xl text-green-600">কৃষক লগইন</CardTitle>
                 <CardDescription>
                     {currentStep === 'phone'
