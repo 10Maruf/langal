@@ -5,19 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Phone, ArrowLeft, Lock } from "lucide-react";
+import { Loader2, Phone, ArrowLeft, Lock, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAssetPath } from "@/lib/utils";
-import ExpertForgotPassword from "./ExpertForgotPassword";
+import api from "@/services/api";
+import CustomerForgotPassword from "./CustomerForgotPassword";
 
-interface ExpertLoginProps {
+interface CustomerLoginProps {
     onBackToMainLogin: () => void;
 }
 
-// API Base URL
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000/api';
-
-const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
+const CustomerLogin = ({ onBackToMainLogin }: CustomerLoginProps) => {
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +31,7 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
         if (!phone || !password) {
             toast({
                 title: "ত্রুটি",
-                description: "মোবাইল নম্বর ও পাসওয়ার্ড দিন",
+                description: "অনুগ্রহ করে মোবাইল নম্বর ও পাসওয়ার্ড দিন",
                 variant: "destructive",
             });
             return;
@@ -42,29 +40,16 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
         setIsLoading(true);
 
         try {
-            // API call to login
-            const response = await fetch(`${API_BASE}/expert/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    phone,
-                    password
-                }),
+            const response = await api.post('/customer/login', {
+                phone: phone,
+                password: password,
             });
 
-            let data: { success?: boolean; data?: { token?: string; user?: any }; message?: string };
-            try {
-                data = await response.json();
-            } catch {
-                throw new Error('Invalid server response');
-            }
+            if (response.data.success) {
+                const { user, token } = response.data.data;
 
-            if (response.ok && data?.success) {
-                // Check verification status first
-                const backendUser = data.data.user;
-                const verificationStatus = backendUser.profile?.verification_status || 'pending';
+                // Check verification status first - BEFORE setting auth user
+                const verificationStatus = user.profile?.verification_status || 'pending';
 
                 // Block rejected users from logging in
                 if (verificationStatus === 'rejected') {
@@ -77,67 +62,37 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                     return;
                 }
 
-                // Store authentication data
-                if (data.data?.token) {
-                    localStorage.setItem('auth_token', data.data.token);
-                    localStorage.setItem('user_data', JSON.stringify(data.data.user));
+                // Map backend user to frontend user format
+                const authUser = {
+                    id: user.user_id.toString(),
+                    user_id: user.user_id,
+                    name: user.profile?.full_name || user.phone,
+                    type: 'customer' as const,
+                    email: user.email || '',
+                    phone: user.phone,
+                    profilePhoto: user.profile?.profile_photo_url_full,
+                    location: user.profile?.address || 'Bangladesh',
+                    location_info: user.location_info || undefined,
+                    businessName: user.customer_business?.business_name,
+                    verificationStatus: verificationStatus
+                };
 
-                    // Set user in AuthContext with actual backend data
-                    setAuthUser({
-                        id: backendUser.user_id?.toString() || '',
-                        user_id: backendUser.user_id,
-                        name: backendUser.profile?.full_name || backendUser.full_name || 'বিশেষজ্ঞ',
-                        type: 'expert',
-                        email: backendUser.email || '',
-                        phone: backendUser.phone || phone,
-                        profilePhoto: backendUser.profile?.profile_photo_url_full,
-                        nidNumber: backendUser.profile?.nid_number,
-                        location: backendUser.profile?.address,
-                        expertProfile: backendUser.expert || undefined,
-                        verificationStatus: verificationStatus
-                    }, data.data.token);
-                }
+                // Set user in context
+                setAuthUser(authUser, token);
 
                 toast({
                     title: "সফল",
                     description: "সফলভাবে লগইন হয়েছে",
                 });
 
-                // Redirect to expert dashboard
-                navigate('/consultant-dashboard');
+                navigate('/customer-dashboard');
             } else {
-                const backendMsg = data?.message;
-                if (response.status === 404) {
-                    toast({
-                        title: 'অ্যাকাউন্ট পাওয়া যায়নি',
-                        description: 'এই নম্বরে কোনো বিশেষজ্ঞ নিবন্ধিত নেই।',
-                        variant: 'destructive'
-                    });
-                } else if (response.status === 401) {
-                    toast({
-                        title: 'ভুল পাসওয়ার্ড',
-                        description: 'আপনার দেওয়া পাসওয়ার্ড সঠিক নয়।',
-                        variant: 'destructive'
-                    });
-                } else if (response.status === 403) {
-                    toast({
-                        title: 'অ্যাকাউন্ট নিষ্ক্রিয়',
-                        description: backendMsg || 'আপনার অ্যাকাউন্ট নিষ্ক্রিয়। সহায়তা নিন।',
-                        variant: 'destructive'
-                    });
-                } else {
-                    toast({
-                        title: 'লগইন ব্যর্থ',
-                        description: backendMsg || 'লগইন করা যায়নি।',
-                        variant: 'destructive'
-                    });
-                }
-                return;
+                throw new Error(response.data.message);
             }
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "ত্রুটি",
-                description: (error as Error).message || "লগইনে সমস্যা হয়েছে",
+                description: error.response?.data?.message || "লগইনে সমস্যা হয়েছে",
                 variant: "destructive",
             });
         } finally {
@@ -145,9 +100,8 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
         }
     };
 
-    // Show forgot password component
     if (showForgotPassword) {
-        return <ExpertForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
+        return <CustomerForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
     }
 
     return (
@@ -158,7 +112,7 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                         variant="ghost"
                         size="sm"
                         onClick={onBackToMainLogin}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         ফিরে যান
@@ -167,11 +121,11 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                 <div className="flex flex-col items-center justify-center mb-4">
                     <img src={getAssetPath("/img/Asset 3.png")} alt="logo" className="h-16 w-16 mb-2" />
                     <h1 className="text-2xl font-bold text-primary mb-2">লাঙল</h1>
-                    <p className="text-sm text-gray-700 font-medium px-3 py-1 bg-blue-50 rounded-md border-l-4 border-blue-500">
+                    <p className="text-sm text-gray-700 font-medium px-3 py-1 bg-purple-50 rounded-md border-l-4 border-purple-500">
                         কৃষকের ডিজিটাল হাতিয়ার
                     </p>
                 </div>
-                <CardTitle className="text-xl text-blue-600">বিশেষজ্ঞ লগইন</CardTitle>
+                <CardTitle className="text-xl text-purple-800">ক্রেতা/ব্যবসায়ী লগইন</CardTitle>
                 <CardDescription>
                     মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে লগইন করুন
                 </CardDescription>
@@ -180,28 +134,28 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
             <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="phone">মোবাইল নম্বর *</Label>
+                        <Label htmlFor="phone">মোবাইল নম্বর</Label>
                         <div className="relative">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <Input
                                 id="phone"
                                 type="tel"
                                 placeholder="০১XXXXXXXXX"
+                                className="pl-10 border-purple-200 focus:border-purple-500"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 required
-                                className="pl-10"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <Label htmlFor="password">পাসওয়ার্ড *</Label>
+                            <Label htmlFor="password">পাসওয়ার্ড</Label>
                             <Button
                                 type="button"
                                 variant="link"
-                                className="p-0 h-auto text-sm text-blue-600 hover:text-blue-700"
+                                className="p-0 h-auto text-sm text-purple-600 hover:text-purple-700"
                                 onClick={() => setShowForgotPassword(true)}
                             >
                                 পাসওয়ার্ড ভুলে গেছেন?
@@ -212,20 +166,19 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                             <Input
                                 id="password"
                                 type="password"
-                                placeholder="আপনার পাসওয়ার্ড"
+                                placeholder="আপনার পাসওয়ার্ড দিন"
+                                className="pl-10 border-purple-200 focus:border-purple-500"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="pl-10"
                             />
                         </div>
                     </div>
 
                     <Button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        className="w-full bg-purple-600 hover:bg-purple-700"
                         disabled={isLoading}
-                        size="lg"
                     >
                         {isLoading ? (
                             <>
@@ -233,13 +186,31 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                                 লগইন হচ্ছে...
                             </>
                         ) : (
-                            'লগইন করুন'
+                            <>
+                                <Users className="mr-2 h-4 w-4" />
+                                ক্রেতা/ব্যবসায়ী হিসেবে লগইন
+                            </>
                         )}
                     </Button>
+
+                    <div className="text-center text-sm text-gray-600 pt-2">
+                        নতুন ব্যবহারকারী?{" "}
+                        <Button
+                            type="button"
+                            variant="link"
+                            className="p-0 text-purple-600 hover:text-purple-700 font-medium"
+                            onClick={() => {
+                                onBackToMainLogin();
+                                // Navigate will happen from parent
+                            }}
+                        >
+                            নিবন্ধন করুন
+                        </Button>
+                    </div>
                 </form>
             </CardContent>
         </Card>
     );
 };
 
-export default ExpertLogin;
+export default CustomerLogin;
