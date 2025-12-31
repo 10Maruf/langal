@@ -175,18 +175,18 @@ export const Header = () => {
                     </AvatarFallback>
                   </Avatar>
                   {user?.verificationStatus === 'approved' && (
-                    <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full p-0.5 ring-2 ring-background">
-                      <CheckCircle className="h-3 w-3 text-white" />
+                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full">
+                      <CheckCircle className="h-[1px] w-[1px] text-white" />
                     </div>
                   )}
                   {user?.verificationStatus === 'pending' && (
-                    <div className="absolute -bottom-0.5 -right-0.5 bg-yellow-500 rounded-full p-0.5 ring-2 ring-background">
-                      <Clock className="h-3 w-3 text-white" />
+                    <div className="absolute bottom-0 right-0 bg-yellow-500 rounded-full">
+                      <Clock className="h-[1px] w-[1px] text-white" />
                     </div>
                   )}
                   {user?.verificationStatus === 'rejected' && (
-                    <div className="absolute -bottom-0.5 -right-0.5 bg-red-500 rounded-full p-0.5 ring-2 ring-background">
-                      <XCircle className="h-3 w-3 text-white" />
+                    <div className="absolute bottom-0 right-0 bg-red-500 rounded-full">
+                      <XCircle className="h-[1px] w-[1px] text-white" />
                     </div>
                   )}
                 </Button>
