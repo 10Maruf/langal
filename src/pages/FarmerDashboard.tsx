@@ -17,9 +17,11 @@ import {
     Wind,
     Loader2,
     Sun,
+    Moon,
     Cloud,
     CloudRain,
     CloudSun,
+    CloudMoon,
     ChevronRight,
     Bell,
     Sprout,
@@ -97,12 +99,33 @@ const FarmerDashboard = () => {
         return `${API_BASE_URL}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
     };
 
-    // Weather icon helper
+    // রাত কিনা চেক করার হেল্পার
+    const isNightTime = (): boolean => {
+        const hour = new Date().getHours();
+        return hour < 6 || hour >= 18; // সন্ধ্যা ৬টা থেকে সকাল ৬টা পর্যন্ত রাত
+    };
+
+    // Weather icon helper - দিন/রাত অনুযায়ী
     const getWeatherIcon = (condition: string) => {
         const c = condition.toLowerCase();
-        if (c.includes('পরিষ্কার') || c.includes('clear')) return <Sun className="h-10 w-10 text-amber-500" />;
+        const isNight = isNightTime();
+
+        if (c.includes('পরিষ্কার') || c.includes('clear')) {
+            return isNight
+                ? <Moon className="h-10 w-10 text-indigo-400" />
+                : <Sun className="h-10 w-10 text-amber-500" />;
+        }
         if (c.includes('বৃষ্টি') || c.includes('rain')) return <CloudRain className="h-10 w-10 text-blue-500" />;
-        if (c.includes('মেঘ') && c.includes('হালকা')) return <CloudSun className="h-10 w-10 text-gray-400" />;
+        if (c.includes('মেঘ') && c.includes('হালকা')) {
+            return isNight
+                ? <CloudMoon className="h-10 w-10 text-slate-400" />
+                : <CloudSun className="h-10 w-10 text-gray-400" />;
+        }
+        if (c.includes('মেঘ')) {
+            return isNight
+                ? <CloudMoon className="h-10 w-10 text-slate-400" />
+                : <CloudSun className="h-10 w-10 text-gray-400" />;
+        }
         return <Cloud className="h-10 w-10 text-gray-400" />;
     };
 

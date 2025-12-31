@@ -24,11 +24,14 @@ import {
     Mic,
     Wind,
     Sun,
+    Moon,
+    MoonStar,
     Bot,
     Thermometer,
     CloudRain,
     Cloud,
     CloudSun,
+    CloudMoon,
     Cloudy,
     CloudSnow,
     CloudLightning,
@@ -47,12 +50,21 @@ import {
     CompleteWeatherData
 } from "@/services/weatherService";
 
-// আবহাওয়া আইকন ম্যাপিং
-const getWeatherIcon = (condition: string, size: string = "h-8 w-8") => {
+// রাত কিনা চেক করার হেল্পার ফাংশন
+const isNightTime = (): boolean => {
+    const hour = new Date().getHours();
+    return hour < 6 || hour >= 18; // সন্ধ্যা ৬টা থেকে সকাল ৬টা পর্যন্ত রাত
+};
+
+// আবহাওয়া আইকন ম্যাপিং - দিন/রাত অনুযায়ী
+const getWeatherIcon = (condition: string, size: string = "h-8 w-8", forceNight?: boolean) => {
     const conditionLower = condition.toLowerCase();
+    const isNight = forceNight !== undefined ? forceNight : isNightTime();
 
     if (conditionLower.includes('পরিষ্কার') || conditionLower.includes('clear')) {
-        return <Sun className={`${size} text-amber-500`} />;
+        return isNight
+            ? <Moon className={`${size} text-indigo-400`} />
+            : <Sun className={`${size} text-amber-500`} />;
     }
     if (conditionLower.includes('বজ্র') || conditionLower.includes('thunder')) {
         return <CloudLightning className={`${size} text-purple-500`} />;
@@ -70,7 +82,9 @@ const getWeatherIcon = (condition: string, size: string = "h-8 w-8") => {
         return <Cloudy className={`${size} text-gray-500`} />;
     }
     if (conditionLower.includes('মেঘ') || conditionLower.includes('cloud')) {
-        return <CloudSun className={`${size} text-gray-400`} />;
+        return isNight
+            ? <CloudMoon className={`${size} text-slate-400`} />
+            : <CloudSun className={`${size} text-gray-400`} />;
     }
 
     return <Cloud className={`${size} text-gray-400`} />;

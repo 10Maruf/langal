@@ -300,11 +300,20 @@ const WeatherPlanning = () => {
         return conditionMap[condition.toLowerCase()] || "আংশিক মেঘলা";
       };
 
-      // Get weather icon
-      const getWeatherIcon = (condition: string): string => {
-        const iconMap: Record<string, string> = {
+      // রাত কিনা চেক করার হেল্পার
+      const isNightTime = (): boolean => {
+        const hour = new Date().getHours();
+        return hour < 6 || hour >= 18; // সন্ধ্যা ৬টা থেকে সকাল ৬টা পর্যন্ত রাত
+      };
+
+      // Get weather icon - দিন/রাত অনুযায়ী
+      const getWeatherIcon = (condition: string, isNight?: boolean): string => {
+        const night = isNight !== undefined ? isNight : isNightTime();
+
+        // দিনের আইকন
+        const dayIconMap: Record<string, string> = {
           "clear": "☀️",
-          "clouds": "☁️",
+          "clouds": "⛅",
           "rain": "🌧️",
           "drizzle": "🌦️",
           "thunderstorm": "⛈️",
@@ -313,7 +322,22 @@ const WeatherPlanning = () => {
           "fog": "🌫️",
           "haze": "🌫️"
         };
-        return iconMap[condition.toLowerCase()] || "⛅";
+
+        // রাতের আইকন
+        const nightIconMap: Record<string, string> = {
+          "clear": "🌙",
+          "clouds": "☁️",
+          "rain": "🌧️",
+          "drizzle": "🌧️",
+          "thunderstorm": "⛈️",
+          "snow": "🌨️",
+          "mist": "🌫️",
+          "fog": "🌫️",
+          "haze": "🌫️"
+        };
+
+        const iconMap = night ? nightIconMap : dayIconMap;
+        return iconMap[condition.toLowerCase()] || (night ? "🌙" : "⛅");
       };
 
       // Process 7-day forecast (OpenWeatherMap free tier gives 5-day forecast)
