@@ -582,11 +582,8 @@ class MarketplaceController extends Controller
         
         // Add seller info with avatar
         if ($listing->seller && $listing->seller->profile) {
-            // Generate full profile photo URL
-            $profilePhotoUrl = null;
-            if ($listing->seller->profile->profile_photo_url) {
-                $profilePhotoUrl = url('storage/' . $listing->seller->profile->profile_photo_url);
-            }
+            // Use the accessor we fixed in UserProfile model
+            $profilePhotoUrl = $listing->seller->profile->profile_photo_url_full;
             
             $data['seller_info'] = [
                 'user_id' => $listing->seller->user_id,
