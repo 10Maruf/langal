@@ -12,10 +12,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProfilePhotoUrl } from "@/lib/utils";
-import { 
-    UserCheck, 
-    Bell, 
-    User, 
+import {
+    UserCheck,
+    Bell,
+    User,
     LogOut
 } from "lucide-react";
 import DataOperatorProfile from "@/components/data-operator/DataOperatorProfile";
@@ -133,9 +133,9 @@ const DataOperatorHeader = () => {
 
             {/* Profile Dialog */}
             {showProfile && (
-                <DataOperatorProfile 
-                    open={showProfile} 
-                    onOpenChange={setShowProfile} 
+                <DataOperatorProfile
+                    open={showProfile}
+                    onOpenChange={setShowProfile}
                 />
             )}
         </>

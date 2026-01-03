@@ -430,7 +430,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                         {/* Post Images */}
                                         {post.images && post.images.length > 0 && (
                                             <div className={`grid gap-2 ${post.images.length === 1 ? 'grid-cols-1' :
-                                                    post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                                                post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
                                                 }`}>
                                                 {post.images.slice(0, 3).map((image, index) => (
                                                     <div key={index} className="relative aspect-square">
