@@ -35,8 +35,9 @@ class MarketplaceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = MarketplaceListing::query()
-            ->with(['category', 'seller.profile']);
+        try {
+            $query = MarketplaceListing::query()
+                ->with(['category', 'seller.profile']);
 
         // Filters
         if ($search = $request->string('search')->toString()) {
@@ -213,26 +214,42 @@ class MarketplaceController extends Controller
             'success' => true,
             'data' => $listings,
         ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Marketplace Index Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /** GET /api/marketplace/{id} */
     public function show(int $id)
     {
-        $listing = MarketplaceListing::with(['category', 'seller.profile'])
-            ->find($id);
+        try {
+            $listing = MarketplaceListing::with(['category', 'seller.profile'])
+                ->find($id);
 
-        if (!$listing) {
-            return response()->json(['success' => false, 'message' => 'Listing not found'], 404);
+            if (!$listing) {
+                return response()->json(['success' => false, 'message' => 'Listing not found'], 404);
+            }
+
+            return response()->json(['success' => true, 'data' => $this->transformListing($listing)]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Marketplace Show Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json(['success' => true, 'data' => $this->transformListing($listing)]);
     }
 
     /** POST /api/marketplace */
     public function store(Request $request)
     {
-        // Get authenticated user - this is the primary source for seller_id
-        $authenticatedUserId = $request->user() ? $request->user()->user_id : null;
+        try {
+            // Get authenticated user - this is the primary source for seller_id
+            $authenticatedUserId = $request->user() ? $request->user()->user_id : null;
         
         // Validation rules - seller_id is not validated here since we use authenticated user
         $validator = Validator::make($request->all(), [
@@ -315,7 +332,14 @@ class MarketplaceController extends Controller
 
         $listing = MarketplaceListing::create($data);
 
-        return response()->json(['success' => true, 'data' => $listing], 201);
+            return response()->json(['success' => true, 'data' => $listing], 201);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Marketplace Store Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /** PUT /api/marketplace/{id} */

@@ -70,7 +70,11 @@ class MarketplaceListing extends Model
             if (filter_var($image, FILTER_VALIDATE_URL)) {
                 return $image;
             }
-            return \Illuminate\Support\Facades\Storage::url($image);
+            try {
+                return \Illuminate\Support\Facades\Storage::url($image);
+            } catch (\Exception $e) {
+                return null;
+            }
         }, $this->images);
     }
 
