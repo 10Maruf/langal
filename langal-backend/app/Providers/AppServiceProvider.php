@@ -36,6 +36,15 @@ class AppServiceProvider extends ServiceProvider
             $adapter = new AzureBlobStorageAdapter($client, $config['container']);
             $filesystem = new Filesystem($adapter);
 
+            // Ensure URL is set in config so Storage::url() works
+            if (empty($config['url'])) {
+                $config['url'] = sprintf(
+                    'https://%s.blob.core.windows.net/%s',
+                    $config['name'],
+                    $config['container']
+                );
+            }
+
             return new FilesystemAdapter($filesystem, $adapter, $config);
         });
     }
