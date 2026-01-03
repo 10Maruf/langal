@@ -50,23 +50,28 @@ class UserProfile extends Model
     public function getProfilePhotoUrlFullAttribute(): ?string
     {
         if ($this->profile_photo_url) {
-            // If it's already a full URL, return it
-            if (filter_var($this->profile_photo_url, FILTER_VALIDATE_URL)) {
-                return $this->profile_photo_url;
+            $url = $this->profile_photo_url;
+
+            // If it's not a URL, generate one using Storage facade
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                try {
+                    $url = \Illuminate\Support\Facades\Storage::url($url);
+                } catch (\Exception $e) {
+                    // Ignore error, will fall through to manual construction
+                }
             }
 
-            try {
-                // Try to use the Storage facade
-                $url = \Illuminate\Support\Facades\Storage::url($this->profile_photo_url);
+            // Check if the URL is localhost or 127.0.0.1 (misconfiguration or legacy data)
+            if (str_contains($url, 'localhost') || str_contains($url, '127.0.0.1')) {
+                // Extract the relative path
+                // Remove http://localhost:8000/storage/ or similar
+                $path = parse_url($url, PHP_URL_PATH);
+                // Remove leading /storage/ if present (common in Laravel local driver)
+                $path = preg_replace('#^/storage/#', '', $path);
+                // Remove leading slash
+                $path = ltrim($path, '/');
                 
-                // If the generated URL is localhost (misconfiguration) but we have Azure credentials, force Azure
-                if (str_contains($url, 'localhost') && config('filesystems.disks.azure.name')) {
-                    throw new \Exception('Localhost URL detected with Azure config present');
-                }
-                
-                return $url;
-            } catch (\Exception $e) {
-                // Fallback: Manually construct the Azure URL if Storage::url fails or returns localhost
+                // Force Azure URL construction
                 $accountName = config('filesystems.disks.azure.name');
                 $container = config('filesystems.disks.azure.container');
                 
@@ -75,14 +80,12 @@ class UserProfile extends Model
                         'https://%s.blob.core.windows.net/%s/%s',
                         $accountName,
                         $container,
-                        ltrim($this->profile_photo_url, '/')
+                        $path
                     );
                 }
-                
-                // Log the error for debugging
-                \Illuminate\Support\Facades\Log::error('Profile Photo URL Generation Error: ' . $e->getMessage());
-                return null;
             }
+
+            return $url;
         }
         
         // Return default avatar if no photo

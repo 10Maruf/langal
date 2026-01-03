@@ -67,20 +67,28 @@ class MarketplaceListing extends Model
         }
 
         return array_map(function ($image) {
-            if (filter_var($image, FILTER_VALIDATE_URL)) {
-                return $image;
-            }
-            try {
-                $url = \Illuminate\Support\Facades\Storage::url($image);
-                
-                // If the generated URL is localhost (misconfiguration) but we have Azure credentials, force Azure
-                if (str_contains($url, 'localhost') && config('filesystems.disks.azure.name')) {
-                    throw new \Exception('Localhost URL detected with Azure config present');
+            $url = $image;
+
+            // If it's not a URL, generate one using Storage facade
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                try {
+                    $url = \Illuminate\Support\Facades\Storage::url($url);
+                } catch (\Exception $e) {
+                    // Ignore error, will fall through to manual construction
                 }
+            }
+
+            // Check if the URL is localhost or 127.0.0.1 (misconfiguration or legacy data)
+            if (str_contains($url, 'localhost') || str_contains($url, '127.0.0.1')) {
+                // Extract the relative path
+                // Remove http://localhost:8000/storage/ or similar
+                $path = parse_url($url, PHP_URL_PATH);
+                // Remove leading /storage/ if present (common in Laravel local driver)
+                $path = preg_replace('#^/storage/#', '', $path);
+                // Remove leading slash
+                $path = ltrim($path, '/');
                 
-                return $url;
-            } catch (\Exception $e) {
-                // Fallback: Manually construct the Azure URL
+                // Force Azure URL construction
                 $accountName = config('filesystems.disks.azure.name');
                 $container = config('filesystems.disks.azure.container');
                 
@@ -89,6 +97,14 @@ class MarketplaceListing extends Model
                         'https://%s.blob.core.windows.net/%s/%s',
                         $accountName,
                         $container,
+                        $path
+                    );
+                }
+            }
+
+            return $url;
+        }, $this->images);
+    }                        $container,
                         ltrim($image, '/')
                     );
                 }
