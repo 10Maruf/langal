@@ -20,14 +20,45 @@ import { API_URL } from '@/services/api';
 // API Base URL for images (derive from VITE_API_BASE, strip trailing /api)
 const API_BASE_URL = API_URL.replace(/\/api\/?$/, '');
 
-// Profile photo URL helper
+// Azure storage config
+const AZURE_STORAGE_URL = 'https://langal.blob.core.windows.net/public';
+
+// Profile photo URL helper - handles localhost URLs and converts to Azure
 const getProfilePhotoUrl = (photoPath: string | undefined): string | undefined => {
   if (!photoPath) return undefined;
-  // If already a full URL, return as is
-  if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+  
+  // If it's a localhost URL, convert to Azure URL
+  if (photoPath.includes('localhost') || photoPath.includes('127.0.0.1')) {
+    // Extract the path from localhost URL
+    // e.g., http://localhost:8000/storage/profile_photos/xxx.jpg -> profile_photos/xxx.jpg
+    try {
+      const url = new URL(photoPath);
+      let path = url.pathname;
+      // Remove leading /storage/ if present
+      path = path.replace(/^\/storage\//, '');
+      // Remove leading slash
+      path = path.replace(/^\//, '');
+      return `${AZURE_STORAGE_URL}/${path}`;
+    } catch {
+      // If URL parsing fails, try simple string replacement
+      const pathMatch = photoPath.match(/\/storage\/(.+)$/);
+      if (pathMatch) {
+        return `${AZURE_STORAGE_URL}/${pathMatch[1]}`;
+      }
+    }
+  }
+  
+  // If already a full Azure/HTTPS URL, return as is
+  if (photoPath.startsWith('https://')) {
     return photoPath;
   }
-  // Otherwise, prepend API base URL
+  
+  // If it's just a path (e.g., profile_photos/xxx.jpg), prepend Azure URL
+  if (!photoPath.startsWith('http')) {
+    return `${AZURE_STORAGE_URL}/${photoPath.replace(/^\//, '')}`;
+  }
+  
+  // Otherwise, prepend API base URL (fallback for other http URLs)
   return `${API_BASE_URL}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
 };
 
