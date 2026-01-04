@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.langol.krishisahayak',
-  appName: 'লাঙল কৃষি সহায়ক',
+  appName: 'লাঙল',
   webDir: 'dist',
   android: {
     allowMixedContent: true,
