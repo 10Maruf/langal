@@ -290,7 +290,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                 <AlertDescription className="text-green-800">
                     কৃষক লগইনের জন্য আপনার মোবাইল নম্বর দিন
                     <br />
-                    <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো নম্বর দিলেই হবে</span>
+                    {/* <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো নম্বর দিলেই হবে</span> */}
                 </AlertDescription>
             </Alert>
 
@@ -300,7 +300,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                     <Input
                         id="phone"
                         type="tel"
-                        placeholder="যেকোনো নম্বর (যেমন: 01700000000)"
+                        placeholder="01700000000"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         required
