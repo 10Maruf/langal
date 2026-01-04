@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Langol Krishi Sahayak</string>
+    <string name="title_activity_main">Langol Krishi Sahayak</string>
+    <string name="package_name">com.langol.krishisahayak</string>
+    <string name="custom_url_scheme">com.langol.krishisahayak</string>
+</resources>
