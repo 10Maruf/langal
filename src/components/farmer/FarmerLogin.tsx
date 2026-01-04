@@ -358,7 +358,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                     <Input
                         id="otp"
                         type="text"
-                        placeholder="যেকোনো ৬ ডিজিট (যেমন: 123456)"
+                        placeholder="৬ ডিজিট OTP কোড"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}
