@@ -25,7 +25,7 @@ import {
     Loader2
 } from "lucide-react";
 import { API_URL } from "@/services/api";
-import { getProfilePhotoUrl } from "@/lib/utils";
+import { getProfilePhotoUrl, getImageUrl } from "@/lib/utils";
 
 const API_BASE = API_URL;
 

@@ -55,5 +55,6 @@ export function getAzureImageUrl(imagePath: string | undefined | null): string |
   return imagePath;
 }
 
-// Alias for backward compatibility
+// Aliases for backward compatibility
 export const getProfilePhotoUrl = getAzureImageUrl;
+export const getImageUrl = getAzureImageUrl;
