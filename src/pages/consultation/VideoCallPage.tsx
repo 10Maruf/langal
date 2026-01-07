@@ -232,29 +232,38 @@ const VideoCallPage = () => {
 
       // Create local tracks - always create both audio and video
       // This allows users to toggle video on/off during the call
+      const isVideoCall = appointment?.consultation_type === "video";
+      
       try {
         localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
         if (localVideoRef.current) {
           localTracksRef.current.videoTrack.play(localVideoRef.current);
         }
         // If it's an audio call, start with video disabled
-        if (appointment?.consultation_type !== "video") {
+        if (!isVideoCall) {
           localTracksRef.current.videoTrack.setEnabled(false);
           setIsVideoOff(true);
         }
       } catch (videoErr) {
         console.warn("Could not access camera:", videoErr);
+        localTracksRef.current.videoTrack = null;
         setIsVideoOff(true);
       }
 
       localTracksRef.current.audioTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
 
-      // Publish tracks - publish both if video track exists
-      const tracks = localTracksRef.current.videoTrack
-        ? [localTracksRef.current.audioTrack, localTracksRef.current.videoTrack]
-        : [localTracksRef.current.audioTrack];
+      // Publish tracks - only publish enabled tracks
+      // For audio calls, only publish audio track initially
+      // Video track can be published later when user enables it
+      const tracksToPublish = [];
+      tracksToPublish.push(localTracksRef.current.audioTrack);
+      
+      // Only publish video track if it's a video call and track exists
+      if (isVideoCall && localTracksRef.current.videoTrack) {
+        tracksToPublish.push(localTracksRef.current.videoTrack);
+      }
 
-      await clientRef.current.publish(tracks);
+      await clientRef.current.publish(tracksToPublish);
 
       setConnected(true);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -312,9 +321,27 @@ const VideoCallPage = () => {
     }
   };
 
-  const toggleVideo = () => {
+  const toggleVideo = async () => {
     if (localTracksRef.current.videoTrack) {
-      localTracksRef.current.videoTrack.setEnabled(isVideoOff);
+      if (isVideoOff) {
+        // Enabling video - need to publish if not already published
+        localTracksRef.current.videoTrack.setEnabled(true);
+        // Check if track is not published yet (for audio calls that started without video)
+        try {
+          // Try to publish the video track if it wasn't published initially
+          if (clientRef.current && !localTracksRef.current.videoTrack._published) {
+            await clientRef.current.publish([localTracksRef.current.videoTrack]);
+          }
+        } catch (err) {
+          console.warn("Video track already published or error:", err);
+        }
+        if (localVideoRef.current) {
+          localTracksRef.current.videoTrack.play(localVideoRef.current);
+        }
+      } else {
+        // Disabling video
+        localTracksRef.current.videoTrack.setEnabled(false);
+      }
       setIsVideoOff(!isVideoOff);
     }
   };
