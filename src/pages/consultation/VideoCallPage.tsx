@@ -255,7 +255,7 @@ const VideoCallPage = () => {
       // Create local tracks - always create both audio and video
       // This allows users to toggle video on/off during the call
       const isVideoCall = appointment?.consultation_type === "video";
-      
+
       try {
         localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
         if (localVideoRef.current) {
@@ -279,7 +279,7 @@ const VideoCallPage = () => {
       // Video track can be published later when user enables it
       const tracksToPublish = [];
       tracksToPublish.push(localTracksRef.current.audioTrack);
-      
+
       // Only publish video track if it's a video call and track exists
       if (isVideoCall && localTracksRef.current.videoTrack) {
         tracksToPublish.push(localTracksRef.current.videoTrack);
