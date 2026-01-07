@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Expert;
 use App\Models\UserProfile;
+use App\Models\ConsultationFeedback;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -72,7 +73,7 @@ class ExpertAuthController extends Controller
 
             // Generate token
             $token = $user->createToken('expert-app', ['expert'])->plainTextToken;
-            $user->update(['updated_at' => now()]);
+            $user->update(['updated_at' => now(), 'last_active_at' => now()]);
 
             // Load relationships
             $userData = $user->load(['profile', 'expert'])->toArray();
@@ -160,36 +161,44 @@ class ExpertAuthController extends Controller
      */
     public function verifyOtp(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|min:11|max:15',
-            'otp_code' => 'required|string|size:6',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'phone' => 'required|string|min:11|max:15',
+                'otp_code' => 'required|string|size:6',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $phone = $request->phone;
+            $otpCode = $request->otp_code;
+
+            // Verify OTP
+            $result = $this->otpService->verifyOtp($phone, $otpCode, 'register');
+
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP verified successfully',
+            ], 200);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Expert Verify OTP Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $phone = $request->phone;
-        $otpCode = $request->otp_code;
-
-        // Verify OTP
-        $result = $this->otpService->verifyOtp($phone, $otpCode, 'register');
-
-        if (!$result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-            ], 400);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'OTP verified successfully',
-        ], 200);
     }
 
     /**
@@ -247,16 +256,16 @@ class ExpertAuthController extends Controller
         try {
             DB::beginTransaction();
 
-            // Handle file uploads
+            // Handle file uploads (Azure storage)
             $profilePhotoPath = null;
             $certificationPhotoPath = null;
 
             if ($request->hasFile('profilePhoto')) {
-                $profilePhotoPath = $request->file('profilePhoto')->store('expert/profiles', 'public');
+                $profilePhotoPath = $request->file('profilePhoto')->store('expert/profiles', 'azure');
             }
 
             if ($request->hasFile('certificationPhoto')) {
-                $certificationPhotoPath = $request->file('certificationPhoto')->store('expert/certifications', 'public');
+                $certificationPhotoPath = $request->file('certificationPhoto')->store('expert/certifications', 'azure');
             }
 
             // Create user account
@@ -371,6 +380,8 @@ class ExpertAuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         try {
+            // Clear last_active_at when logging out
+            $request->user()->update(['last_active_at' => null]);
             $request->user()->currentAccessToken()->delete();
 
             return response()->json([
@@ -385,6 +396,34 @@ class ExpertAuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Heartbeat - Update last active timestamp
+     * POST /api/expert/heartbeat
+     */
+    public function heartbeat(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $user->update(['last_active_at' => now()]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Heartbeat received',
+                'data' => [
+                    'last_active_at' => $user->last_active_at,
+                    'is_online' => true,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Heartbeat failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Create Expert Profile
      * POST /api/expert/profile
@@ -517,11 +556,15 @@ class ExpertAuthController extends Controller
             $userProfile = $user->profile;
             if ($userProfile) {
                 if ($request->hasFile('profilePhoto')) {
-                    // Delete old photo if exists
+                    // Delete old photo if exists (try Azure first, then local)
                     if ($userProfile->profile_photo_url) {
-                        \Illuminate\Support\Facades\Storage::disk('public')->delete($userProfile->profile_photo_url);
+                        try {
+                            \Illuminate\Support\Facades\Storage::disk('azure')->delete($userProfile->profile_photo_url);
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($userProfile->profile_photo_url);
+                        }
                     }
-                    $path = $request->file('profilePhoto')->store('expert/profiles', 'public');
+                    $path = $request->file('profilePhoto')->store('expert/profiles', 'azure');
                     $userProfile->profile_photo_url = $path;
                 }
 
@@ -627,7 +670,10 @@ class ExpertAuthController extends Controller
     public function getAllExperts(Request $request): JsonResponse
     {
         try {
-            $query = Expert::with('user.userProfile');
+            $query = Expert::with('user.profile')
+                ->whereHas('user', function ($q) {
+                    $q->where('is_active', true);
+                });
 
             // Filter by specialization
             if ($request->has('specialization')) {
@@ -649,20 +695,72 @@ class ExpertAuthController extends Controller
                 $query->where('consultation_fee', '<=', $request->max_fee);
             }
 
+            // Filter by online status (active within last 5 minutes)
+            if ($request->has('online_only') && $request->online_only) {
+                $query->whereHas('user', function ($q) {
+                    $q->where('last_active_at', '>=', now()->subMinutes(5));
+                });
+            }
+
             // Pagination
             $perPage = $request->input('per_page', 15);
             $experts = $query->paginate($perPage);
 
+            // Transform data to include online status
+            $transformedExperts = collect($experts->items())->map(function ($expert) {
+                $isOnline = $expert->user->last_active_at && 
+                           $expert->user->last_active_at->diffInMinutes(now()) < 5;
+                
+                // Get specialization in Bangla
+                $specializationTranslations = [
+                    'crop_disease' => 'ফসলের রোগ',
+                    'pest_control' => 'কীটপতঙ্গ নিয়ন্ত্রণ',
+                    'soil_science' => 'মাটি বিজ্ঞান',
+                    'irrigation' => 'সেচ ব্যবস্থা',
+                    'horticulture' => 'উদ্যানতত্ত্ব',
+                    'livestock' => 'পশুপালন',
+                    'fisheries' => 'মৎস্য চাষ',
+                    'organic_farming' => 'জৈব চাষ',
+                    'seed_production' => 'বীজ উৎপাদন',
+                    'agricultural_economics' => 'কৃষি অর্থনীতি',
+                ];
+                
+                return [
+                    'expert_id' => $expert->expert_id,
+                    'id' => $expert->expert_id,
+                    'user_id' => $expert->user_id,
+                    'specialization' => $expert->specialization,
+                    'specialization_bn' => $specializationTranslations[$expert->specialization] ?? $expert->specialization,
+                    'qualification' => $expert->qualification,
+                    'institution' => $expert->institution,
+                    'experience_years' => $expert->experience_years,
+                    'consultation_fee' => $expert->consultation_fee,
+                    'rating' => $expert->rating ?? 0,
+                    'total_consultations' => $expert->total_consultations ?? 0,
+                    'is_government_approved' => $expert->is_government_approved ?? false,
+                    'is_online' => $isOnline,
+                    'last_active_at' => $expert->user->last_active_at,
+                    'user' => [
+                        'id' => $expert->user->user_id,
+                        'phone' => $expert->user->phone,
+                        'profile' => $expert->user->profile ? [
+                            'full_name' => $expert->user->profile->full_name,
+                            'full_name_bn' => $expert->user->profile->full_name_bn ?? $expert->user->profile->full_name,
+                            'profile_photo_url' => $expert->user->profile->profile_photo_url,
+                            'avatar_url' => $expert->user->profile->profile_photo_url,
+                        ] : null,
+                    ],
+                ];
+            });
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'experts' => $experts->items(),
-                    'pagination' => [
-                        'current_page' => $experts->currentPage(),
-                        'last_page' => $experts->lastPage(),
-                        'per_page' => $experts->perPage(),
-                        'total' => $experts->total(),
-                    ],
+                'data' => $transformedExperts,
+                'pagination' => [
+                    'current_page' => $experts->currentPage(),
+                    'last_page' => $experts->lastPage(),
+                    'per_page' => $experts->perPage(),
+                    'total' => $experts->total(),
                 ],
             ], 200);
 
@@ -683,7 +781,10 @@ class ExpertAuthController extends Controller
     {
         try {
             $expert = Expert::where('expert_id', $expert_id)
-                ->with('user.userProfile')
+                ->with('user.profile')
+                ->whereHas('user', function ($q) {
+                    $q->where('is_active', true);
+                })
                 ->first();
 
             if (!$expert) {
@@ -693,11 +794,105 @@ class ExpertAuthController extends Controller
                 ], 404);
             }
 
+            // Get feedback stats
+            $feedbackStats = ConsultationFeedback::where('expert_id', $expert->user_id)
+                ->selectRaw('AVG(overall_rating) as avg_rating, COUNT(*) as total_reviews')
+                ->first();
+
+            // Get recent reviews
+            $recentReviews = ConsultationFeedback::with(['farmer.profile'])
+                ->where('expert_id', $expert->user_id)
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get()
+                ->map(function ($feedback) {
+                    return [
+                        'id' => $feedback->feedback_id,
+                        'rating' => $feedback->overall_rating,
+                        'comment' => $feedback->review_text ?? $feedback->review_text_bn,
+                        'tags' => $feedback->tags,
+                        'created_at' => $feedback->created_at,
+                        'farmer' => $feedback->farmer?->profile ? [
+                            'name' => $feedback->farmer->profile->full_name_bn ?? 
+                                     $feedback->farmer->profile->full_name,
+                            'avatar' => $feedback->farmer->profile->profile_photo_url,
+                        ] : null,
+                    ];
+                });
+
+            // Get specialization in Bangla
+            $specializationTranslations = [
+                'crop_disease' => 'ফসলের রোগ',
+                'pest_control' => 'কীটপতঙ্গ নিয়ন্ত্রণ',
+                'soil_science' => 'মাটি বিজ্ঞান',
+                'irrigation' => 'সেচ ব্যবস্থা',
+                'horticulture' => 'উদ্যানতত্ত্ব',
+                'livestock' => 'পশুপালন',
+                'fisheries' => 'মৎস্য চাষ',
+                'organic_farming' => 'জৈব চাষ',
+                'seed_production' => 'বীজ উৎপাদন',
+                'agricultural_economics' => 'কৃষি অর্থনীতি',
+            ];
+
+            // Build qualifications array from qualification field
+            $qualificationsArray = [];
+            if ($expert->qualification) {
+                $qualificationsArray[] = $expert->qualification;
+            }
+            if ($expert->institution) {
+                $qualificationsArray[] = $expert->institution;
+            }
+
+            // Build expertise areas array
+            $expertiseAreas = [];
+            if ($expert->specialization) {
+                $expertiseAreas[] = $specializationTranslations[$expert->specialization] ?? $expert->specialization;
+            }
+
+            // Generate bio from available data
+            $bio = '';
+            if ($expert->qualification && $expert->institution) {
+                $bio = $expert->institution . ' থেকে ' . $expert->qualification . ' ডিগ্রি অর্জন করেছেন।';
+            }
+            if ($expert->experience_years) {
+                $bio .= ' ' . $expert->experience_years . ' বছরের অভিজ্ঞতা আছে কৃষি ক্ষেত্রে।';
+            }
+
+            $data = [
+                'id' => $expert->expert_id,
+                'expert_id' => $expert->expert_id,
+                'user_id' => $expert->user_id,
+                'specialization' => $expert->specialization,
+                'specialization_bn' => $specializationTranslations[$expert->specialization] ?? $expert->specialization,
+                'bio' => $bio,
+                'bio_bn' => $bio,
+                'experience_years' => $expert->experience_years ?? 0,
+                'consultation_fee' => $expert->consultation_fee ?? 0,
+                'rating' => round($feedbackStats->avg_rating ?? 0, 1),
+                'total_reviews' => $feedbackStats->total_reviews ?? 0,
+                'is_available' => $expert->is_available ?? true,
+                'is_government_approved' => $expert->is_government_approved ?? false,
+                'response_time' => $expert->response_time ?? 'সাধারণত ১ ঘন্টার মধ্যে',
+                'languages' => ['বাংলা'],
+                'qualifications' => $qualificationsArray,
+                'expertise_areas' => $expertiseAreas,
+                'total_consultations' => $expert->total_consultations ?? 0,
+                'recent_feedbacks' => $recentReviews,
+                'user' => [
+                    'id' => $expert->user->user_id,
+                    'phone' => $expert->user->phone,
+                    'profile' => $expert->user->profile ? [
+                        'full_name' => $expert->user->profile->full_name,
+                        'full_name_bn' => $expert->user->profile->full_name_bn ?? $expert->user->profile->full_name,
+                        'profile_photo_url' => $expert->user->profile->profile_photo_url,
+                        'avatar_url' => $expert->user->profile->profile_photo_url,
+                    ] : null,
+                ],
+            ];
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'expert' => $expert,
-                ],
+                'data' => $data,
             ], 200);
 
         } catch (\Exception $e) {

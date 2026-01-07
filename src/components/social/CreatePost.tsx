@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Image, MapPin, ShoppingCart, X, UserCheck, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_URL } from '@/services/api';
 import axios from "axios";
 
 interface CreatePostProps {
@@ -41,7 +42,7 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
 
     // Get user_id from either user_id or id field
     const userId = user?.user_id || (user?.id ? parseInt(user.id) : null);
-    
+
     if (!userId) {
       console.error('User ID not found');
       return;
@@ -52,7 +53,7 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
     try {
       // Upload images to server first
       let uploadedImageUrls: string[] = [];
-      
+
       if (images.length > 0) {
         const formData = new FormData();
         images.forEach((img) => {
@@ -60,7 +61,7 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
         });
 
         const uploadResponse = await axios.post(
-          'http://localhost:8000/api/social/upload-images',
+          `${API_URL}/social/upload-images`,
           formData,
           {
             headers: {

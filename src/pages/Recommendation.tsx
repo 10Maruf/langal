@@ -420,9 +420,21 @@ const Recommendation = () => {
                     title: "সফল!",
                     description: "ফসল আপনার তালিকায় যোগ হয়েছে। নোটিফিকেশন চালু আছে।",
                 });
-            } catch (error) {
-                console.error('Failed to save selection:', error);
-                // Continue anyway to show details
+            } catch (error: any) {
+                if (error.message === 'OFFLINE_SAVED') {
+                    toast({
+                        title: "অফলাইনে সংরক্ষিত",
+                        description: "সার্ভার সংযোগ নেই। সংযোগ ফিরে আসলে এটি স্বয়ংক্রিয়ভাবে সেভ হবে।",
+                        variant: "default", // or a warning color if available
+                    });
+                } else {
+                    console.error('Failed to save selection:', error);
+                    toast({
+                        title: "ত্রুটি",
+                        description: "ফসল সংরক্ষণ করা যায়নি।",
+                        variant: "destructive"
+                    });
+                }
             }
         }
 

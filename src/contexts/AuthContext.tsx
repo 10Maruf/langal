@@ -54,14 +54,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check if user is stored in localStorage
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('auth_token');
+        
         if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
-            setIsAuthenticated(true);
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                console.log('AuthContext - Restoring user from localStorage:', parsedUser);
+                console.log('AuthContext - User type:', parsedUser.type);
+                setUser(parsedUser);
+                setIsAuthenticated(true);
+            } catch (error) {
+                console.error('Error parsing stored user:', error);
+                // Clear corrupted data
+                localStorage.removeItem('user');
+                localStorage.removeItem('auth_token');
+            }
         }
         setIsLoading(false);
     }, []);
 
     const setAuthUser = (user: User, token: string) => {
+        console.log('AuthContext - Setting auth user:', user);
+        console.log('AuthContext - User type being saved:', user.type);
         setUser(user);
         setIsAuthenticated(true);
         localStorage.setItem('user', JSON.stringify(user));
@@ -101,10 +114,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = () => {
+        console.log('AuthContext - Logging out user');
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem('user');
         localStorage.removeItem('auth_token');
+        // Clear any other stored data
+        sessionStorage.clear();
     };
 
     return (

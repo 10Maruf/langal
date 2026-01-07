@@ -310,6 +310,22 @@ class CropRecommendationController extends Controller
                 $duration = $cropData['duration_days'] ?? 90;
                 $harvestDate = (clone $startDate)->modify("+{$duration} days");
 
+                // Calculate next notification date from cultivation plan
+                $nextNotificationDate = null;
+                if (!empty($cropData['cultivation_plan']) && is_array($cropData['cultivation_plan'])) {
+                    foreach ($cropData['cultivation_plan'] as $phase) {
+                        if (isset($phase['days'])) {
+                            // Extract day number (e.g., "Day 1" or "Day 1-3")
+                            if (preg_match('/Day (\d+)/i', $phase['days'], $matches)) {
+                                $dayOffset = (int)$matches[1];
+                                // If day is 0 or 1, set for start date, else add offset
+                                $nextNotificationDate = (clone $startDate)->modify("+" . max(0, $dayOffset - 1) . " days");
+                                break; // Found the first phase
+                            }
+                        }
+                    }
+                }
+
                 $selectedCrop = FarmerSelectedCrop::create([
                     'farmer_id' => $farmerId,
                     'recommendation_id' => $request->input('recommendation_id'),
@@ -335,6 +351,7 @@ class CropRecommendationController extends Controller
                     'cost_breakdown' => $cropData['cost_breakdown'] ?? null,
                     'fertilizer_schedule' => $cropData['fertilizer_schedule'] ?? null,
                     'notifications_enabled' => true,
+                    'next_notification_date' => $nextNotificationDate,
                 ]);
 
                 $selectedCrops[] = $selectedCrop;

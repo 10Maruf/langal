@@ -1,9 +1,13 @@
 import axios from 'axios';
 
 // Resolve base API from Vite env with sensible default
-const API_URL = (
-    (import.meta as unknown as { env?: Record<string, string | undefined> })?.env?.VITE_API_BASE
-    || 'http://127.0.0.1:8000/api'
+const isProd = import.meta.env.PROD;
+const defaultUrl = isProd ? 'https://langal-production.up.railway.app/api' : 'http://127.0.0.1:8000/api';
+
+export const API_URL = (
+    (import.meta as unknown as { env?: Record<string, string | undefined> })?.env?.VITE_API_URL
+    || (import.meta as unknown as { env?: Record<string, string | undefined> })?.env?.VITE_API_BASE
+    || defaultUrl
 ).replace(/\/$/, '');
 
 const api = axios.create({

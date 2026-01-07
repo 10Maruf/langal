@@ -28,50 +28,58 @@ class DataOperatorAuthController extends Controller
      */
     public function sendOtp(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|min:11|max:15',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'phone' => 'required|string|min:11|max:15',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $phone = $request->phone;
+
+            // Check if phone already registered
+            $user = User::where('phone', $phone)->where('user_type', 'data_operator')->first();
+
+            if ($user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This mobile number is already registered as Data Operator. Please login.',
+                ], 409);
+            }
+
+            // Send OTP
+            $result = $this->otpService->sendOtp($phone, 'register');
+
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                ], 400);
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $phone = $request->phone;
-
-        // Check if phone already registered
-        $user = User::where('phone', $phone)->where('user_type', 'data_operator')->first();
-
-        if ($user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This mobile number is already registered as Data Operator. Please login.',
-            ], 409);
-        }
-
-        // Send OTP
-        $result = $this->otpService->sendOtp($phone, 'register');
-
-        if (!$result['success']) {
-            return response()->json([
-                'success' => false,
+                'success' => true,
                 'message' => $result['message'],
-            ], 400);
+                'data' => [
+                    'otp_id' => $result['otp_id'],
+                    'expires_in' => $result['expires_in'],
+                    'phone' => $phone,
+                    'otp_code' => $result['otp_code'] ?? null, // For dev
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Data Operator Send OTP Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => $result['message'],
-            'data' => [
-                'otp_id' => $result['otp_id'],
-                'expires_in' => $result['expires_in'],
-                'phone' => $phone,
-                'otp_code' => $result['otp_code'] ?? null, // For dev
-            ],
-        ]);
     }
 
     /**
@@ -122,10 +130,10 @@ class DataOperatorAuthController extends Controller
                 'is_active' => true,
             ]);
 
-            // Handle Profile Photo Upload
+            // Handle Profile Photo Upload (Azure storage)
             $profilePhotoPath = null;
             if ($request->hasFile('profilePhoto')) {
-                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos', 'public');
+                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos', 'azure');
             }
 
             // Get location details from postal_code
@@ -216,82 +224,90 @@ class DataOperatorAuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|string',
-            'password' => 'required|string',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'phone' => 'required|string',
+                'password' => 'required|string',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
 
-        $phone = $request->phone;
-        $password = $request->password;
+            $phone = $request->phone;
+            $password = $request->password;
 
-        // Find user by phone and user_type
-        $user = User::where('phone', $phone)
-            ->where('user_type', 'data_operator')
-            ->first();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No Data Operator account found with this mobile number.',
-            ], 404);
-        }
-
-        // Check if account is active
-        if (!$user->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your account is inactive. Please contact support.',
-            ], 403);
-        }
-
-        // Verify password
-        if (!Hash::check($password, $user->password_hash)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid password.',
-            ], 401);
-        }
-
-        // Generate token
-        $token = $user->createToken('data-operator-app', ['data_operator'])->plainTextToken;
-        $user->update(['updated_at' => now()]);
-
-        $userData = $user->load(['profile', 'dataOperator'])->toArray();
-
-        // Add full location info from location table based on postal_code
-        if ($user->profile && $user->profile->postal_code) {
-            $location = DB::table('location')
-                ->where('postal_code', $user->profile->postal_code)
+            // Find user by phone and user_type
+            $user = User::where('phone', $phone)
+                ->where('user_type', 'data_operator')
                 ->first();
 
-            if ($location) {
-                $userData['location_info'] = [
-                    'village' => $user->profile->village ?? null,
-                    'postal_code' => $user->profile->postal_code,
-                    'post_office_bn' => $location->post_office_bn ?? null,
-                    'upazila_bn' => $location->upazila_bn ?? null,
-                    'district_bn' => $location->district_bn ?? null,
-                    'division_bn' => $location->division_bn ?? null,
-                ];
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No Data Operator account found with this mobile number.',
+                ], 404);
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => [
-                'user' => $userData,
-                'token' => $token,
-            ],
-        ]);
+            // Check if account is active
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account is inactive. Please contact support.',
+                ], 403);
+            }
+
+            // Verify password
+            if (!Hash::check($password, $user->password_hash)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid password.',
+                ], 401);
+            }
+
+            // Generate token
+            $token = $user->createToken('data-operator-app', ['data_operator'])->plainTextToken;
+            $user->update(['updated_at' => now()]);
+
+            $userData = $user->load(['profile', 'dataOperator'])->toArray();
+
+            // Add full location info from location table based on postal_code
+            if ($user->profile && $user->profile->postal_code) {
+                $location = DB::table('location')
+                    ->where('postal_code', $user->profile->postal_code)
+                    ->first();
+
+                if ($location) {
+                    $userData['location_info'] = [
+                        'village' => $user->profile->village ?? null,
+                        'postal_code' => $user->profile->postal_code,
+                        'post_office_bn' => $location->post_office_bn ?? null,
+                        'upazila_bn' => $location->upazila_bn ?? null,
+                        'district_bn' => $location->district_bn ?? null,
+                        'division_bn' => $location->division_bn ?? null,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => $userData,
+                    'token' => $token,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Data Operator Login Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -396,12 +412,16 @@ class DataOperatorAuthController extends Controller
 
                 // Handle profile photo upload
                 if ($request->hasFile('profile_photo')) {
-                    // Delete old photo if exists
+                    // Delete old photo if exists (try Azure first, then local)
                     if ($profile->profile_photo_url) {
-                        Storage::disk('public')->delete($profile->profile_photo_url);
+                        try {
+                            Storage::disk('azure')->delete($profile->profile_photo_url);
+                        } catch (\Exception $e) {
+                            Storage::disk('public')->delete($profile->profile_photo_url);
+                        }
                     }
 
-                    $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
+                    $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'azure');
                     $profile->profile_photo_url = $profilePhotoPath;
                 }
 
@@ -477,6 +497,8 @@ class DataOperatorAuthController extends Controller
                     $query->select(
                         'user_id',
                         'full_name',
+                        'father_name',
+                        'mother_name',
                         'profile_photo_url',
                         'date_of_birth',
                         'nid_number',
@@ -515,14 +537,14 @@ class DataOperatorAuthController extends Controller
                     return [
                         'user_id' => $user->user_id,
                         'full_name' => $profile->full_name,
+                        'father_name' => $profile->father_name ?? null,
+                        'mother_name' => $profile->mother_name ?? null,
                         'phone_number' => $user->phone,
                         'profile_photo_url_full' => $profile->profile_photo_url
                             ? url('storage/' . $profile->profile_photo_url)
                             : null,
                         'date_of_birth' => $profile->date_of_birth,
                         'nid_number' => $profile->nid_number,
-                        'father_name' => $profile->father_name ?? null,
-                        'mother_name' => $profile->mother_name ?? null,
                         'village' => $profile->village,
                         'division' => $locationInfo['division'] ?? null,
                         'district' => $locationInfo['district'] ?? null,
@@ -604,19 +626,35 @@ class DataOperatorAuthController extends Controller
                         }
                     }
 
+                    // Get business details
+                    $businessDetails = $user->customerBusiness;
+
                     return [
                         'user_id' => $user->user_id,
                         'full_name' => $profile->full_name,
+                        'father_name' => $profile->father_name,
+                        'mother_name' => $profile->mother_name,
                         'phone_number' => $user->phone,
                         'profile_photo_url_full' => $profile->profile_photo_url
                             ? url('storage/' . $profile->profile_photo_url)
                             : null,
+                        'nid_photo_url_full' => $profile->nid_photo_url
+                            ? url('storage/' . $profile->nid_photo_url)
+                            : null,
                         'date_of_birth' => $profile->date_of_birth,
                         'nid_number' => $profile->nid_number,
+                        'village' => $profile->village,
+                        'postal_code' => $profile->postal_code,
                         'division' => $locationInfo['division'] ?? null,
                         'district' => $locationInfo['district'] ?? null,
                         'upazila' => $locationInfo['upazila'] ?? null,
-                        'address' => $profile->village ?? null, // Using village field as address
+                        'address' => $profile->address,
+                        'business_name' => $businessDetails?->business_name,
+                        'business_type' => $businessDetails?->business_type,
+                        'custom_business_type' => $businessDetails?->custom_business_type,
+                        'trade_license_number' => $businessDetails?->trade_license_number,
+                        'business_address' => $businessDetails?->business_address,
+                        'established_year' => $businessDetails?->established_year,
                         'verification_status' => $profile->verification_status ?? 'pending',
                         'verified_at' => $profile->verified_at,
                         'verified_by' => $profile->verified_by,
@@ -642,7 +680,123 @@ class DataOperatorAuthController extends Controller
     }
 
     /**
-     * Verify farmer/customer profile (Approve/Reject)
+     * Get all experts/consultants for verification
+     */
+    public function getExperts(Request $request): JsonResponse
+    {
+        // Verify user is actually a data operator
+        if ($request->user()->user_type !== 'data_operator') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only data operators can access expert list.',
+            ], 403);
+        }
+
+        try {
+            $experts = User::where('user_type', 'expert')
+                ->with(['profile' => function ($query) {
+                    $query->select(
+                        'user_id',
+                        'full_name',
+                        'profile_photo_url',
+                        'date_of_birth',
+                        'nid_number',
+                        'postal_code',
+                        'verification_status',
+                        'verified_at',
+                        'verified_by'
+                    );
+                }, 'expert' => function ($query) {
+                    $query->select(
+                        'user_id',
+                        'qualification',
+                        'specialization',
+                        'experience_years',
+                        'institution',
+                        'license_number',
+                        'certification_document',
+                        'is_government_approved',
+                        'rating',
+                        'total_consultations'
+                    );
+                }])
+                ->get()
+                ->map(function ($user) {
+                    $profile = $user->profile;
+                    $expertInfo = $user->expert;
+                    
+                    if (!$profile) {
+                        return null;
+                    }
+
+                    // Get location info
+                    $locationInfo = null;
+                    if ($profile->postal_code) {
+                        $location = DB::table('location')
+                            ->where('postal_code', $profile->postal_code)
+                            ->first();
+
+                        if ($location) {
+                            $locationInfo = [
+                                'division' => $location->division_bn,
+                                'district' => $location->district_bn,
+                                'upazila' => $location->upazila_bn,
+                                'post_office' => $location->post_office_bn,
+                            ];
+                        }
+                    }
+
+                    return [
+                        'user_id' => $user->user_id,
+                        'full_name' => $profile->full_name,
+                        'phone_number' => $user->phone,
+                        'profile_photo_url_full' => $profile->profile_photo_url
+                            ? url('storage/' . $profile->profile_photo_url)
+                            : null,
+                        'date_of_birth' => $profile->date_of_birth,
+                        'nid_number' => $profile->nid_number,
+                        'division' => $locationInfo['division'] ?? null,
+                        'district' => $locationInfo['district'] ?? null,
+                        'upazila' => $locationInfo['upazila'] ?? null,
+                        'post_office' => $locationInfo['post_office'] ?? null,
+                        // Expert specific fields
+                        'qualification' => $expertInfo?->qualification ?? null,
+                        'specialization' => $expertInfo?->specialization ?? null,
+                        'experience_years' => $expertInfo && $expertInfo->experience_years ? (int)$expertInfo->experience_years : null,
+                        'institution' => $expertInfo?->institution ?? null,
+                        'license_number' => $expertInfo?->license_number ?? null,
+                        'certification_document_url' => $expertInfo && $expertInfo->certification_document 
+                            ? url('storage/' . $expertInfo->certification_document) 
+                            : null,
+                        'is_government_approved' => (bool)($expertInfo?->is_government_approved ?? false),
+                        'rating' => $expertInfo && $expertInfo->rating ? (float)$expertInfo->rating : 0.0,
+                        'total_consultations' => $expertInfo && $expertInfo->total_consultations ? (int)$expertInfo->total_consultations : 0,
+                        'verification_status' => $profile->verification_status ?? 'pending',
+                        'verified_at' => $profile->verified_at,
+                        'verified_by' => $profile->verified_by,
+                    ];
+                })
+                ->filter() // Remove null values
+                ->values(); // Re-index array
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Experts fetched successfully',
+                'data' => $experts,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Get Experts Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch experts: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify farmer/customer/expert profile (Approve/Reject)
      */
     public function verifyProfile(Request $request): JsonResponse
     {
@@ -669,7 +823,7 @@ class DataOperatorAuthController extends Controller
 
         try {
             $user = User::where('user_id', $request->user_id)
-                ->whereIn('user_type', ['farmer', 'customer'])
+                ->whereIn('user_type', ['farmer', 'customer', 'expert'])
                 ->first();
 
             if (!$user) {

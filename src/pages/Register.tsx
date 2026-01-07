@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -74,6 +74,20 @@ const Register = () => {
     const nidPhotoRef = useRef<HTMLInputElement>(null);
     const profilePhotoRef = useRef<HTMLInputElement>(null);
     const certificationRef = useRef<HTMLInputElement>(null);
+
+    // Preload background images to prevent flickering
+    useEffect(() => {
+        const imagesToPreload = [
+            getAssetPath('/img/farmer_dashbord_bg.png'),
+            getAssetPath('/img/customer_dashboard_bg.png'),
+            getAssetPath('/img/expert_dashboard_bg.png')
+        ];
+
+        imagesToPreload.forEach(src => {
+            const img = new Image();
+            img.src = src;
+        });
+    }, []);
 
     const handleInputChange = (field: keyof RegisterData, value: string) => {
         setRegisterData(prev => ({ ...prev, [field]: value }));
@@ -211,17 +225,49 @@ const Register = () => {
         }
     };
 
+    // Get background image based on active tab
+    const getBackgroundStyle = () => {
+        switch (activeTab) {
+            case 'farmer':
+                return {
+                    backgroundImage: `url(${getAssetPath('/img/farmer_dashbord_bg.png')})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                };
+            case 'customer':
+                return {
+                    backgroundImage: `url(${getAssetPath('/img/customer_dashboard_bg.png')})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                };
+            case 'expert':
+                return {
+                    backgroundImage: `url(${getAssetPath('/img/expert_dashboard_bg.png')})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                };
+            default:
+                return {};
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div
+            className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4 transition-all duration-500"
+            style={getBackgroundStyle()}
+        >
             {/* Show Farmer Registration Component if farmer is selected and farmer registration is enabled */}
             {activeTab === 'farmer' && showFarmerRegistration ? (
-                <FarmerRegistration />
+                <FarmerRegistration onBack={() => setShowFarmerRegistration(false)} />
             ) : activeTab === 'expert' && showExpertRegistration ? (
                 <ExpertRegistration onBackToMainRegister={() => setShowExpertRegistration(false)} />
             ) : activeTab === 'customer' && showCustomerRegistration ? (
                 <CustomerRegistration onBack={() => setShowCustomerRegistration(false)} />
             ) : (
-                <Card className="w-full max-w-2xl">
+                <Card className="w-full max-w-2xl backdrop-blur-md bg-white/80 border border-white/50 shadow-xl">
                     <CardHeader className="text-center">
                         <div className="flex flex-col items-center justify-center mb-4">
                             <img src={getAssetPath("/img/Asset 3.png")} alt="logo" className="h-16 w-16 mb-2" />

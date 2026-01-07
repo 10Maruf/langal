@@ -82,7 +82,9 @@ class BanglaTTSService {
         this.updateStatus({ isLoading: true, isPlaying: false, progress: 10 });
 
         // Get backend API URL from environment
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const isProd = import.meta.env.PROD;
+        const defaultUrl = isProd ? 'https://langal-production.up.railway.app' : 'http://localhost:8000';
+        const backendUrl = (import.meta.env.VITE_API_URL || defaultUrl).replace(/\/api\/?$/, '');
         const apiEndpoint = `${backendUrl}/api/tts/generate`;
 
         console.info('🎙️ Calling Hugging Face TTS via backend proxy...');

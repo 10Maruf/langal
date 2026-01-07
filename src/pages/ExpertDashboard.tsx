@@ -1,288 +1,424 @@
-import { useState } from "react";
-import { Header } from "@/components/layout/Header";
-import { BottomNav } from "@/components/layout/BottomNav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Users, TrendingUp, Calendar, CheckCircle, Clock, AlertCircle, Bell } from "lucide-react";
+import { TTSButton } from "@/components/ui/tts-button";
+import { Header } from "@/components/layout/Header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
-import { Link } from "react-router-dom";
-import { ExpertNotifications } from "@/components/notifications/ExpertNotifications";
+import {
+    Users,
+    MapPin,
+    Droplets,
+    Wind,
+    Loader2,
+    Sun,
+    Moon,
+    Cloud,
+    CloudRain,
+    CloudSun,
+    CloudMoon,
+    ChevronRight,
+    CheckCircle,
+    Clock
+} from "lucide-react";
+import {
+    fetchWeatherOneCall,
+    processWeatherData,
+    getLocationName,
+    toBengaliNumber,
+    CompleteWeatherData
+} from "@/services/weatherService";
+import { getProfilePhotoUrl } from "@/lib/utils";
+
+// Import dashboard icons
+import socialFeedIcon from "@/assets/dashboard-icons/social-feed.png";
+import diagnosisIcon from "@/assets/dashboard-icons/diagnosis.png";
+import weatherIcon from "@/assets/dashboard-icons/weather.png";
+import newsIcon from "@/assets/dashboard-icons/news.png";
+import consultationIcon from "@/assets/dashboard-icons/consultation.png";
 
 const ExpertDashboard = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState("feed");
-    const [activeConsultations] = useState([
-        {
-            id: 1,
-            farmer: "আবদুল করিম",
-            crop: "ধান",
-            issue: "পাতা হলুদ হয়ে যাচ্ছে",
-            priority: "high",
-            time: "২ ঘন্টা আগে",
-            status: "pending"
-        },
-        {
-            id: 2,
-            farmer: "রহিমা খাতুন",
-            crop: "টমেটো",
-            issue: "ফল ছোট হচ্ছে",
-            priority: "medium",
-            time: "৪ ঘন্টা আগে",
-            status: "in-progress"
-        },
-        {
-            id: 3,
-            farmer: "মোঃ সালাম",
-            crop: "আলু",
-            issue: "পোকামাকড়ের আক্রমণ",
-            priority: "high",
-            time: "১ দিন আগে",
-            status: "completed"
-        }
-    ]);
 
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'high':
-                return 'bg-red-100 text-red-800';
-            case 'medium':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'low':
-                return 'bg-green-100 text-green-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
+    // Weather state
+    const [weatherData, setWeatherData] = useState<CompleteWeatherData | null>(null);
+    const [weatherLocation, setWeatherLocation] = useState<string>("");
+    const [weatherLoading, setWeatherLoading] = useState(true);
+    const [weatherError, setWeatherError] = useState<string | null>(null);
+
+    // Expert stats
+    const [totalConsultations] = useState<number>(342);
+
+    // রাত কিনা চেক করার হেল্পার
+    const isNightTime = (): boolean => {
+        const hour = new Date().getHours();
+        return hour < 6 || hour >= 18;
     };
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return <Clock className="h-4 w-4 text-orange-500" />;
-            case 'in-progress':
-                return <AlertCircle className="h-4 w-4 text-blue-500" />;
-            case 'completed':
-                return <CheckCircle className="h-4 w-4 text-green-500" />;
-            default:
-                return <Clock className="h-4 w-4" />;
+    // Weather icon helper - দিন/রাত অনুযায়ী
+    const getWeatherIcon = (condition: string) => {
+        const c = condition.toLowerCase();
+        const isNight = isNightTime();
+
+        if (c.includes('পরিষ্কার') || c.includes('clear')) {
+            return isNight
+                ? <Moon className="h-10 w-10 text-indigo-400" />
+                : <Sun className="h-10 w-10 text-amber-500" />;
         }
+        if (c.includes('বৃষ্টি') || c.includes('rain')) return <CloudRain className="h-10 w-10 text-blue-500" />;
+        if (c.includes('মেঘ') && c.includes('হালকা')) {
+            return isNight
+                ? <CloudMoon className="h-10 w-10 text-slate-400" />
+                : <CloudSun className="h-10 w-10 text-gray-400" />;
+        }
+        if (c.includes('মেঘ')) {
+            return isNight
+                ? <CloudMoon className="h-10 w-10 text-slate-400" />
+                : <CloudSun className="h-10 w-10 text-gray-400" />;
+        }
+        return <Cloud className="h-10 w-10 text-gray-400" />;
     };
 
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return 'অপেক্ষমান';
-            case 'in-progress':
-                return 'চলমান';
-            case 'completed':
-                return 'সম্পন্ন';
-            default:
-                return 'অজানা';
+    // বাংলা তারিখ ফরম্যাট
+    const formatBanglaDate = () => {
+        const banglaMonths = [
+            'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+            'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+        ];
+        const today = new Date();
+        const day = toBengaliNumber(today.getDate());
+        const month = banglaMonths[today.getMonth()];
+        const year = toBengaliNumber(today.getFullYear());
+        return `${day} ই ${month}, ${year}`;
+    };
+
+    // Fetch weather on mount using GPS
+    useEffect(() => {
+        const fetchWeather = async () => {
+            setWeatherLoading(true);
+            setWeatherError(null);
+
+            if (!navigator.geolocation) {
+                setWeatherError("GPS সমর্থিত নয়");
+                setWeatherLoading(false);
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        const { latitude, longitude } = position.coords;
+                        const locationName = await getLocationName(latitude, longitude);
+                        const rawData = await fetchWeatherOneCall(latitude, longitude);
+                        const processed = processWeatherData(rawData, locationName);
+
+                        setWeatherData(processed);
+                        setWeatherLocation(locationName);
+                    } catch (error) {
+                        console.error("Weather fetch error:", error);
+                        setWeatherError("আবহাওয়া লোড করতে সমস্যা");
+                    } finally {
+                        setWeatherLoading(false);
+                    }
+                },
+                (error) => {
+                    console.error("GPS error:", error);
+                    setWeatherError("অবস্থান পাওয়া যায়নি");
+                    setWeatherLoading(false);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        };
+
+        fetchWeather();
+    }, []);
+
+    // ড্যাশবোর্ড আইকন এবং রুট ম্যাপিং - Expert এর জন্য ৫ টি মেনু
+    const dashboardItems = [
+        {
+            id: "social",
+            title: "সামাজিক ফিড",
+            description: "কৃষক ও বিশেষজ্ঞদের সাথে যোগাযোগ করুন",
+            image: socialFeedIcon,
+            route: "/social-feed",
+            color: "bg-blue-500",
+            stats: "২৪৫ নতুন পোস্ট"
+        },
+        {
+            id: "consultation",
+            title: "পরামর্শ",
+            description: "কৃষকদের পরামর্শ দিন",
+            image: consultationIcon,
+            route: "/consultation/dashboard",
+            color: "bg-indigo-500",
+            stats: "২৪/৭ সেবা"
+        },
+        {
+            id: "agricultural-news",
+            title: "কৃষি সংবাদ",
+            description: "কৃষি বিষয়ক সংবাদ ও তথ্য",
+            image: newsIcon,
+            route: "/agricultural-news",
+            color: "bg-amber-500",
+            stats: "নতুন সংবাদ"
+        },
+        {
+            id: "weather",
+            title: "আবহাওয়া পূর্বাভাস",
+            description: "আবহাওয়ার পূর্বাভাস ও কৃষি পরামর্শ",
+            image: weatherIcon,
+            route: "/abhaowa-purbabhas",
+            color: "bg-orange-500",
+            stats: "৭ দিনের পূর্বাভাস"
+        },
+        {
+            id: "diagnosis",
+            title: "রোগ নির্ণয়",
+            description: "ফসলের রোগ শনাক্ত করুন",
+            image: diagnosisIcon,
+            route: "/diagnosis",
+            color: "bg-red-500",
+            stats: "AI সহায়তা"
         }
+    ];
+
+    const handleNavigation = (route: string) => {
+        navigate(route);
     };
 
     return (
-        <NotificationProvider>
-            <div className="min-h-screen bg-background">
-                <Header />
+        <div className="min-h-screen bg-background">
+            <Header />
+            <main className="p-4 pb-20 space-y-4 pt-20 max-w-3xl mx-auto">
+                {/* ১. স্বাগত বার্তা with Profile Picture - Glassmorphism Hero Section */}
+                <Card className="border border-blue-200/50 bg-blue-50/60 dark:bg-blue-950/30 backdrop-blur-md shadow-lg overflow-hidden">
+                    <CardContent className="p-5 relative">
+                        {/* Decorative circles */}
+                        <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-200/30 dark:bg-blue-400/10 rounded-full blur-sm"></div>
+                        <div className="absolute -right-4 top-12 w-20 h-20 bg-blue-300/20 dark:bg-blue-500/10 rounded-full blur-sm"></div>
 
-                <main className="container mx-auto px-4 py-6 pb-20">
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-foreground">
-                            স্বাগতম, {user?.name || 'কৃষি বিশেষজ্ঞ'}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            কৃষকদের সহায়তা ও পরামর্শ প্রদানের ড্যাশবোর্ড
-                        </p>
-                    </div>
-
-                    {/* Stats Cards - Removed as per requirement */}
-                    {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"> ... </div> */}
-
-                    <Tabs defaultValue="consultations" className="space-y-4">
-                        <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="consultations">পরামর্শ সেবা</TabsTrigger>
-                            <TabsTrigger value="notifications">
-                                <div className="flex items-center gap-1">
-                                    <Bell className="h-4 w-4" />
-                                    নোটিফিকেশন
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className="relative">
+                                <Avatar className="h-16 w-16 border-2 border-blue-400/40 shadow-lg ring-2 ring-blue-300/30">
+                                    <AvatarImage src={getProfilePhotoUrl(user?.profilePhoto)} alt={user?.name} />
+                                    <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xl font-bold">
+                                        {user?.name?.charAt(0)?.toUpperCase() || 'E'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                {user?.verificationStatus && (
+                                    <>
+                                        {user.verificationStatus === 'approved' && (
+                                            <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 shadow-md">
+                                                <CheckCircle className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                        {user.verificationStatus === 'pending' && (
+                                            <div className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full p-1 shadow-md">
+                                                <Clock className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">স্বাগতম,</p>
+                                <h1 className="text-2xl font-bold tracking-tight text-blue-800 dark:text-blue-100">{user?.name || 'কৃষি বিশেষজ্ঞ'}</h1>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Badge className="bg-blue-200/60 dark:bg-blue-800/60 text-blue-700 dark:text-blue-200 border-0 text-xs">
+                                        কৃষি বিশেষজ্ঞ
+                                    </Badge>
                                 </div>
-                            </TabsTrigger>
-                            <TabsTrigger value="social">সামাজিক ফিড</TabsTrigger>
-                            <TabsTrigger value="profile">প্রোফাইল</TabsTrigger>
-                            <TabsTrigger value="analytics">বিশ্লেষণ</TabsTrigger>
-                        </TabsList>
+                            </div>
+                            <div className="text-right bg-white/50 dark:bg-blue-900/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-blue-200/50">
+                                <p className="text-xs text-blue-600 dark:text-blue-400">আজকের তারিখ</p>
+                                <p className="text-lg font-semibold text-blue-800 dark:text-blue-100">{formatBanglaDate()}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                        <TabsContent value="consultations">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>কৃষকদের পরামর্শের তালিকা</CardTitle>
-                                    <CardDescription>
-                                        কৃষকদের সমস্যা ও আপনার পরামর্শ পরিচালনা করুন
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        {activeConsultations.map((consultation) => (
-                                            <div
-                                                key={consultation.id}
-                                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                                            >
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h3 className="font-semibold">{consultation.farmer}</h3>
-                                                        <Badge variant="outline">{consultation.crop}</Badge>
-                                                        <Badge className={getPriorityColor(consultation.priority)}>
-                                                            {consultation.priority === 'high' ? 'জরুরি' :
-                                                                consultation.priority === 'medium' ? 'মাঝারি' : 'সাধারণ'}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground mb-1">
-                                                        সমস্যা: {consultation.issue}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {consultation.time}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center gap-1">
-                                                        {getStatusIcon(consultation.status)}
-                                                        <span className="text-sm">{getStatusText(consultation.status)}</span>
-                                                    </div>
-                                                    <Button
-                                                        variant={consultation.status === 'completed' ? 'outline' : 'default'}
-                                                        size="sm"
-                                                    >
-                                                        {consultation.status === 'completed' ? 'দেখুন' : 'উত্তর দিন'}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
+                {/* ২. পরিসংখ্যান কার্ড */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* মোট পরামর্শ */}
+                    <Card className="border">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
+                                    <Users className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">মোট পরামর্শ</p>
+                                    <p className="text-lg font-semibold">{toBengaliNumber(totalConsultations)} টি</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* সফলতার হার */}
+                    <Card className="border">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950">
+                                    <CheckCircle className="h-5 w-5 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">সফলতার হার</p>
+                                    <p className="text-lg font-semibold">৯২%</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* ৩. আবহাওয়া কার্ড - Simple Design */}
+                <Card
+                    className="border cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => navigate("/abhaowa-purbabhas")}
+                >
+                    <CardContent className="p-4">
+                        {weatherLoading ? (
+                            <div className="flex items-center justify-center py-2">
+                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+                                <span className="text-sm text-muted-foreground">আবহাওয়া লোড হচ্ছে...</span>
+                            </div>
+                        ) : weatherError ? (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Cloud className="h-8 w-8 text-gray-400" />
+                                    <div>
+                                        <p className="text-sm font-medium">আবহাওয়া</p>
+                                        <p className="text-xs text-muted-foreground">{weatherError}</p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="notifications">
-                            <ExpertNotifications />
-                        </TabsContent>
-
-                        <TabsContent value="social">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>সামাজিক ফিড</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-center py-8">
-                                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <p className="text-muted-foreground">
-                                            সামাজিক ফিড এখানে প্রদর্শিত হবে
-                                        </p>
-                                        <Button className="mt-4">
-                                            পোস্ট করুন
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="profile">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>আমার প্রোফাইল</CardTitle>
-                                    <CardDescription>
-                                        আপনার প্রোফাইল তথ্য দেখুন ও আপডেট করুন
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-                                                    <Users className="h-8 w-8 text-blue-600" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-lg">{user?.name || 'কৃষি বিশেষজ্ঞ'}</h3>
-                                                    <p className="text-sm text-muted-foreground">কৃষি বিশেষজ্ঞ</p>
-                                                    <p className="text-sm text-muted-foreground">{user?.email}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <h4 className="font-medium">বিশেষত্ব</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <Badge variant="secondary">ফসল উৎপাদন</Badge>
-                                                    <Badge variant="secondary">মাটি ব্যবস্থাপনা</Badge>
-                                                    <Badge variant="secondary">পোকামাকড় নিয়ন্ত্রণ</Badge>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <h4 className="font-medium">যোগাযোগ</h4>
-                                                <p className="text-sm text-muted-foreground">ফোন: ০১৭১২৩৪৫৬৭৮</p>
-                                                <p className="text-sm text-muted-foreground">অভিজ্ঞতা: ১৫ বছর</p>
-                                            </div>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                        ) : weatherData ? (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    {getWeatherIcon(weatherData.বর্তমান.অবস্থা)}
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-2xl font-semibold">
+                                                {toBengaliNumber(weatherData.বর্তমান.তাপমাত্রা)}°
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                                {weatherData.বর্তমান.অবস্থা}
+                                            </span>
                                         </div>
-
-                                        <div className="space-y-4">
-                                            <h4 className="font-medium">দ্রুত পরিসংখ্যান</h4>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                                    <p className="text-2xl font-bold text-blue-600">৩৪২</p>
-                                                    <p className="text-sm text-muted-foreground">মোট পরামর্শ</p>
-                                                </div>
-                                                <div className="text-center p-4 bg-green-50 rounded-lg">
-                                                    <p className="text-2xl font-bold text-green-600">৯২%</p>
-                                                    <p className="text-sm text-muted-foreground">সফলতার হার</p>
-                                                </div>
-                                                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                                                    <p className="text-2xl font-bold text-orange-600">২৭৫</p>
-                                                    <p className="text-sm text-muted-foreground">সাহায্যপ্রাপ্ত কৃষক</p>
-                                                </div>
-                                                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                                    <p className="text-2xl font-bold text-purple-600">৪.৮</p>
-                                                    <p className="text-sm text-muted-foreground">গড় রেটিং</p>
-                                                </div>
-                                            </div>
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <MapPin className="h-3 w-3" />
+                                            <span>{weatherLocation}</span>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="mt-6 flex gap-2">
-                                        <Button asChild>
-                                            <Link to="/expert-profile">বিস্তারিত প্রোফাইল দেখুন</Link>
-                                        </Button>
-                                        <Button variant="outline">প্রোফাইল সম্পাদনা</Button>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right text-xs text-muted-foreground space-y-1">
+                                        <div className="flex items-center gap-1 justify-end">
+                                            <Droplets className="h-3 w-3" />
+                                            {toBengaliNumber(weatherData.বর্তমান.আর্দ্রতা)}%
+                                        </div>
+                                        <div className="flex items-center gap-1 justify-end">
+                                            <Wind className="h-3 w-3" />
+                                            {toBengaliNumber(weatherData.বর্তমান.বাতাসের_গতি)} কিমি/ঘ
+                                        </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                            </div>
+                        ) : null}
+                    </CardContent>
+                </Card>
 
-                        <TabsContent value="analytics">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>বিশ্লেষণ ও রিপোর্ট</CardTitle>
-                                    <CardDescription>
-                                        আপনার কার্যক্রমের পরিসংখ্যান ও বিশ্লেষণ
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-center py-8">
-                                        <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <p className="text-muted-foreground">
-                                            বিশ্লেষণ ডেটা এখানে প্রদর্শিত হবে
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </main>
+                {/* মূল ড্যাশবোর্ড মেনু - ৫ টি অপশন */}
+                <div
+                    className="relative rounded-xl p-4 -mx-4"
+                    style={{
+                        backgroundImage: 'url("/img/farmer_dashbord_bg.svg")',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'bottom center',
+                        backgroundSize: 'cover'
+                    }}
+                >
+                    {/* Opacity overlay */}
+                    <div className="absolute inset-0 bg-background/70 rounded-xl"></div>
 
-                <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-            </div>
-        </NotificationProvider>
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">মূল মেনু</h2>
+                            <TTSButton
+                                text="বিশেষজ্ঞ সেবা মেনু। এখানে সামাজিক ফিড, পরামর্শ, কৃষি সংবাদ, আবহাওয়া পূর্বাভাস এবং রোগ নির্ণয় সেবা পাবেন।"
+                                size="icon"
+                                variant="ghost"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {dashboardItems.map((item) => {
+                                return (
+                                    <Card
+                                        key={item.id}
+                                        className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 border border-white/30 dark:border-white/10 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md hover:bg-white/60 dark:hover:bg-gray-800/60"
+                                        onClick={() => handleNavigation(item.route)}
+                                    >
+                                        <CardContent className="p-6 text-center space-y-3">
+                                            <div className="mx-auto w-20 h-20 bg-white/70 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl shadow-lg flex items-center justify-center p-2 border border-white/50 dark:border-white/10">
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.title}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+                                                <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
+                                                    {item.description}
+                                                </p>
+                                                <Badge variant="secondary" className="text-xs bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm">
+                                                    {item.stats}
+                                                </Badge>
+                                            </div>
+
+                                            <div className="mt-2">
+                                                <TTSButton
+                                                    text={`${item.title}। ${item.description}। ${item.stats}`}
+                                                    size="icon"
+                                                    variant="outline"
+                                                    className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm border-white/40"
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* সাহায্য বিভাগ */}
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="text-center space-y-3">
+                            <h3 className="text-lg font-semibold">সাহায্য প্রয়োজন?</h3>
+                            <p className="text-muted-foreground">
+                                কোন সমস্যা হলে আমাদের সাথে যোগাযোগ করুন
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                                <Badge variant="outline" className="py-2 px-4">
+                                    📞 হটলাইন: ১৬১২৩
+                                </Badge>
+                                <Badge variant="outline" className="py-2 px-4">
+                                    📱 SMS: ১৬১২৩
+                                </Badge>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
     );
 };
 

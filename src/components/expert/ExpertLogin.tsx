@@ -7,14 +7,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Phone, ArrowLeft, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAssetPath } from "@/lib/utils";
 import ExpertForgotPassword from "./ExpertForgotPassword";
+import { API_URL } from '@/services/api';
 
 interface ExpertLoginProps {
     onBackToMainLogin: () => void;
 }
 
 // API Base URL
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000/api';
+const API_BASE = API_URL;
 
 const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
     const [phone, setPhone] = useState("");
@@ -61,13 +63,27 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
             }
 
             if (response.ok && data?.success) {
+                // Check verification status first
+                const backendUser = data.data.user;
+                const verificationStatus = backendUser.profile?.verification_status || 'pending';
+
+                // Block rejected users from logging in
+                if (verificationStatus === 'rejected') {
+                    toast({
+                        title: "প্রোফাইল প্রত্যাখ্যাত",
+                        description: "আপনার প্রোফাইল প্রত্যাখ্যাত হয়েছে। সঠিক তথ্য দিয়ে পুনরায় রেজিস্ট্রেশনের জন্য অনুগ্রহ করে নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।",
+                        variant: "destructive",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Store authentication data
                 if (data.data?.token) {
                     localStorage.setItem('auth_token', data.data.token);
                     localStorage.setItem('user_data', JSON.stringify(data.data.user));
 
                     // Set user in AuthContext with actual backend data
-                    const backendUser = data.data.user;
                     setAuthUser({
                         id: backendUser.user_id?.toString() || '',
                         user_id: backendUser.user_id,
@@ -78,7 +94,8 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                         profilePhoto: backendUser.profile?.profile_photo_url_full,
                         nidNumber: backendUser.profile?.nid_number,
                         location: backendUser.profile?.address,
-                        expertProfile: backendUser.expert || undefined
+                        expertProfile: backendUser.expert || undefined,
+                        verificationStatus: verificationStatus
                     }, data.data.token);
                 }
 
@@ -88,7 +105,7 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                 });
 
                 // Redirect to expert dashboard
-                navigate('/consultant-dashboard');
+                navigate('/expert-dashboard');
             } else {
                 const backendMsg = data?.message;
                 if (response.status === 404) {
@@ -135,8 +152,26 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
     }
 
     return (
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md backdrop-blur-md bg-white/80 border border-white/50 shadow-xl">
             <CardHeader className="text-center">
+                <div className="flex justify-start mb-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onBackToMainLogin}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        ফিরে যান
+                    </Button>
+                </div>
+                <div className="flex flex-col items-center justify-center mb-4">
+                    <img src={getAssetPath("/img/Asset 3.png")} alt="logo" className="h-16 w-16 mb-2" />
+                    <h1 className="text-2xl font-bold text-primary mb-2">লাঙল</h1>
+                    <p className="text-sm text-gray-700 font-medium px-3 py-1 bg-blue-50 rounded-md border-l-4 border-blue-500">
+                        কৃষকের ডিজিটাল হাতিয়ার
+                    </p>
+                </div>
                 <CardTitle className="text-xl text-blue-600">বিশেষজ্ঞ লগইন</CardTitle>
                 <CardDescription>
                     মোবাইল নম্বর ও পাসওয়ার্ড দিয়ে লগইন করুন
@@ -201,16 +236,6 @@ const ExpertLogin = ({ onBackToMainLogin }: ExpertLoginProps) => {
                         ) : (
                             'লগইন করুন'
                         )}
-                    </Button>
-
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onBackToMainLogin}
-                        className="w-full"
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        অন্য ধরনের লগইন
                     </Button>
                 </form>
             </CardContent>

@@ -76,7 +76,11 @@ interface FarmerFormData {
 
 type RegistrationStep = 'initial' | 'documents' | 'form' | 'otp' | 'success';
 
-const FarmerRegistration = () => {
+interface FarmerRegistrationProps {
+    onBack?: () => void;
+}
+
+const FarmerRegistration = ({ onBack }: FarmerRegistrationProps) => {
     const [currentStep, setCurrentStep] = useState<RegistrationStep>('initial');
     const [isLoading, setIsLoading] = useState(false);
     const [otp, setOtp] = useState('');
@@ -326,13 +330,10 @@ const FarmerRegistration = () => {
                     description: `আপনার ${initialData.phone} নম্বরে OTP পাঠানো হয়েছে`,
                 });
 
-                // For dev/demo purposes, log the OTP if returned
+                // For dev/demo purposes, save and display the OTP
                 if (response.data.data.otp_code) {
                     console.log("Dev OTP:", response.data.data.otp_code);
-                    toast({
-                        title: "Dev Mode OTP",
-                        description: `OTP Code: ${response.data.data.otp_code}`,
-                    });
+                    setGeneratedOtp(response.data.data.otp_code);
                 }
 
                 setCurrentStep('otp');
@@ -367,10 +368,7 @@ const FarmerRegistration = () => {
 
                 if (response.data.data.otp_code) {
                     console.log("Dev OTP:", response.data.data.otp_code);
-                    toast({
-                        title: "Dev Mode OTP",
-                        description: `OTP Code: ${response.data.data.otp_code}`,
-                    });
+                    setGeneratedOtp(response.data.data.otp_code);
                 }
             }
         } catch (error) {
@@ -683,6 +681,16 @@ const FarmerRegistration = () => {
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                     )}
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onBack ? onBack() : navigate('/register')}
+                    className="w-full"
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    ফিরে যান
                 </Button>
             </form>
         </div>
@@ -1051,10 +1059,21 @@ const FarmerRegistration = () => {
                 <CheckCircle className="h-4 w-4 text-purple-600" />
                 <AlertDescription className="text-purple-800">
                     আপনার {initialData.phone} নম্বরে একটি ৬ ডিজিটের OTP কোড পাঠানো হয়েছে
-                    <br />
-                    <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো ৬ ডিজিট দিলেই হবে</span>
                 </AlertDescription>
             </Alert>
+
+            {/* OTP Display for Demo/Testing - Shows OTP on screen */}
+            {generatedOtp && (
+                <Alert className="border-orange-300 bg-orange-50">
+                    <AlertDescription className="text-orange-800 text-center">
+                        <span className="font-medium">🔐 ডেমো OTP কোড:</span>
+                        <br />
+                        <span className="text-2xl font-bold tracking-widest text-orange-600">{generatedOtp}</span>
+                        <br />
+                        <span className="text-xs text-gray-500">(মোবাইল টেস্টিং এর জন্য)</span>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <form onSubmit={handleOtpSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -1062,7 +1081,7 @@ const FarmerRegistration = () => {
                     <Input
                         id="otp"
                         type="text"
-                        placeholder="যেকোনো ৬ ডিজিট (যেমন: 123456)"
+                        placeholder="৬ ডিজিট OTP কোড"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}

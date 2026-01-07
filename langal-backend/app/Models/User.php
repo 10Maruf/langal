@@ -24,6 +24,7 @@ class User extends Authenticatable
         'phone',
         'is_verified',
         'is_active',
+        'last_active_at',
     ];
 
     /**
@@ -42,9 +43,29 @@ class User extends Authenticatable
         return [
             'is_verified' => 'boolean',
             'is_active' => 'boolean',
+            'last_active_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Check if user is currently online (active within last 5 minutes)
+     */
+    public function isOnline(): bool
+    {
+        if (!$this->last_active_at) {
+            return false;
+        }
+        return $this->last_active_at->diffInMinutes(now()) < 5;
+    }
+
+    /**
+     * Update last active timestamp
+     */
+    public function updateLastActive(): void
+    {
+        $this->update(['last_active_at' => now()]);
     }
 
     /**

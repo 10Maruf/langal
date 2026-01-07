@@ -17,9 +17,11 @@ import {
     Wind,
     Loader2,
     Sun,
+    Moon,
     Cloud,
     CloudRain,
     CloudSun,
+    CloudMoon,
     ChevronRight,
     Bell,
     Sprout,
@@ -33,9 +35,7 @@ import {
     toBengaliNumber,
     CompleteWeatherData
 } from "@/services/weatherService";
-
-// API Base URL for images
-const API_BASE_URL = 'http://localhost:8000';
+import { getProfilePhotoUrl } from "@/lib/utils";
 
 // Import dashboard icons
 import socialFeedIcon from "@/assets/dashboard-icons/social-feed.png";
@@ -86,23 +86,33 @@ const FarmerDashboard = () => {
         { name: "আলু", price: "২২", unit: "কেজি", trend: "up" },
     ];
 
-    // Profile photo URL helper
-    const getProfilePhotoUrl = (photoPath: string | undefined): string | undefined => {
-        if (!photoPath) return undefined;
-        // If already a full URL, return as is
-        if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
-            return photoPath;
-        }
-        // Otherwise, prepend API base URL
-        return `${API_BASE_URL}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
+    // রাত কিনা চেক করার হেল্পার
+    const isNightTime = (): boolean => {
+        const hour = new Date().getHours();
+        return hour < 6 || hour >= 18; // সন্ধ্যা ৬টা থেকে সকাল ৬টা পর্যন্ত রাত
     };
 
-    // Weather icon helper
+    // Weather icon helper - দিন/রাত অনুযায়ী
     const getWeatherIcon = (condition: string) => {
         const c = condition.toLowerCase();
-        if (c.includes('পরিষ্কার') || c.includes('clear')) return <Sun className="h-10 w-10 text-amber-500" />;
+        const isNight = isNightTime();
+
+        if (c.includes('পরিষ্কার') || c.includes('clear')) {
+            return isNight
+                ? <Moon className="h-10 w-10 text-indigo-400" />
+                : <Sun className="h-10 w-10 text-amber-500" />;
+        }
         if (c.includes('বৃষ্টি') || c.includes('rain')) return <CloudRain className="h-10 w-10 text-blue-500" />;
-        if (c.includes('মেঘ') && c.includes('হালকা')) return <CloudSun className="h-10 w-10 text-gray-400" />;
+        if (c.includes('মেঘ') && c.includes('হালকা')) {
+            return isNight
+                ? <CloudMoon className="h-10 w-10 text-slate-400" />
+                : <CloudSun className="h-10 w-10 text-gray-400" />;
+        }
+        if (c.includes('মেঘ')) {
+            return isNight
+                ? <CloudMoon className="h-10 w-10 text-slate-400" />
+                : <CloudSun className="h-10 w-10 text-gray-400" />;
+        }
         return <Cloud className="h-10 w-10 text-gray-400" />;
     };
 
@@ -169,8 +179,38 @@ const FarmerDashboard = () => {
             }
         };
 
+        // Load offline crops
+        const loadOfflineCrops = () => {
+            try {
+                const offlineData = localStorage.getItem('offline_crop_selections');
+                if (offlineData) {
+                    const parsed = JSON.parse(offlineData);
+                    if (Array.isArray(parsed)) {
+                        // Transform offline data to match display format
+                        const offlineCrops = parsed.flatMap((selection: any) =>
+                            selection.crops.map((crop: any) => ({
+                                selection_id: `offline-${Date.now()}-${Math.random()}`,
+                                crop_name_bn: crop.name_bn,
+                                status: 'offline',
+                                image_url: crop.image?.url,
+                                start_date: selection.start_date || new Date().toISOString(),
+                                progress_percentage: 0,
+                                is_offline: true
+                            }))
+                        );
+
+                        setSelectedCrops(prev => [...prev, ...offlineCrops]);
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading offline crops:", e);
+            }
+        };
+
         if (user) {
-            fetchSelectedCrops();
+            fetchSelectedCrops().then(() => {
+                loadOfflineCrops();
+            });
         }
     }, [user]);
 
@@ -549,10 +589,11 @@ const FarmerDashboard = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            <Badge variant="outline" className="mt-2 text-[10px] w-full justify-center">
-                                                {crop.status === 'planned' ? 'পরিকল্পিত' :
-                                                    crop.status === 'active' ? 'চলমান' :
-                                                        crop.status === 'completed' ? 'সম্পন্ন' : 'বাতিল'}
+                                            <Badge variant="outline" className={`mt-2 text-[10px] w-full justify-center ${crop.is_offline ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : ''}`}>
+                                                {crop.is_offline ? 'অফলাইন (সিঙ্ক বাকি)' :
+                                                    crop.status === 'planned' ? 'পরিকল্পিত' :
+                                                        crop.status === 'active' ? 'চলমান' :
+                                                            crop.status === 'completed' ? 'সম্পন্ন' : 'বাতিল'}
                                             </Badge>
                                         </CardContent>
                                     </Card>

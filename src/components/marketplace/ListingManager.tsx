@@ -34,9 +34,10 @@ import {
     Upload,
     Rocket
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAzureImageUrl } from "@/lib/utils";
 import { MarketplaceListing, LISTING_CATEGORIES } from "@/types/marketplace";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_URL } from '@/services/api';
 import { useToast } from "@/hooks/use-toast";
 import { marketplaceService } from "@/services/marketplaceService";
 import { englishToBangla } from "@/lib/banglaUtils";
@@ -61,7 +62,7 @@ interface ListingManagerProps {
 }
 
 // API Base URL
-const API_BASE = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env?.VITE_API_BASE?.replace(/\/$/, '') || 'http://localhost:8000/api';
+const API_BASE = API_URL;
 
 interface Category {
     id: number;
@@ -513,9 +514,13 @@ export const ListingManager = ({ onClose }: ListingManagerProps) => {
                     <div className="w-24 h-24 flex-shrink-0 bg-muted">
                         {listing.images && listing.images.length > 0 ? (
                             <img
-                                src={listing.images[0]}
+                                src={getAzureImageUrl(listing.images[0]) || listing.images[0]}
                                 alt={listing.title}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                }}
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center">

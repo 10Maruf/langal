@@ -19,9 +19,21 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        env('FRONTEND_URL', 'http://localhost:5173'),
+        'http://localhost:5173',
+        'https://langal.vercel.app',
+        'http://127.0.0.1:5500',
+        'http://localhost:5500',
+        'capacitor://localhost',
+        'http://localhost',
+        'https://localhost',
+    ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        'http://localhost:*',
+        'http://127.0.0.1:*',
+    ],
 
     'allowed_headers' => ['*'],
 

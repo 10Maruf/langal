@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TTSButton } from "@/components/ui/tts-button";
 import { MapPin, Heart, MessageCircle, Star, ShoppingCart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAzureImageUrl } from "@/lib/utils";
 
 export interface CustomerMarketplaceItem {
     id: string;
@@ -135,9 +135,16 @@ export const CustomerMarketplaceCard = ({ item, onContact, onSave, onClick }: Cu
                 <div className="aspect-video bg-muted rounded-lg mb-3 overflow-hidden">
                     {item.images.length > 0 ? (
                         <img
-                            src={item.images[0]}
+                            src={getAzureImageUrl(item.images[0]) || item.images[0]}
                             alt={item.title}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                if (target.parentElement) {
+                                    target.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground"><span class="text-2xl">🏷️</span></div>';
+                                }
+                            }}
                         />
                     ) : (
                         <div className="flex items-center justify-center h-full text-muted-foreground">

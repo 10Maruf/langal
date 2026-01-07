@@ -32,7 +32,7 @@ export const useNotifications = () => {
 };
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -42,22 +42,54 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         setLoading(true);
         try {
-            const response = await api.get('/notifications');
-            if (response.data.success) {
-                const mappedNotifications = response.data.data.data.map((n: any) => ({
-                    id: n.id.toString(),
-                    type: n.notification_type,
-                    title: n.title,
-                    message: n.message,
-                    time: new Date(n.created_at).toLocaleString('bn-BD'),
-                    read: n.is_read === 1 || n.is_read === true,
-                    relatedEntityId: n.related_entity_id
-                }));
-                setNotifications(mappedNotifications);
+            // Add X-User-Id header for debugging/fallback
+            const config = {
+                headers: {} as any
+            };
 
-                // Update unread count
-                const unread = mappedNotifications.filter((n: NotificationItem) => !n.read).length;
-                setUnreadCount(unread);
+            // Try to get ID from user object (user_id is DB id, id might be string)
+            const userId = user?.user_id || user?.id;
+            if (userId) {
+                config.headers['X-User-Id'] = userId.toString();
+                console.log('Sending X-User-Id header:', userId);
+            }
+
+            const response = await api.get('/notifications', config);
+            console.log('Notification API Response:', response.data); // Debug log
+
+            if (response.data.success) {
+                // Handle both paginated and non-paginated responses
+                // Check if data is wrapped in 'data' property (Laravel pagination)
+                let rawData = [];
+                if (response.data.data && Array.isArray(response.data.data.data)) {
+                    rawData = response.data.data.data;
+                } else if (Array.isArray(response.data.data)) {
+                    rawData = response.data.data;
+                } else if (Array.isArray(response.data)) {
+                    rawData = response.data;
+                }
+
+                console.log('Parsed Raw Data:', rawData);
+
+                if (Array.isArray(rawData)) {
+                    const mappedNotifications = rawData.map((n: any) => ({
+                        id: (n.notification_id || n.id) ? (n.notification_id || n.id).toString() : Math.random().toString(), // Handle notification_id or id
+                        type: n.notification_type || 'system',
+                        title: n.title || 'Notification',
+                        message: n.message || '',
+                        time: n.created_at ? new Date(n.created_at).toLocaleString('bn-BD') : '',
+                        read: n.is_read === 1 || n.is_read === true || n.is_read === '1',
+                        relatedEntityId: n.related_entity_id
+                    }));
+                    setNotifications(mappedNotifications);
+
+                    // Update unread count
+                    const unread = mappedNotifications.filter((n: NotificationItem) => !n.read).length;
+                    setUnreadCount(unread);
+                } else {
+                    console.error('Unexpected notification data format:', response.data);
+                    setNotifications([]);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
@@ -76,7 +108,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             );
             setUnreadCount(prev => Math.max(0, prev - 1));
 
-            await api.post(`/notifications/${id}/read`);
+            // Add X-User-Id header for debugging/fallback
+            const config = {
+                headers: {} as any
+            };
+
+            // Try to get ID from user object
+            const userId = user?.user_id || user?.id;
+            if (userId) {
+                config.headers['X-User-Id'] = userId.toString();
+            }
+
+            await api.post(`/notifications/${id}/read`, {}, config);
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
         }
@@ -90,7 +133,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             );
             setUnreadCount(0);
 
-            await api.post('/notifications/mark-all-read');
+            // Add X-User-Id header for debugging/fallback
+            const config = {
+                headers: {} as any
+            };
+
+            // Try to get ID from user object
+            const userId = user?.user_id || user?.id;
+            if (userId) {
+                config.headers['X-User-Id'] = userId.toString();
+            }
+
+            await api.post('/notifications/mark-all-read', {}, config);
         } catch (error) {
             console.error('Failed to mark all notifications as read:', error);
         }

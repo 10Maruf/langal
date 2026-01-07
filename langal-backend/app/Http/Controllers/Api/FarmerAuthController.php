@@ -88,73 +88,81 @@ class FarmerAuthController extends Controller
      */
     public function verifyOtp(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|min:11|max:15',
-            'otp_code' => 'required|string|size:6',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'phone' => 'required|string|min:11|max:15',
+                'otp_code' => 'required|string|size:6',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $phone = $request->phone;
-        $otpCode = $request->otp_code;
-
-        // Verify OTP
-        $result = $this->otpService->verifyOtp($phone, $otpCode, 'login');
-
-        if (!$result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-            ], 400);
-        }
-
-        $user = User::where('phone', $phone)->where('user_type', 'farmer')->first();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User not found',
-            ], 404);
-        }
-
-        // Generate token
-        $token = $user->createToken('farmer-app', ['farmer'])->plainTextToken;
-        $user->update(['updated_at' => now()]);
-
-        $userData = $user->load(['profile', 'farmer'])->toArray();
-
-        // Add full location info from location table based on postal_code
-        if ($user->profile && $user->profile->postal_code) {
-            $location = \DB::table('location')
-                ->where('postal_code', $user->profile->postal_code)
-                ->first();
-
-            if ($location) {
-                $userData['location_info'] = [
-                    'village' => $user->profile->village ?? null,
-                    'postal_code' => $user->profile->postal_code,
-                    'post_office_bn' => $location->post_office_bn ?? null,
-                    'upazila_bn' => $location->upazila_bn ?? null,
-                    'district_bn' => $location->district_bn ?? null,
-                    'division_bn' => $location->division_bn ?? null,
-                ];
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => [
-                'user' => $userData,
-                'token' => $token,
-            ],
-        ]);
+            $phone = $request->phone;
+            $otpCode = $request->otp_code;
+
+            // Verify OTP
+            $result = $this->otpService->verifyOtp($phone, $otpCode, 'login');
+
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                ], 400);
+            }
+
+            $user = User::where('phone', $phone)->where('user_type', 'farmer')->first();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found',
+                ], 404);
+            }
+
+            // Generate token
+            $token = $user->createToken('farmer-app', ['farmer'])->plainTextToken;
+            $user->update(['updated_at' => now()]);
+
+            $userData = $user->load(['profile', 'farmer'])->toArray();
+
+            // Add full location info from location table based on postal_code
+            if ($user->profile && $user->profile->postal_code) {
+                $location = \DB::table('location')
+                    ->where('postal_code', $user->profile->postal_code)
+                    ->first();
+
+                if ($location) {
+                    $userData['location_info'] = [
+                        'village' => $user->profile->village ?? null,
+                        'postal_code' => $user->profile->postal_code,
+                        'post_office_bn' => $location->post_office_bn ?? null,
+                        'upazila_bn' => $location->upazila_bn ?? null,
+                        'district_bn' => $location->district_bn ?? null,
+                        'division_bn' => $location->division_bn ?? null,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => $userData,
+                    'token' => $token,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Farmer Verify OTP Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -221,8 +229,8 @@ class FarmerAuthController extends Controller
             ]);
 
             if ($request->hasFile('profilePhoto')) {
-                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos', 'public');
-                \Log::info('Profile photo uploaded', ['path' => $profilePhotoPath]);
+                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos', 'azure');
+                \Log::info('Profile photo uploaded to Azure', ['path' => $profilePhotoPath]);
             } else {
                 \Log::warning('No profile photo in request');
             }
@@ -415,8 +423,8 @@ class FarmerAuthController extends Controller
                         }
                     }
 
-                    // Store new photo
-                    $path = $file->store('profile_photos', 'public');
+                    // Store new photo in Azure
+                    $path = $file->store('profile_photos', 'azure');
                     $profileData['profile_photo_url'] = $path;
                 }
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ExpertAuthController;
 use App\Http\Controllers\Api\DataOperatorAuthController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\ImageUploadController;
+use App\Http\Controllers\Api\DocumentUploadController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\CropRecommendationController;
 use App\Http\Controllers\PostController;
@@ -126,6 +127,7 @@ Route::prefix('expert')->group(function () {
         Route::put('/profile', [ExpertAuthController::class, 'updateProfile']);
         Route::get('/profile', [ExpertAuthController::class, 'getProfile']);
         Route::post('/logout', [ExpertAuthController::class, 'logout']);
+        Route::post('/heartbeat', [ExpertAuthController::class, 'heartbeat']);
     });
 });
 
@@ -155,6 +157,7 @@ Route::prefix('data-operator')->group(function () {
         // Profile verification routes
         Route::get('/farmers', [DataOperatorAuthController::class, 'getFarmers']);
         Route::get('/customers', [DataOperatorAuthController::class, 'getCustomers']);
+        Route::get('/experts', [DataOperatorAuthController::class, 'getExperts']);
         Route::post('/verify-profile', [DataOperatorAuthController::class, 'verifyProfile']);
 
         // Field data collection routes
@@ -200,6 +203,11 @@ Route::prefix('images')->group(function () {
     Route::post('/marketplace', [ImageUploadController::class, 'uploadMarketplaceImages']);
     Route::delete('/marketplace', [ImageUploadController::class, 'deleteMarketplaceImage']);
     Route::get('/marketplace/{listingId}', [ImageUploadController::class, 'getListingImages']);
+});
+
+// Document Upload Routes
+Route::prefix('documents')->group(function () {
+    Route::post('/upload', [DocumentUploadController::class, 'upload']);
 });
 
 // Location Routes (Public - no authentication required)
@@ -268,4 +276,95 @@ Route::prefix('tts')->group(function () {
     Route::get('/models', [TTSController::class, 'getModels']);
     Route::get('/health', [TTSController::class, 'healthCheck']);
     Route::get('/debug', [TTSDebugController::class, 'testAPI']);
+});
+
+// ============================================
+// EXPERT-FARMER CONSULTATION SYSTEM ROUTES
+// ============================================
+
+use App\Http\Controllers\Api\ExpertAvailabilityController;
+use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\CallController;
+use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\PrescriptionController;
+
+// Expert Availability Routes (Public - view availability)
+Route::prefix('experts/{expertId}')->group(function () {
+    Route::get('/availability', [ExpertAvailabilityController::class, 'index']);
+    Route::get('/slots', [ExpertAvailabilityController::class, 'getAvailableSlots']);
+    Route::get('/reviews', [FeedbackController::class, 'getExpertReviews']);
+});
+
+// Expert Availability Management (Protected - expert only)
+Route::middleware('auth:sanctum')->prefix('expert')->group(function () {
+    Route::get('/my-availability', [ExpertAvailabilityController::class, 'getMyAvailability']);
+    Route::post('/set-availability', [ExpertAvailabilityController::class, 'setAvailability']);
+    Route::post('/availability', [ExpertAvailabilityController::class, 'store']);
+    Route::delete('/availability/{id}', [ExpertAvailabilityController::class, 'destroy']);
+    Route::post('/unavailable-dates', [ExpertAvailabilityController::class, 'addUnavailableDate']);
+    Route::delete('/unavailable-dates/{id}', [ExpertAvailabilityController::class, 'removeUnavailableDate']);
+    Route::get('/stats', [AppointmentController::class, 'getExpertStats']);
+});
+
+// Appointment Routes (Protected)
+Route::middleware('auth:sanctum')->prefix('appointments')->group(function () {
+    Route::get('/my', [AppointmentController::class, 'myAppointments']);
+    Route::get('/today-count', [AppointmentController::class, 'todayCount']);
+    Route::get('/', [AppointmentController::class, 'index']);
+    Route::post('/', [AppointmentController::class, 'store']);
+    Route::get('/{id}', [AppointmentController::class, 'show'])->whereNumber('id');
+    
+    // Appointment actions
+    Route::put('/{id}/approve', [AppointmentController::class, 'approve']);
+    Route::put('/{id}/confirm', [AppointmentController::class, 'approve']); // alias for frontend
+    Route::put('/{id}/reject', [AppointmentController::class, 'reject']);
+    Route::put('/{id}/reschedule', [AppointmentController::class, 'reschedule']);
+    Route::put('/{id}/cancel', [AppointmentController::class, 'cancel']);
+    Route::put('/{id}/complete', [AppointmentController::class, 'complete']);
+    
+    // Feedback & Prescription for appointment
+    Route::post('/{id}/feedback', [FeedbackController::class, 'store']);
+    Route::get('/{id}/feedback', [FeedbackController::class, 'show']);
+    Route::post('/{id}/prescription', [PrescriptionController::class, 'store']);
+    
+    // Call history for appointment
+    Route::get('/{id}/calls', [CallController::class, 'getCallHistory']);
+});
+
+// Conversation/Message Routes (Protected)
+Route::middleware('auth:sanctum')->prefix('conversations')->group(function () {
+    Route::get('/', [MessageController::class, 'getConversations']);
+    Route::get('/{appointmentId}/messages', [MessageController::class, 'getMessages']);
+    Route::post('/{appointmentId}/messages', [MessageController::class, 'sendMessage']);
+    Route::post('/{appointmentId}/read', [MessageController::class, 'markAsRead']);
+});
+
+// Message Routes (Protected)
+Route::middleware('auth:sanctum')->prefix('messages')->group(function () {
+    Route::get('/unread-count', [MessageController::class, 'getUnreadCount']);
+    Route::delete('/{id}', [MessageController::class, 'deleteMessage']);
+});
+
+// Call Routes (Protected)
+Route::middleware('auth:sanctum')->prefix('calls')->group(function () {
+    Route::post('/token', [CallController::class, 'generateToken']);
+    Route::post('/start', [CallController::class, 'startCall']);
+    Route::put('/{id}/answer', [CallController::class, 'answerCall']);
+    Route::put('/{id}/reject', [CallController::class, 'rejectCall']);
+    Route::put('/{id}/end', [CallController::class, 'endCall']);
+    Route::get('/{id}/status', [CallController::class, 'getStatus']);
+});
+
+// Prescription Routes (Protected)
+Route::middleware('auth:sanctum')->prefix('prescriptions')->group(function () {
+    Route::get('/', [PrescriptionController::class, 'index']);
+    Route::get('/{id}', [PrescriptionController::class, 'show']);
+    Route::put('/{id}', [PrescriptionController::class, 'update']);
+    Route::get('/{id}/download', [PrescriptionController::class, 'download']);
+});
+
+// Review Routes (Protected)
+Route::middleware('auth:sanctum')->prefix('reviews')->group(function () {
+    Route::post('/{id}/report', [FeedbackController::class, 'reportReview']);
 });

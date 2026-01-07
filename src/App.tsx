@@ -17,7 +17,7 @@ import Recommendation from "./pages/Recommendation";
 import NewsFeed from "./pages/NewsFeed";
 import WeatherPlanning from "./pages/WeatherPlanning";
 import WeatherForecast from "./pages/WeatherForecast";
-import Consultation from "./pages/Consultation";
+// Consultation page replaced by ExpertListPage
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -43,11 +43,57 @@ import AgriculturalNews from "./pages/AgriculturalNews";
 import FarmerDashboard from "./pages/FarmerDashboard";
 import CentralMarketplace from "./pages/CentralMarketplace";
 import TTSDemo from "./pages/TTSDemo";
+// Consultation System Pages
+import ExpertListPage from "./pages/consultation/ExpertListPage";
+import ExpertProfilePage from "./pages/consultation/ExpertProfilePage";
+import BookAppointmentPage from "./pages/consultation/BookAppointmentPage";
+import MyAppointmentsPage from "./pages/consultation/MyAppointmentsPage";
+import AppointmentDetailsPage from "./pages/consultation/AppointmentDetailsPage";
+import ChatRoom from "./pages/consultation/ChatRoom";
+import VideoCallPage from "./pages/consultation/VideoCallPage";
+import FeedbackPage from "./pages/consultation/FeedbackPage";
+import ExpertConsultationDashboard from "./pages/consultation/ExpertConsultationDashboard";
+import ExpertAvailabilityPage from "./pages/consultation/ExpertAvailabilityPage";
+import { syncOfflineSelections } from "@/services/recommendationService";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useExpertHeartbeat } from "@/hooks/useExpertHeartbeat";
 
 const queryClient = new QueryClient();
 
 // Get the base path for GitHub Pages
-const basename = import.meta.env.PROD ? "/langal-prototype" : "";
+const basename = "";
+
+const OfflineSyncHandler = () => {
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const handleSync = async () => {
+      if (isAuthenticated && navigator.onLine) {
+        const syncedCount = await syncOfflineSelections();
+        if (syncedCount && syncedCount > 0) {
+          toast({
+            title: "সিঙ্ক সম্পন্ন",
+            description: `${syncedCount}টি অফলাইন ডাটা সার্ভারে সেভ হয়েছে।`,
+          });
+        }
+      }
+    };
+
+    handleSync();
+    window.addEventListener('online', handleSync);
+    return () => window.removeEventListener('online', handleSync);
+  }, [isAuthenticated, toast]);
+
+  return null;
+};
+
+// Expert heartbeat component - keeps expert online status updated
+const ExpertHeartbeatHandler = () => {
+  useExpertHeartbeat();
+  return null;
+};
 
 const App = () => {
   const [showIntro, setShowIntro] = useState(true);
@@ -75,10 +121,18 @@ const App = () => {
           <NotificationProvider>
             <Toaster />
             <Sonner />
+            <OfflineSyncHandler />
+            <ExpertHeartbeatHandler />
             {showIntro && !hasShownIntro && (
               <IntroAnimation onComplete={handleIntroComplete} duration={3500} />
             )}
-            <BrowserRouter basename={basename}>
+            <BrowserRouter
+              basename={basename}
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true
+              }}
+            >
               <Routes>
                 <Route
                   path="/login"
@@ -172,7 +226,7 @@ const App = () => {
                   path="/consultation"
                   element={
                     <ProtectedRoute>
-                      <Consultation />
+                      <ExpertListPage />
                     </ProtectedRoute>
                   }
                 />
@@ -305,6 +359,87 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <TTSDemo />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Consultation System Routes */}
+                <Route
+                  path="/consultation"
+                  element={
+                    <ProtectedRoute>
+                      <ExpertListPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/expert/:expertId"
+                  element={
+                    <ProtectedRoute>
+                      <ExpertProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/book/:expertId"
+                  element={
+                    <ProtectedRoute>
+                      <BookAppointmentPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/appointments"
+                  element={
+                    <ProtectedRoute>
+                      <MyAppointmentsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/appointment/:appointmentId"
+                  element={
+                    <ProtectedRoute>
+                      <AppointmentDetailsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/chat/:appointmentId"
+                  element={
+                    <ProtectedRoute>
+                      <ChatRoom />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/call/:appointmentId"
+                  element={
+                    <ProtectedRoute>
+                      <VideoCallPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/feedback/:appointmentId"
+                  element={
+                    <ProtectedRoute>
+                      <FeedbackPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <ExpertConsultationDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/consultation/availability"
+                  element={
+                    <ProtectedRoute>
+                      <ExpertAvailabilityPage />
                     </ProtectedRoute>
                   }
                 />

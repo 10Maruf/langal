@@ -36,6 +36,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getProfilePhotoUrl } from "@/lib/utils";
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -321,7 +322,7 @@ const Profile = () => {
                                 <div className="relative">
                                     <Avatar className="h-24 w-24">
                                         <AvatarImage
-                                            src={previewUrl || profileData.profilePhotoUrl || "/img/farmer-avatar.jpg"}
+                                            src={previewUrl || getProfilePhotoUrl(profileData.profilePhotoUrl) || "/img/farmer-avatar.jpg"}
                                             alt="Profile"
                                         />
                                         <AvatarFallback className="text-2xl">

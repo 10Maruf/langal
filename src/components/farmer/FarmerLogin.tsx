@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Phone, CheckCircle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAssetPath } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { API_URL } from '@/services/api';
 
 type LoginStep = 'phone' | 'otp';
 
@@ -16,7 +18,15 @@ interface FarmerLoginProps {
 }
 
 // API Base URL
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000/api';
+const API_BASE = API_URL;
+
+// Clear old session data
+const clearOldSession = () => {
+    console.log('Clearing old session data...');
+    localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    sessionStorage.clear();
+};
 
 const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     const [currentStep, setCurrentStep] = useState<LoginStep>('phone');
@@ -29,6 +39,11 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     const { login, setAuthUser } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
+
+    // Clear old session on component mount
+    useEffect(() => {
+        clearOldSession();
+    }, []);
 
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -268,14 +283,43 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
         }
     };
 
+    // Demo login handler - auto-fill phone number
+    const handleDemoLogin = () => {
+        setPhone("01997900840");
+        toast({
+            title: "ডেমো নম্বর সেট হয়েছে",
+            description: "এখন 'OTP পাঠান' বাটনে ক্লিক করুন",
+        });
+    };
+
     const renderPhoneForm = () => (
         <div className="space-y-6">
+            {/* Demo Login Banner */}
+            <Alert className="border-amber-300 bg-amber-50">
+                <AlertDescription className="text-amber-800">
+                    <div className="text-center">
+                        <span className="font-bold text-amber-700">🎯 ডেমো অ্যাক্সেস</span>
+                        <br />
+                        <span className="text-sm">ডেমো দেখতে নিচের নম্বর ব্যবহার করুন:</span>
+                        <br />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleDemoLogin}
+                            className="mt-2 bg-amber-100 hover:bg-amber-200 border-amber-400 text-amber-800 font-bold"
+                        >
+                            📱 01997900840
+                        </Button>
+                    </div>
+                </AlertDescription>
+            </Alert>
+
             <Alert className="border-green-200 bg-green-50">
                 <Phone className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                     কৃষক লগইনের জন্য আপনার মোবাইল নম্বর দিন
                     <br />
-                    <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো নম্বর দিলেই হবে</span>
+                    {/* <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো নম্বর দিলেই হবে</span> */}
                 </AlertDescription>
             </Alert>
 
@@ -285,7 +329,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                     <Input
                         id="phone"
                         type="tel"
-                        placeholder="যেকোনো নম্বর (যেমন: 01700000000)"
+                        placeholder="01700000000"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         required
@@ -311,16 +355,6 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                         </>
                     )}
                 </Button>
-
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onBackToMainLogin}
-                    className="w-full"
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    অন্য ধরনের লগইন
-                </Button>
             </form>
         </div>
     );
@@ -331,10 +365,21 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                 <CheckCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
                     আপনার {phone} নম্বরে একটি ৬ ডিজিটের OTP কোড পাঠানো হয়েছে
-                    <br />
-                    <span className="text-orange-600 font-medium">প্রোটোটাইপ মোড: যেকোনো ৬ ডিজিট দিলেই হবে</span>
                 </AlertDescription>
             </Alert>
+
+            {/* OTP Display for Demo/Testing - Shows OTP on screen */}
+            {generatedOtp && (
+                <Alert className="border-orange-300 bg-orange-50">
+                    <AlertDescription className="text-orange-800 text-center">
+                        <span className="font-medium">🔐 ডেমো OTP কোড:</span>
+                        <br />
+                        <span className="text-2xl font-bold tracking-widest text-orange-600">{generatedOtp}</span>
+                        <br />
+                        <span className="text-xs text-gray-500">(মোবাইল টেস্টিং এর জন্য)</span>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <form onSubmit={handleOtpSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -342,7 +387,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                     <Input
                         id="otp"
                         type="text"
-                        placeholder="যেকোনো ৬ ডিজিট (যেমন: 123456)"
+                        placeholder="৬ ডিজিট OTP কোড"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}
@@ -396,8 +441,26 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
     );
 
     return (
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md backdrop-blur-md bg-white/80 border border-white/50 shadow-xl">
             <CardHeader className="text-center">
+                <div className="flex justify-start mb-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onBackToMainLogin}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        ফিরে যান
+                    </Button>
+                </div>
+                <div className="flex flex-col items-center justify-center mb-4">
+                    <img src={getAssetPath("/img/Asset 3.png")} alt="logo" className="h-16 w-16 mb-2" />
+                    <h1 className="text-2xl font-bold text-primary mb-2">লাঙল</h1>
+                    <p className="text-sm text-gray-700 font-medium px-3 py-1 bg-green-50 rounded-md border-l-4 border-green-500">
+                        কৃষকের ডিজিটাল হাতিয়ার
+                    </p>
+                </div>
                 <CardTitle className="text-xl text-green-600">কৃষক লগইন</CardTitle>
                 <CardDescription>
                     {currentStep === 'phone'

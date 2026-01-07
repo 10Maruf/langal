@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '@/services/api';
 
 interface Location {
     postal_code: number;
@@ -36,7 +37,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     const [selectedDistrict, setSelectedDistrict] = useState('');
     const [selectedUpazila, setSelectedUpazila] = useState('');
 
-    const API_BASE = 'http://localhost:8000/api/locations';
+    const API_BASE = `${API_URL}/locations`;
 
     // Load divisions on mount
     useEffect(() => {
@@ -238,7 +239,7 @@ export const PostalCodeSearch: React.FC<{ language?: 'en' | 'bn' }> = ({
 
         try {
             const response = await axios.get(
-                `http://localhost:8000/api/locations/postal/${postalCode}?lang=${language}`
+                `${API_URL}/locations/postal/${postalCode}?lang=${language}`
             );
 
             if (response.data.success) {

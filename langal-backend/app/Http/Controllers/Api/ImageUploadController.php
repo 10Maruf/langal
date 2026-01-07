@@ -46,14 +46,24 @@ class ImageUploadController extends Controller
                 // Generate unique filename
                 $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
 
-                // Store in storage/app/public/marketplace
-                $path = $image->storeAs('marketplace', $filename, 'public');
+                // Store in Azure Blob Storage (or default disk configured in .env)
+                $path = $image->storeAs('marketplace', $filename, 'azure');
 
-                // Return public URL
+                // Build Azure URL
+                $accountName = config('filesystems.disks.azure.name');
+                $container = config('filesystems.disks.azure.container');
+                $fullUrl = sprintf(
+                    'https://%s.blob.core.windows.net/%s/%s',
+                    $accountName,
+                    $container,
+                    $path
+                );
+
+                // Return Azure URL - store only the path in DB
                 $uploadedPaths[] = [
                     'path' => $path,
-                    'url' => Storage::url($path),
-                    'full_url' => url(Storage::url($path)),
+                    'url' => $fullUrl,
+                    'full_url' => $fullUrl,
                 ];
             }
 
@@ -170,11 +180,21 @@ class ImageUploadController extends Controller
                 // Generate unique filename
                 $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
 
-                // Store in storage/app/public/posts
-                $path = $image->storeAs('posts', $filename, 'public');
+                // Store in Azure Blob Storage
+                $path = $image->storeAs('posts', $filename, 'azure');
 
-                // Return full URL for frontend use
-                $uploadedUrls[] = url(Storage::url($path));
+                // Build Azure URL
+                $accountName = config('filesystems.disks.azure.name');
+                $container = config('filesystems.disks.azure.container');
+                $fullUrl = sprintf(
+                    'https://%s.blob.core.windows.net/%s/%s',
+                    $accountName,
+                    $container,
+                    $path
+                );
+
+                // Return Azure URL for frontend use
+                $uploadedUrls[] = $fullUrl;
             }
 
             return response()->json([

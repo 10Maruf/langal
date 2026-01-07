@@ -53,12 +53,26 @@ interface LineChartProps {
 }
 
 export const LineChart = ({ data, height = 200, color = "blue" }: LineChartProps) => {
-    const maxValue = Math.max(...data.map(item => item.value));
-    const minValue = Math.min(...data.map(item => item.value));
+    // Handle empty or insufficient data
+    if (!data || data.length === 0) {
+        return (
+            <div className="flex items-center justify-center text-gray-400" style={{ height: `${height}px` }}>
+                <div className="text-center">
+                    <p>কোনো ডেটা নেই</p>
+                </div>
+            </div>
+        );
+    }
+
+    const maxValue = Math.max(...data.map(item => item.value), 1);
+    const minValue = Math.min(...data.map(item => item.value), 0);
     const range = maxValue - minValue || 1;
 
+    // Handle single data point case
+    const divisor = data.length > 1 ? data.length - 1 : 1;
+
     const points = data.map((item, index) => {
-        const x = (index / (data.length - 1)) * 100;
+        const x = data.length > 1 ? (index / divisor) * 100 : 50;
         const y = 100 - ((item.value - minValue) / range) * 80;
         return `${x},${y}`;
     }).join(' ');
@@ -93,7 +107,7 @@ export const LineChart = ({ data, height = 200, color = "blue" }: LineChartProps
 
                     {/* Data points */}
                     {data.map((item, index) => {
-                        const x = (index / (data.length - 1)) * 100;
+                        const x = data.length > 1 ? (index / divisor) * 100 : 50;
                         const y = 100 - ((item.value - minValue) / range) * 80;
                         return (
                             <circle

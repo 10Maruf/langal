@@ -8,12 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
-    Heart, 
-    MessageCircle, 
-    MoreHorizontal, 
-    MapPin, 
-    ExternalLink, 
+import { API_URL } from '@/services/api';
+import {
+    Heart,
+    MessageCircle,
+    MoreHorizontal,
+    MapPin,
+    ExternalLink,
     UserCheck,
     Flag,
     Edit2,
@@ -22,7 +23,7 @@ import {
     ChevronDown,
     ChevronUp
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAzureImageUrl } from "@/lib/utils";
 import { SocialPost, PostComment, POST_REPORT_REASONS, COMMENT_REPORT_REASONS } from "@/types/social";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +46,7 @@ export const EnhancedPostCard = ({
 }: EnhancedPostCardProps) => {
     const { user } = useAuth();
     const { toast } = useToast();
-    
+
     // State management
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState<PostComment[]>([]);
@@ -109,25 +110,25 @@ export const EnhancedPostCard = ({
             setIsUploadingEdit(true);
             try {
                 let finalImages = [...editedImages];
-                
+
                 // Upload new images if any
                 if (newImages.length > 0) {
                     const formData = new FormData();
                     newImages.forEach((img) => {
                         formData.append('images[]', img);
                     });
-                    
-                    const response = await fetch('http://localhost:8000/api/social/upload-images', {
+
+                    const response = await fetch(`${API_URL}/social/upload-images`, {
                         method: 'POST',
                         body: formData,
                     });
-                    
+
                     const data = await response.json();
                     if (data.success) {
                         finalImages = [...finalImages, ...data.urls];
                     }
                 }
-                
+
                 onUpdate(post.id, { content: editedContent, images: finalImages, type: editedType });
                 setIsEditing(false);
                 setNewImages([]);
@@ -170,22 +171,22 @@ export const EnhancedPostCard = ({
     // Handle report button click
     const handleReportClick = async () => {
         const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
-        
+
         try {
             const result = await socialFeedService.reportPost(post.id, userId);
             if (result) {
                 // Update the post locally
                 if (onUpdate) {
-                    onUpdate(post.id, { 
-                        reported: result.reported, 
-                        reports: result.reports 
+                    onUpdate(post.id, {
+                        reported: result.reported,
+                        reports: result.reports
                     });
                 }
-                
+
                 toast({
                     title: result.reported ? "রিপোর্ট করা হয়েছে" : "রিপোর্ট বাতিল হয়েছে",
-                    description: result.reported 
-                        ? "আপনার রিপোর্ট জমা দেওয়া হয়েছে।" 
+                    description: result.reported
+                        ? "আপনার রিপোর্ট জমা দেওয়া হয়েছে।"
                         : "আপনার রিপোর্ট বাতিল করা হয়েছে।",
                 });
             }
@@ -212,11 +213,11 @@ export const EnhancedPostCard = ({
 
         const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
         const result = await socialFeedService.reportPost(post.id, reportReason, post.type, userId);
-        
+
         if (result) {
             setShowReportDialog(false);
             setReportReason("");
-            
+
             toast({
                 title: result.reported ? "রিপোর্ট জমা দেওয়া হয়েছে" : "রিপোর্ট বাতিল করা হয়েছে",
                 description: result.reported ? "আমরা আপনার রিপোর্ট পর্যালোচনা করব।" : "আপনার রিপোর্ট সরিয়ে দেওয়া হয়েছে।",
@@ -237,12 +238,12 @@ export const EnhancedPostCard = ({
 
         const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
         const result = await socialFeedService.reportComment(post.id, commentId, reportReason, userId);
-        
+
         if (result) {
             setShowReportDialog(false);
             setReportReason("");
             setReportCommentId(null);
-            
+
             toast({
                 title: result.reported ? "মন্তব্য রিপোর্ট করা হয়েছে" : "রিপোর্ট বাতিল করা হয়েছে",
                 description: result.reported ? "আমরা আপনার রিপোর্ট পর্যালোচনা করব।" : "আপনার রিপোর্ট সরিয়ে দেওয়া হয়েছে।",
@@ -269,15 +270,15 @@ export const EnhancedPostCard = ({
 
     const formatTime = (dateString: string | undefined | null) => {
         if (!dateString) return "এখনই";
-        
+
         // Handle MySQL datetime format (2025-01-17 11:03:28)
         // Backend now uses Asia/Dhaka timezone, so just parse directly
         const normalizedDate = dateString.replace(' ', 'T');
         const date = new Date(normalizedDate + '+06:00'); // Explicitly set Bangladesh timezone
-        
+
         // Check if date is valid
         if (isNaN(date.getTime())) return "এখনই";
-        
+
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const diffMinutes = Math.floor(diffMs / (1000 * 60));
@@ -296,8 +297,8 @@ export const EnhancedPostCard = ({
     const postImages = post.images || [];
     const postAuthor = post.author || { name: 'Unknown', avatar: '', location: '', userType: 'farmer', isExpert: false };
     const shouldTruncateContent = postContent.length > 300;
-    const displayContent = shouldTruncateContent && !showFullContent 
-        ? postContent.substring(0, 300) + "..." 
+    const displayContent = shouldTruncateContent && !showFullContent
+        ? postContent.substring(0, 300) + "..."
         : postContent;
 
     const isOwnPost = post.isOwnPost || (user?.name === postAuthor.name);
@@ -308,7 +309,7 @@ export const EnhancedPostCard = ({
                 <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
                         <Avatar className="h-10 w-10">
-                            <AvatarImage src={postAuthor.avatar} />
+                            <AvatarImage src={getAzureImageUrl(postAuthor.avatar)} />
                             <AvatarFallback>
                                 {postAuthor.name?.charAt(0) || 'U'}
                             </AvatarFallback>
@@ -344,7 +345,7 @@ export const EnhancedPostCard = ({
                             size="icon"
                             variant="ghost"
                         />
-                        
+
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -358,7 +359,7 @@ export const EnhancedPostCard = ({
                                             <Edit2 className="h-4 w-4 mr-2" />
                                             সম্পাদনা
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem 
+                                        <DropdownMenuItem
                                             onClick={() => onDelete?.(post.id)}
                                             className="text-destructive"
                                         >
@@ -401,13 +402,13 @@ export const EnhancedPostCard = ({
                                 )}
                             </SelectContent>
                         </Select>
-                        
+
                         <Textarea
                             value={editedContent}
                             onChange={(e) => setEditedContent(e.target.value)}
                             className="min-h-[100px] resize-none"
                         />
-                        
+
                         {/* Existing Images */}
                         {editedImages.length > 0 && (
                             <div className="space-y-2">
@@ -415,9 +416,9 @@ export const EnhancedPostCard = ({
                                 <div className="grid grid-cols-4 gap-2">
                                     {editedImages.map((img, index) => (
                                         <div key={index} className="relative aspect-square">
-                                            <img 
-                                                src={img} 
-                                                alt="" 
+                                            <img
+                                                src={img}
+                                                alt=""
                                                 className="w-full h-full object-cover rounded-lg"
                                             />
                                             <button
@@ -431,7 +432,7 @@ export const EnhancedPostCard = ({
                                 </div>
                             </div>
                         )}
-                        
+
                         {/* New Images Preview */}
                         {newImages.length > 0 && (
                             <div className="space-y-2">
@@ -439,9 +440,9 @@ export const EnhancedPostCard = ({
                                 <div className="grid grid-cols-4 gap-2">
                                     {newImages.map((img, index) => (
                                         <div key={index} className="relative aspect-square">
-                                            <img 
-                                                src={URL.createObjectURL(img)} 
-                                                alt="" 
+                                            <img
+                                                src={URL.createObjectURL(img)}
+                                                alt=""
                                                 className="w-full h-full object-cover rounded-lg"
                                             />
                                             <button
@@ -455,7 +456,7 @@ export const EnhancedPostCard = ({
                                 </div>
                             </div>
                         )}
-                        
+
                         {/* Add Image Button */}
                         <label className="flex items-center gap-2 text-sm font-medium cursor-pointer text-primary hover:underline">
                             <span>+ ছবি যোগ করুন</span>
@@ -467,14 +468,14 @@ export const EnhancedPostCard = ({
                                 className="hidden"
                             />
                         </label>
-                        
+
                         <div className="flex gap-2">
                             <Button size="sm" onClick={handleEditSave} disabled={isUploadingEdit}>
                                 {isUploadingEdit ? 'আপলোড হচ্ছে...' : 'সংরক্ষণ'}
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 disabled={isUploadingEdit}
                                 onClick={() => {
                                     setIsEditing(false);
@@ -539,7 +540,7 @@ export const EnhancedPostCard = ({
                                 )}
                             >
                                 <img
-                                    src={image}
+                                    src={getAzureImageUrl(image) || image}
                                     alt=""
                                     className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
                                     onError={(e) => {
@@ -636,8 +637,8 @@ export const EnhancedPostCard = ({
                                 onChange={(e) => setNewComment(e.target.value)}
                                 className="min-h-[80px] resize-none"
                             />
-                            <Button 
-                                size="sm" 
+                            <Button
+                                size="sm"
                                 onClick={handleCommentSubmit}
                                 disabled={!newComment.trim()}
                             >
@@ -652,46 +653,46 @@ export const EnhancedPostCard = ({
                         {comments.map((comment) => {
                             const commentAuthor = comment.author || { name: 'Unknown', avatar: '', isExpert: false };
                             return (
-                            <div key={comment.id} className="flex gap-2 items-start">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={commentAuthor.avatar} />
-                                    <AvatarFallback>
-                                        {commentAuthor.name?.charAt(0) || 'U'}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <div className="bg-muted rounded-lg p-3">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-semibold text-sm">
-                                                {commentAuthor.name}
-                                            </span>
-                                            {commentAuthor.isExpert && (
-                                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                                    <UserCheck className="h-3 w-3 mr-1" />
-                                                    বিশেষজ্ঞ
-                                                </Badge>
-                                            )}
+                                <div key={comment.id} className="flex gap-2 items-start">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={commentAuthor.avatar} />
+                                        <AvatarFallback>
+                                            {commentAuthor.name?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="bg-muted rounded-lg p-3">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-semibold text-sm">
+                                                    {commentAuthor.name}
+                                                </span>
+                                                {commentAuthor.isExpert && (
+                                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                                        <UserCheck className="h-3 w-3 mr-1" />
+                                                        বিশেষজ্ঞ
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-sm">{comment.content}</p>
                                         </div>
-                                        <p className="text-sm">{comment.content}</p>
-                                    </div>
-                                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                        <span>{formatTime(comment.postedAt)}</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                setReportCommentId(comment.id);
-                                                setShowReportDialog(true);
-                                            }}
-                                            className="h-6 px-2 text-xs"
-                                        >
-                                            <Flag className="h-3 w-3 mr-1" />
-                                            রিপোর্ট
-                                        </Button>
+                                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                            <span>{formatTime(comment.postedAt)}</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setReportCommentId(comment.id);
+                                                    setShowReportDialog(true);
+                                                }}
+                                                className="h-6 px-2 text-xs"
+                                            >
+                                                <Flag className="h-3 w-3 mr-1" />
+                                                রিপোর্ট
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
+                            );
                         })}
                     </div>
                 </CardContent>

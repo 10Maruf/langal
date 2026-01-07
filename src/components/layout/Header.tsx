@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Search, LogOut, CheckCircle, XCircle, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Bell, Search, LogOut, CheckCircle, XCircle, Clock, Check, ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,43 +14,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getAssetPath } from "@/lib/utils";
-
-// API Base URL for images (derive from VITE_API_BASE, strip trailing /api)
-const RAW_API = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env?.VITE_API_BASE || 'http://127.0.0.1:8000/api';
-const API_BASE_URL = RAW_API.replace(/\/?api\/?$/, '');
-
-// Profile photo URL helper
-const getProfilePhotoUrl = (photoPath: string | undefined): string | undefined => {
-  if (!photoPath) return undefined;
-  // If already a full URL, return as is
-  if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
-    return photoPath;
-  }
-  // Otherwise, prepend API base URL
-  return `${API_BASE_URL}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
-};
+import { getAssetPath, getProfilePhotoUrl } from "@/lib/utils";
 
 export const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // Get notifications for all authenticated users
-  let unreadCount = 0;
-  let notifications: any[] = [];
-  let markAsRead: ((id: number) => void) | undefined;
-
-  if (isAuthenticated) {
-    try {
-      const notificationContext = useNotifications();
-      unreadCount = notificationContext.unreadCount;
-      notifications = notificationContext.notifications;
-      markAsRead = notificationContext.markAsRead;
-    } catch (error) {
-      // NotificationContext not available
-      unreadCount = 0;
-      notifications = [];
-    }
-  }
+  const {
+    notifications = [],
+    unreadCount = 0,
+    markAsRead,
+    markAllAsRead
+  } = isAuthenticated ? useNotifications() : {} as any;
 
   const handleLogout = () => {
     logout();
@@ -103,11 +81,27 @@ export const Header = () => {
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel className="flex items-center justify-between">
                     <span>নোটিফিকেশন</span>
-                    {unreadCount > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {unreadCount} নতুন
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {unreadCount} নতুন
+                        </Badge>
+                      )}
+                      {unreadCount > 0 && markAllAsRead && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          title="সবগুলো পঠিত হিসেবে চিহ্নিত করুন"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            markAllAsRead();
+                          }}
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                    </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="max-h-[400px] overflow-y-auto">
@@ -116,28 +110,56 @@ export const Header = () => {
                         কোন নোটিফিকেশন নেই
                       </div>
                     ) : (
-                      notifications.slice(0, 10).map((notification) => (
+                      notifications.slice(0, visibleCount).map((notification: any) => (
                         <DropdownMenuItem
                           key={notification.id}
                           className={`flex flex-col items-start p-3 cursor-pointer ${!notification.read ? 'bg-blue-50 hover:bg-blue-100' : ''
                             }`}
-                          onClick={() => markAsRead && markAsRead(notification.id)}
+                          onClick={() => {
+                            // Mark as read
+                            markAsRead && markAsRead(notification.id);
+
+                            // Navigate based on notification type
+                            if (notification.type === 'consultation_request') {
+                              // Navigate to appointment details page if relatedEntityId exists
+                              if (notification.relatedEntityId) {
+                                navigate(`/consultation/appointment/${notification.relatedEntityId}`);
+                              } else if (user?.type === 'expert') {
+                                navigate('/consultation/dashboard');
+                              } else {
+                                navigate('/consultation/appointments');
+                              }
+                            }
+                          }}
                         >
-                          <div className="font-medium text-sm mb-1">{notification.title}</div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <div className="text-[10px] text-muted-foreground mt-1">
-                            {notification.time}
+                          <div className="flex items-center gap-2 w-full">
+                            <div className="flex-1">
+                              <div className="font-medium text-sm mb-1">{notification.title}</div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <div className="text-[10px] text-muted-foreground mt-1">
+                                {notification.time}
+                              </div>
+                            </div>
+                            {notification.type === 'consultation_request' && (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
                           </div>
                         </DropdownMenuItem>
                       ))
                     )}
                   </div>
-                  {notifications.length > 10 && (
+                  {notifications.length > visibleCount && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-center text-xs text-primary">
+                      <DropdownMenuItem
+                        className="text-center text-xs text-primary cursor-pointer justify-center"
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setVisibleCount(prev => prev + 5);
+                        }}
+                      >
                         আরও দেখুন...
                       </DropdownMenuItem>
                     </>
@@ -150,7 +172,7 @@ export const Header = () => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-0 h-8 w-8 rounded-full">
+                <Button variant="ghost" size="sm" className="p-0 h-8 w-8 rounded-full relative">
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={getProfilePhotoUrl(user?.profilePhoto)}
@@ -160,6 +182,21 @@ export const Header = () => {
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
+                  {user?.verificationStatus === 'approved' && (
+                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full">
+                      <CheckCircle className="h-[1px] w-[1px] text-white" />
+                    </div>
+                  )}
+                  {user?.verificationStatus === 'pending' && (
+                    <div className="absolute bottom-0 right-0 bg-yellow-500 rounded-full">
+                      <Clock className="h-[1px] w-[1px] text-white" />
+                    </div>
+                  )}
+                  {user?.verificationStatus === 'rejected' && (
+                    <div className="absolute bottom-0 right-0 bg-red-500 rounded-full">
+                      <XCircle className="h-[1px] w-[1px] text-white" />
+                    </div>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -170,7 +207,7 @@ export const Header = () => {
                       user?.type === 'expert' ? 'কৃষি বিশেষজ্ঞ' :
                         user?.type === 'customer' ? 'ক্রেতা' : ''}
                   </div>
-                  {user?.type === 'farmer' && user?.verificationStatus && (
+                  {user?.verificationStatus && (
                     <div className="mt-1">
                       {user.verificationStatus === 'approved' && (
                         <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs">
@@ -182,6 +219,12 @@ export const Header = () => {
                         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 text-xs">
                           <Clock className="mr-1 h-3 w-3" />
                           যাচাই মুলতবি
+                        </Badge>
+                      )}
+                      {user.verificationStatus === 'rejected' && (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">
+                          <XCircle className="mr-1 h-3 w-3" />
+                          প্রত্যাখ্যাত
                         </Badge>
                       )}
                     </div>

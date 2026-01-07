@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { API_URL } from '@/services/api';
 
 interface UploadedImage {
     path: string;
@@ -22,7 +23,7 @@ export function MarketplaceImageUpload({
     const [previewImages, setPreviewImages] = useState<string[]>(existingImages);
     const [uploadedPaths, setUploadedPaths] = useState<string[]>(existingImages);
 
-    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+    const API_BASE = API_URL;
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;

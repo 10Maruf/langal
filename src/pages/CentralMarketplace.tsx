@@ -145,16 +145,36 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
             });
             return;
         }
+        
+        // Optimistic update - immediately toggle the UI before API call
+        const wasAlreadySaved = listing.isSaved;
+        const newSavedState = !wasAlreadySaved;
+        
+        // Update UI immediately
+        setListings(prev => prev.map(l => 
+            l.id === listing.id 
+                ? { ...l, isSaved: newSavedState, saves: newSavedState ? l.saves + 1 : Math.max(0, l.saves - 1) } 
+                : l
+        ));
+        
+        // Show toast immediately with correct message
+        toast({
+            title: newSavedState ? "সেভ করা হয়েছে" : "সেভ সরানো হয়েছে",
+            description: newSavedState
+                ? "আইটেমটি আপনার সেভ লিস্টে যোগ করা হয়েছে।"
+                : "আইটেমটি আপনার সেভ লিস্ট থেকে সরানো হয়েছে।",
+        });
+        
+        // Make API call in background
         const result = await marketplaceService.toggleSave(listing.id, user.user_id);
-        if (result.listing) {
-            setListings(prev => prev.map(l => l.id === listing.id ? result.listing! : l));
-            toast({
-                title: result.saved ? "সেভ করা হয়েছে" : "সেভ সরানো হয়েছে",
-                description: result.saved
-                    ? "আইটেমটি আপনার সেভ লিস্টে যোগ করা হয়েছে।"
-                    : "আইটেমটি আপনার সেভ লিস্ট থেকে সরানো হয়েছে।",
-            });
-        } else {
+        
+        // If API fails, revert the optimistic update
+        if (!result.listing) {
+            setListings(prev => prev.map(l => 
+                l.id === listing.id 
+                    ? { ...l, isSaved: wasAlreadySaved, saves: wasAlreadySaved ? l.saves + 1 : Math.max(0, l.saves - 1) } 
+                    : l
+            ));
             toast({
                 title: "ব্যর্থ",
                 description: "সেভ করতে সমস্যা হয়েছে।",

@@ -19,6 +19,8 @@ class Expert extends Model
         'experience_years',
         'institution',
         'consultation_fee',
+        'rating',
+        'total_consultations',
         'is_government_approved',
         'license_number',
         'certification_document',
@@ -29,6 +31,8 @@ class Expert extends Model
         return [
             'experience_years' => 'integer',
             'consultation_fee' => 'decimal:2',
+            'rating' => 'float',
+            'total_consultations' => 'integer',
             'is_government_approved' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
@@ -43,7 +47,29 @@ class Expert extends Model
     public function getCertificationDocumentUrlFullAttribute(): ?string
     {
         if ($this->certification_document) {
-            return asset('storage/' . $this->certification_document);
+            if (filter_var($this->certification_document, FILTER_VALIDATE_URL)) {
+                return $this->certification_document;
+            }
+            
+            try {
+                // Try to get URL from storage
+                return \Illuminate\Support\Facades\Storage::disk('azure')->url($this->certification_document);
+            } catch (\Exception $e) {
+                // Fallback: construct Azure URL manually
+                $accountName = config('filesystems.disks.azure.name');
+                $container = config('filesystems.disks.azure.container');
+                
+                if ($accountName && $container) {
+                    return sprintf(
+                        'https://%s.blob.core.windows.net/%s/%s',
+                        $accountName,
+                        $container,
+                        $this->certification_document
+                    );
+                }
+                
+                return null;
+            }
         }
         return null;
     }

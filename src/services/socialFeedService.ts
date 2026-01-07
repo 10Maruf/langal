@@ -1,8 +1,9 @@
 // Central Social Feed Service - Facebook-like system for all user types
 import axios from 'axios';
 import { SocialPost, PostComment } from '@/types/social';
+import { API_URL as BASE_API_URL } from './api';
 
-const API_URL = 'http://localhost:8000/api/social';
+const API_URL = `${BASE_API_URL}/social`;
 
 export class SocialFeedService {
     private static instance: SocialFeedService;

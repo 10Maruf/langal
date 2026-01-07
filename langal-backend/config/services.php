@@ -55,4 +55,26 @@ return [
         'secret_key' => env('UNSPLASH_SECRET_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Agora RTC Configuration
+    |--------------------------------------------------------------------------
+    | For video/audio calls in the consultation system
+    */
+    'agora' => [
+        'app_id' => env('AGORA_APP_ID'),
+        'app_certificate' => env('AGORA_APP_CERTIFICATE'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Firebase Cloud Messaging Configuration
+    |--------------------------------------------------------------------------
+    | For push notifications
+    */
+    'fcm' => [
+        'server_key' => env('FCM_SERVER_KEY'),
+        'sender_id' => env('FCM_SENDER_ID'),
+    ],
+
 ];

@@ -10,9 +10,15 @@ const Index = () => {
   useEffect(() => {
     // Redirect based on user type
     if (user) {
+      console.log('Index.tsx - Current user:', user);
+      console.log('Index.tsx - User type:', user.type);
+
       switch (user.type) {
+        case 'data_operator':
+          navigate('/data-operator-dashboard');
+          break;
         case 'expert':
-          navigate('/consultant-dashboard');
+          navigate('/expert-dashboard');
           break;
         case 'customer':
           navigate('/customer-dashboard');
@@ -21,14 +27,20 @@ const Index = () => {
           navigate('/farmer-dashboard');
           break;
         default:
-          // Farmers stay on the main dashboard
+          console.warn('Unknown user type:', user.type);
           break;
       }
     }
   }, [user, navigate]);
 
+  // Show loading or nothing while redirecting
   return (
-    <FarmerDashboard />
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"></div>
+        <p className="mt-4 text-gray-600">লোড হচ্ছে...</p>
+      </div>
+    </div>
   );
 };
 

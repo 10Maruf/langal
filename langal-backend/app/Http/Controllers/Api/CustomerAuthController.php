@@ -100,73 +100,81 @@ class CustomerAuthController extends Controller
      */
     public function verifyOtp(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|min:11|max:15',
-            'otp_code' => 'required|string|size:6',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'phone' => 'required|string|min:11|max:15',
+                'otp_code' => 'required|string|size:6',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $phone = $request->phone;
-        $otpCode = $request->otp_code;
-
-        // Verify OTP
-        $result = $this->otpService->verifyOtp($phone, $otpCode, 'login');
-
-        if (!$result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-            ], 400);
-        }
-
-        $user = User::where('phone', $phone)->where('user_type', 'customer')->first();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'ব্যবহারকারী পাওয়া যায়নি',
-            ], 404);
-        }
-
-        // Generate token
-        $token = $user->createToken('customer-app', ['customer'])->plainTextToken;
-        $user->update(['updated_at' => now()]);
-
-        $userData = $user->load(['profile', 'customerBusiness'])->toArray();
-
-        // Add full location info from location table based on postal_code
-        if ($user->profile && $user->profile->postal_code) {
-            $location = DB::table('location')
-                ->where('postal_code', $user->profile->postal_code)
-                ->first();
-
-            if ($location) {
-                $userData['location_info'] = [
-                    'village' => $user->profile->village ?? null,
-                    'postal_code' => $user->profile->postal_code,
-                    'post_office_bn' => $location->post_office_bn ?? null,
-                    'upazila_bn' => $location->upazila_bn ?? null,
-                    'district_bn' => $location->district_bn ?? null,
-                    'division_bn' => $location->division_bn ?? null,
-                ];
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'লগইন সফল হয়েছে',
-            'data' => [
-                'user' => $userData,
-                'token' => $token,
-            ],
-        ]);
+            $phone = $request->phone;
+            $otpCode = $request->otp_code;
+
+            // Verify OTP
+            $result = $this->otpService->verifyOtp($phone, $otpCode, 'login');
+
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                ], 400);
+            }
+
+            $user = User::where('phone', $phone)->where('user_type', 'customer')->first();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ব্যবহারকারী পাওয়া যায়নি',
+                ], 404);
+            }
+
+            // Generate token
+            $token = $user->createToken('customer-app', ['customer'])->plainTextToken;
+            $user->update(['updated_at' => now()]);
+
+            $userData = $user->load(['profile', 'customerBusiness'])->toArray();
+
+            // Add full location info from location table based on postal_code
+            if ($user->profile && $user->profile->postal_code) {
+                $location = DB::table('location')
+                    ->where('postal_code', $user->profile->postal_code)
+                    ->first();
+
+                if ($location) {
+                    $userData['location_info'] = [
+                        'village' => $user->profile->village ?? null,
+                        'postal_code' => $user->profile->postal_code,
+                        'post_office_bn' => $location->post_office_bn ?? null,
+                        'upazila_bn' => $location->upazila_bn ?? null,
+                        'district_bn' => $location->district_bn ?? null,
+                        'division_bn' => $location->division_bn ?? null,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'লগইন সফল হয়েছে',
+                'data' => [
+                    'user' => $userData,
+                    'token' => $token,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Verify OTP Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -174,76 +182,84 @@ class CustomerAuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|min:11|max:15',
-            'password' => 'required|string|min:6',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'phone' => 'required|string|min:11|max:15',
+                'password' => 'required|string|min:6',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
 
-        $user = User::where('phone', $request->phone)
-            ->where('user_type', 'customer')
-            ->first();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'এই ফোন নম্বর দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি',
-            ], 404);
-        }
-
-        if (!Hash::check($request->password, $user->password_hash)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'পাসওয়ার্ড ভুল হয়েছে',
-            ], 401);
-        }
-
-        if (!$user->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে',
-            ], 403);
-        }
-
-        // Generate token
-        $token = $user->createToken('customer-app', ['customer'])->plainTextToken;
-        $user->update(['updated_at' => now()]);
-
-        $userData = $user->load(['profile', 'customerBusiness'])->toArray();
-
-        // Add full location info
-        if ($user->profile && $user->profile->postal_code) {
-            $location = DB::table('location')
-                ->where('postal_code', $user->profile->postal_code)
+            $user = User::where('phone', $request->phone)
+                ->where('user_type', 'customer')
                 ->first();
 
-            if ($location) {
-                $userData['location_info'] = [
-                    'village' => $user->profile->village ?? null,
-                    'postal_code' => $user->profile->postal_code,
-                    'post_office_bn' => $location->post_office_bn ?? null,
-                    'upazila_bn' => $location->upazila_bn ?? null,
-                    'district_bn' => $location->district_bn ?? null,
-                    'division_bn' => $location->division_bn ?? null,
-                ];
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'এই ফোন নম্বর দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি',
+                ], 404);
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'লগইন সফল হয়েছে',
-            'data' => [
-                'user' => $userData,
-                'token' => $token,
-            ],
-        ]);
+            if (!Hash::check($request->password, $user->password_hash)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'পাসওয়ার্ড ভুল হয়েছে',
+                ], 401);
+            }
+
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে',
+                ], 403);
+            }
+
+            // Generate token
+            $token = $user->createToken('customer-app', ['customer'])->plainTextToken;
+            $user->update(['updated_at' => now()]);
+
+            $userData = $user->load(['profile', 'customerBusiness'])->toArray();
+
+            // Add full location info
+            if ($user->profile && $user->profile->postal_code) {
+                $location = DB::table('location')
+                    ->where('postal_code', $user->profile->postal_code)
+                    ->first();
+
+                if ($location) {
+                    $userData['location_info'] = [
+                        'village' => $user->profile->village ?? null,
+                        'postal_code' => $user->profile->postal_code,
+                        'post_office_bn' => $location->post_office_bn ?? null,
+                        'upazila_bn' => $location->upazila_bn ?? null,
+                        'district_bn' => $location->district_bn ?? null,
+                        'division_bn' => $location->division_bn ?? null,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'লগইন সফল হয়েছে',
+                'data' => [
+                    'user' => $userData,
+                    'token' => $token,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Login Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -277,7 +293,7 @@ class CustomerAuthController extends Controller
             'businessType' => 'required|string',
             'customBusinessType' => 'nullable|string|max:100',
             'tradeLicenseNumber' => 'nullable|string|max:30',
-            'establishedYear' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'establishedYear' => 'nullable|integer|min:1901|max:' . date('Y'),
 
             // Files
             'profilePhoto' => 'nullable|image|max:5120', // 5MB max
@@ -333,18 +349,18 @@ class CustomerAuthController extends Controller
                 'is_active' => true,
             ]);
 
-            // Handle Profile Photo Upload
+            // Handle Profile Photo Upload (Azure storage)
             $profilePhotoPath = null;
             if ($request->hasFile('profilePhoto')) {
-                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos/customers', 'public');
-                Log::info('Customer profile photo uploaded', ['path' => $profilePhotoPath]);
+                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos/customers', 'azure');
+                Log::info('Customer profile photo uploaded to Azure', ['path' => $profilePhotoPath]);
             }
 
-            // Handle NID Photo Upload
+            // Handle NID Photo Upload (Azure storage)
             $nidPhotoPath = null;
             if ($request->hasFile('nidPhoto')) {
-                $nidPhotoPath = $request->file('nidPhoto')->store('nid_photos/customers', 'public');
-                Log::info('Customer NID photo uploaded', ['path' => $nidPhotoPath]);
+                $nidPhotoPath = $request->file('nidPhoto')->store('nid_photos/customers', 'azure');
+                Log::info('Customer NID photo uploaded to Azure', ['path' => $nidPhotoPath]);
             }
 
             // Get location details and format address
@@ -538,13 +554,17 @@ class CustomerAuthController extends Controller
             $profile = $user->profile;
             $business = $user->customerBusiness;
 
-            // Update profile photo if provided
+            // Update profile photo if provided (Azure storage)
             if ($request->hasFile('profilePhoto')) {
-                // Delete old photo
+                // Delete old photo from Azure or local
                 if ($profile && $profile->profile_photo_url) {
-                    Storage::disk('public')->delete($profile->profile_photo_url);
+                    try {
+                        Storage::disk('azure')->delete($profile->profile_photo_url);
+                    } catch (\Exception $e) {
+                        Storage::disk('public')->delete($profile->profile_photo_url);
+                    }
                 }
-                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos/customers', 'public');
+                $profilePhotoPath = $request->file('profilePhoto')->store('profile_photos/customers', 'azure');
                 $profile->profile_photo_url = $profilePhotoPath;
             }
 

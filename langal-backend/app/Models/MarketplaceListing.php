@@ -55,6 +55,68 @@ class MarketplaceListing extends Model
         'expires_at' => 'datetime',
     ];
 
+    protected $appends = ['images_full_url'];
+
+    /**
+     * Get full URLs for images
+     */
+    public function getImagesFullUrlAttribute(): array
+    {
+        if (empty($this->images)) {
+            return [];
+        }
+
+        return array_map(function ($image) {
+            $url = $image;
+
+            // If it's not a URL, generate one using Storage facade
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                try {
+                    $url = \Illuminate\Support\Facades\Storage::disk('azure')->url($url);
+                } catch (\Exception $e) {
+                    // Fallback: construct Azure URL manually
+                    $accountName = config('filesystems.disks.azure.name');
+                    $container = config('filesystems.disks.azure.container');
+                    
+                    if ($accountName && $container) {
+                        return sprintf(
+                            'https://%s.blob.core.windows.net/%s/%s',
+                            $accountName,
+                            $container,
+                            $image
+                        );
+                    }
+                }
+            }
+
+            // Check if the URL is localhost or 127.0.0.1 (misconfiguration or legacy data)
+            if (str_contains($url, 'localhost') || str_contains($url, '127.0.0.1')) {
+                // Extract the relative path
+                // Remove http://localhost:8000/storage/ or similar
+                $path = parse_url($url, PHP_URL_PATH);
+                // Remove leading /storage/ if present (common in Laravel local driver)
+                $path = preg_replace('#^/storage/#', '', $path);
+                // Remove leading slash
+                $path = ltrim($path, '/');
+                
+                // Force Azure URL construction
+                $accountName = config('filesystems.disks.azure.name');
+                $container = config('filesystems.disks.azure.container');
+                
+                if ($accountName && $container) {
+                    return sprintf(
+                        'https://%s.blob.core.windows.net/%s/%s',
+                        $accountName,
+                        $container,
+                        $path
+                    );
+                }
+            }
+
+            return $url;
+        }, $this->images);
+    }
+
     // Relationships
     public function category(): BelongsTo
     {

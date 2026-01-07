@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TTSButton } from "@/components/ui/tts-button";
 import { Heart, MessageCircle, MoreHorizontal, MapPin, ExternalLink, UserCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAzureImageUrl } from "@/lib/utils";
 
 export interface SocialPost {
   id: string;
@@ -142,9 +142,13 @@ export const PostCard = ({
                 )}
               >
                 <img
-                  src={image}
+                  src={getAzureImageUrl(image) || image}
                   alt=""
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
                 {post.images.length > 4 && index === 3 && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium">

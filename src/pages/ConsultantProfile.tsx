@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Star, Calendar, MapPin, Phone, Mail, GraduationCap, Award, Users, CheckCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { Camera, Star, Calendar, MapPin, Phone, Mail, GraduationCap, Award, Users, CheckCircle, ArrowLeft, Loader2, AlertCircle, Clock, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/services/api";
@@ -42,7 +42,8 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
         address: "",
         dateOfBirth: "",
         fatherName: "",
-        motherName: ""
+        motherName: "",
+        verificationStatus: "pending"
     });
 
     // Fetch profile data on mount
@@ -79,7 +80,8 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                     address: userProfile?.address || "",
                     dateOfBirth: userProfile?.date_of_birth || "",
                     fatherName: userProfile?.father_name || "",
-                    motherName: userProfile?.mother_name || ""
+                    motherName: userProfile?.mother_name || "",
+                    verificationStatus: userProfile?.verification_status || "pending"
                 });
             }
         } catch (error) {
@@ -118,6 +120,39 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
         }
     };
 
+    const getVerificationBadge = () => {
+        switch (profileData.verificationStatus) {
+            case 'approved':
+                return (
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        যাচাইকৃত বিশেষজ্ঞ
+                    </Badge>
+                );
+            case 'rejected':
+                return (
+                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100 flex items-center gap-1">
+                        <XCircle className="h-3 w-3" />
+                        প্রত্যাখ্যাত
+                    </Badge>
+                );
+            case 'pending':
+                return (
+                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        যাচাই মুলতবি
+                    </Badge>
+                );
+            default:
+                return (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                        <Award className="h-3 w-3" />
+                        যাচাই অপেক্ষমান
+                    </Badge>
+                );
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
@@ -141,6 +176,23 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                 </div>
             ) : (
                 <div className="p-4 space-y-6">
+                {/* Rejection Alert */}
+                {profileData.verificationStatus === 'rejected' && (
+                    <Card className="border-red-200 bg-red-50">
+                        <CardContent className="pt-6">
+                            <div className="flex items-start">
+                                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                                <div>
+                                    <h4 className="text-sm font-medium text-red-800">প্রোফাইল প্রত্যাখ্যাত</h4>
+                                    <p className="text-sm text-red-700 mt-1">
+                                        আপনার প্রোফাইল প্রত্যাখ্যাত হয়েছে। সঠিক তথ্য দিয়ে প্রোফাইল সংশোধনের জন্য অনুগ্রহ করে নিকটস্থ কৃষি অফিসে যোগাযোগ করুন।
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+                
                 {/* Profile Header */}
                 <Card>
                     <CardContent className="p-6">
@@ -176,10 +228,7 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                             </div>
 
                             <div className="flex gap-2">
-                                <Badge variant="secondary" className="flex items-center gap-1">
-                                    <Award className="h-3 w-3" />
-                                    যাচাইকৃত বিশেষজ্ঞ
-                                </Badge>
+                                {getVerificationBadge()}
                                 <Badge variant="outline">
                                     {profileData.experience} বছর অভিজ্ঞতা
                                 </Badge>
@@ -305,8 +354,13 @@ const ConsultantProfile = ({ onBack }: ConsultantProfileProps) => {
                             )}
                         </div>
 
-                        <div>
-                            <Label>শিক্ষাগত যোগ্যতা</Label>
+                        <div>                            <Label>যাচাই স্ট্যাটাস</Label>
+                            <div className="mt-2">
+                                {getVerificationBadge()}
+                            </div>
+                        </div>
+
+                        <div>                            <Label>শিক্ষাগত যোগ্যতা</Label>
                             {isEditing ? (
                                 <Input
                                     value={profileData.qualification}

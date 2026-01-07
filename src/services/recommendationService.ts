@@ -135,6 +135,44 @@ export interface RecommendationInput {
   };
 }
 
+const OFFLINE_SELECTIONS_KEY = 'offline_crop_selections';
+
+/**
+ * Sync offline selections to server
+ */
+export const syncOfflineSelections = async () => {
+  const stored = localStorage.getItem(OFFLINE_SELECTIONS_KEY);
+  if (!stored) return;
+
+  const selections = JSON.parse(stored);
+  if (!Array.isArray(selections) || selections.length === 0) return;
+
+  console.log(`Syncing ${selections.length} offline crop selections...`);
+  
+  const remaining = [];
+  let syncedCount = 0;
+
+  for (const selection of selections) {
+    try {
+      await selectCrops(selection, true); // true = skip offline save
+      syncedCount++;
+    } catch (e) {
+      console.error('Failed to sync item:', e);
+      remaining.push(selection);
+    }
+  }
+
+  if (remaining.length > 0) {
+    localStorage.setItem(OFFLINE_SELECTIONS_KEY, JSON.stringify(remaining));
+  } else {
+    localStorage.removeItem(OFFLINE_SELECTIONS_KEY);
+  }
+
+  if (syncedCount > 0) {
+    return syncedCount;
+  }
+};
+
 // API Functions
 
 /**
@@ -197,7 +235,7 @@ export const selectCrops = async (data: {
   land_size?: number;
   land_unit?: string;
   start_date?: string;
-}): Promise<{ selected_crops: SelectedCrop[] }> => {
+}, skipOfflineSave = false): Promise<{ selected_crops: SelectedCrop[] }> => {
   // Transform crops to match backend expectations
   const transformedCrops = data.crops.map((crop) => ({
     name: crop.name,
@@ -218,11 +256,25 @@ export const selectCrops = async (data: {
     fertilizer_schedule: crop.fertilizer_schedule,
   }));
 
-  const response = await api.post('/recommendations/select-crops', {
-    ...data,
-    crops: transformedCrops,
-  });
-  return response.data;
+  try {
+    const response = await api.post('/recommendations/select-crops', {
+      ...data,
+      crops: transformedCrops,
+    });
+    return response.data;
+  } catch (error) {
+    if (!skipOfflineSave) {
+      // Save to local storage for later sync
+      const stored = JSON.parse(localStorage.getItem(OFFLINE_SELECTIONS_KEY) || '[]');
+      stored.push(data);
+      localStorage.setItem(OFFLINE_SELECTIONS_KEY, JSON.stringify(stored));
+      console.log('Saved crop selection offline');
+      
+      // Throw specific error for UI handling
+      throw new Error('OFFLINE_SAVED');
+    }
+    throw error;
+  }
 };
 
 /**

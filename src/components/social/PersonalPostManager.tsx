@@ -7,11 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-    Edit2, 
-    Trash2, 
-    Search, 
-    Filter, 
+import { API_URL } from '@/services/api';
+import {
+    Edit2,
+    Trash2,
+    Search,
+    Filter,
     Eye,
     Heart,
     MessageCircle,
@@ -24,7 +25,7 @@ import {
     BarChart3,
     Flag
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAzureImageUrl } from "@/lib/utils";
 import { SocialPost } from "@/types/social";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +39,7 @@ interface PersonalPostManagerProps {
 export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
     const { user } = useAuth();
     const { toast } = useToast();
-    
+
     // State management
     const [myPosts, setMyPosts] = useState<SocialPost[]>([]);
     const [filteredPosts, setFilteredPosts] = useState<SocialPost[]>([]);
@@ -78,7 +79,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
 
         // Filter by search query
         if (searchQuery) {
-            filtered = filtered.filter(post => 
+            filtered = filtered.filter(post =>
                 post.content.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
@@ -118,19 +119,19 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
             setIsUploadingEdit(true);
             try {
                 let finalImages = [...editedImages];
-                
+
                 // Upload new images if any
                 if (newImages.length > 0) {
                     const formData = new FormData();
                     newImages.forEach((img) => {
                         formData.append('images[]', img);
                     });
-                    
-                    const response = await fetch('http://localhost:8000/api/social/upload-images', {
+
+                    const response = await fetch(`${API_URL}/social/upload-images`, {
                         method: 'POST',
                         body: formData,
                     });
-                    
+
                     const data = await response.json();
                     if (data.success) {
                         finalImages = [...finalImages, ...data.urls];
@@ -139,21 +140,21 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
 
                 const updatedPost = await socialFeedService.updatePost(
                     editingPost.id,
-                    { 
+                    {
                         content: editedContent,
                         type: editedType as any,
                         images: finalImages
                     }
                 );
-                
+
                 if (updatedPost) {
-                    setMyPosts(myPosts.map(p => 
+                    setMyPosts(myPosts.map(p =>
                         p.id === editingPost.id ? updatedPost : p
                     ));
                     setEditingPost(null);
                     setEditedContent("");
                     setNewImages([]);
-                    
+
                     toast({
                         title: "পোস্ট আপডেট হয়েছে",
                         description: "আপনার পোস্ট সফলভাবে আপডেট করা হয়েছে।",
@@ -175,11 +176,11 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
     // Handle post delete
     const handleDeletePost = async (postId: string) => {
         const success = await socialFeedService.deletePost(postId);
-        
+
         if (success) {
             setMyPosts(myPosts.filter(p => p.id !== postId));
             setShowDeleteDialog(null);
-            
+
             toast({
                 title: "পোস্ট মুছে ফেলা হয়েছে",
                 description: "আপনার পোস্ট সফলভাবে মুছে ফেলা হয়েছে।",
@@ -190,13 +191,13 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
     // Handle post like
     const handleLike = async (post: SocialPost) => {
         if (!user) return;
-        
+
         const newLikedState = !post.liked;
         const newLikesCount = post.likes + (newLikedState ? 1 : -1);
 
         // Optimistic update
-        const updatePosts = (posts: SocialPost[]) => 
-            posts.map(p => p.id === post.id 
+        const updatePosts = (posts: SocialPost[]) =>
+            posts.map(p => p.id === post.id
                 ? { ...p, liked: newLikedState, likes: newLikesCount }
                 : p
             );
@@ -210,24 +211,24 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
         // API call
         const userId = user.user_id || parseInt(user.id);
         const result = await socialFeedService.toggleLike(post.id, userId);
-        
+
         if (!result.success) {
             // Revert if failed
-            const revertPosts = (posts: SocialPost[]) => 
-                posts.map(p => p.id === post.id 
+            const revertPosts = (posts: SocialPost[]) =>
+                posts.map(p => p.id === post.id
                     ? { ...p, liked: !newLikedState, likes: post.likes }
                     : p
                 );
             setMyPosts(revertPosts(myPosts));
             setFilteredPosts(revertPosts(filteredPosts));
-             if (selectedPost && selectedPost.id === post.id) {
+            if (selectedPost && selectedPost.id === post.id) {
                 setSelectedPost({ ...selectedPost, liked: !newLikedState, likes: post.likes });
             }
         } else {
             // Ensure state matches backend
             if (result.liked !== newLikedState) {
-                const syncPosts = (posts: SocialPost[]) => 
-                    posts.map(p => p.id === post.id 
+                const syncPosts = (posts: SocialPost[]) =>
+                    posts.map(p => p.id === post.id
                         ? { ...p, liked: result.liked, likes: post.likes + (result.liked ? 1 : -1) } // Approximate count adjustment
                         : p
                     );
@@ -242,9 +243,9 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
 
     // Handle post update from EnhancedPostCard
     const handleUpdatePost = (postId: string, updates: Partial<SocialPost>) => {
-        const updatePosts = (posts: SocialPost[]) => 
+        const updatePosts = (posts: SocialPost[]) =>
             posts.map(p => p.id === postId ? { ...p, ...updates } : p);
-        
+
         setMyPosts(updatePosts(myPosts));
         setFilteredPosts(updatePosts(filteredPosts));
         if (selectedPost && selectedPost.id === postId) {
@@ -372,7 +373,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                     <div className="text-4xl mb-4">📝</div>
                                     <h3 className="text-lg font-medium mb-2">কোন পোস্ট নেই</h3>
                                     <p className="text-muted-foreground">
-                                        {searchQuery || filterType !== "all" 
+                                        {searchQuery || filterType !== "all"
                                             ? "আপনার অনুসন্ধান বা ফিল্টারের সাথে মিলে এমন কোন পোস্ট খুঁজে পাওয়া যায়নি।"
                                             : "আপনি এখনো কোন পোস্ট করেননি। প্রথম পোস্ট করুন!"
                                         }
@@ -420,23 +421,22 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                     </CardHeader>
                                     <CardContent className="space-y-3">
                                         <p className="text-sm">
-                                            {post.content.length > 150 
+                                            {post.content.length > 150
                                                 ? post.content.substring(0, 150) + "..."
                                                 : post.content
                                             }
                                         </p>
-                                        
+
                                         {/* Post Images */}
                                         {post.images && post.images.length > 0 && (
-                                            <div className={`grid gap-2 ${
-                                                post.images.length === 1 ? 'grid-cols-1' :
+                                            <div className={`grid gap-2 ${post.images.length === 1 ? 'grid-cols-1' :
                                                 post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
-                                            }`}>
+                                                }`}>
                                                 {post.images.slice(0, 3).map((image, index) => (
                                                     <div key={index} className="relative aspect-square">
-                                                        <img 
-                                                            src={image} 
-                                                            alt="" 
+                                                        <img
+                                                            src={getAzureImageUrl(image) || image}
+                                                            alt=""
                                                             className="w-full h-full object-cover rounded-lg"
                                                             onError={(e) => {
                                                                 (e.target as HTMLImageElement).style.display = 'none';
@@ -453,7 +453,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                                 ))}
                                             </div>
                                         )}
-                                        
+
                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                             <div className="flex items-center gap-1">
                                                 <Heart className="h-4 w-4" />
@@ -617,9 +617,9 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                 <div className="grid grid-cols-4 gap-2">
                                     {editedImages.map((img, index) => (
                                         <div key={index} className="relative aspect-square">
-                                            <img 
-                                                src={img} 
-                                                alt="" 
+                                            <img
+                                                src={img}
+                                                alt=""
                                                 className="w-full h-full object-cover rounded-lg"
                                             />
                                             <button
@@ -633,7 +633,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                 </div>
                             </div>
                         )}
-                        
+
                         {/* New Images Preview */}
                         {newImages.length > 0 && (
                             <div className="space-y-2">
@@ -641,9 +641,9 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                 <div className="grid grid-cols-4 gap-2">
                                     {newImages.map((img, index) => (
                                         <div key={index} className="relative aspect-square">
-                                            <img 
-                                                src={URL.createObjectURL(img)} 
-                                                alt="" 
+                                            <img
+                                                src={URL.createObjectURL(img)}
+                                                alt=""
                                                 className="w-full h-full object-cover rounded-lg"
                                             />
                                             <button
@@ -657,7 +657,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                 </div>
                             </div>
                         )}
-                        
+
                         {/* Add Image Button */}
                         <label className="flex items-center gap-2 text-sm font-medium cursor-pointer text-primary hover:underline">
                             <span>+ ছবি যোগ করুন</span>
@@ -691,8 +691,8 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                     <div className="space-y-4">
                         <p>আপনি কি নিশ্চিত যে এই পোস্টটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</p>
                         <div className="flex gap-2">
-                            <Button 
-                                variant="destructive" 
+                            <Button
+                                variant="destructive"
                                 onClick={() => showDeleteDialog && handleDeletePost(showDeleteDialog)}
                             >
                                 হ্যাঁ, মুছে ফেলুন
@@ -713,7 +713,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                     </DialogHeader>
                     {selectedPost && (
                         <div className="p-4">
-                            <EnhancedPostCard 
+                            <EnhancedPostCard
                                 post={selectedPost}
                                 onLike={handleLike}
                                 onDelete={(postId) => {

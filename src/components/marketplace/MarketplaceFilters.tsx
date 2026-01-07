@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ListingFilter } from "@/types/marketplace";
+import { API_URL } from '@/services/api';
 
 // Icon mapping for categories
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -55,7 +56,7 @@ interface MarketplaceFiltersProps {
 }
 
 // API Base URL
-const API_BASE = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env?.VITE_API_BASE?.replace(/\/$/, '') || 'http://localhost:8000/api';
+const API_BASE = API_URL;
 
 export const MarketplaceFilters = ({
   filters,

@@ -88,7 +88,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({
             ${animationPhase >= 1 ? 'intro-float intro-glow' : ''}
           `}>
                         <img
-                            src={`${import.meta.env.PROD ? '/langal-prototype' : ''}/img/Asset 3.png`}
+                            src="/img/Asset 3.png"
                             alt="লাঙল লোগো"
                             className={`
                 w-16 h-16 xs:w-18 xs:h-18 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32
