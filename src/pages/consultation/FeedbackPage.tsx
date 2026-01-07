@@ -195,19 +195,17 @@ const FeedbackPage = () => {
                   className="p-1 transition-transform hover:scale-110"
                 >
                   <Star
-                    className={`h-10 w-10 transition-colors ${
-                      star <= (hoverRating || rating)
+                    className={`h-10 w-10 transition-colors ${star <= (hoverRating || rating)
                         ? "text-amber-400 fill-amber-400"
                         : "text-gray-300"
-                    }`}
+                      }`}
                   />
                 </button>
               ))}
             </div>
             <p
-              className={`text-lg font-medium ${
-                rating > 0 ? "text-amber-600" : "text-gray-400"
-              }`}
+              className={`text-lg font-medium ${rating > 0 ? "text-amber-600" : "text-gray-400"
+                }`}
             >
               {getRatingText(hoverRating || rating)}
             </p>
@@ -228,11 +226,10 @@ const FeedbackPage = () => {
                 <Badge
                   key={tag.id}
                   variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                  className={`cursor-pointer px-3 py-1.5 text-sm ${
-                    selectedTags.includes(tag.id)
+                  className={`cursor-pointer px-3 py-1.5 text-sm ${selectedTags.includes(tag.id)
                       ? "bg-green-600 hover:bg-green-700"
                       : "hover:bg-green-50"
-                  }`}
+                    }`}
                   onClick={() => toggleTag(tag.id)}
                 >
                   {tag.label}

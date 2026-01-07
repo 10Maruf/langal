@@ -41,14 +41,14 @@ const ChatRoom = () => {
   const { appointmentId } = useParams<{ appointmentId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -231,7 +231,7 @@ const ChatRoom = () => {
         >
           <X className="h-5 w-5" />
         </Button>
-        
+
         <Avatar className="h-10 w-10 border-2 border-white/30">
           <AvatarImage
             src={getProfilePhotoUrl(
@@ -307,11 +307,10 @@ const ChatRoom = () => {
               className={`flex ${isMyMessage(message) ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                  isMyMessage(message)
+                className={`max-w-[80%] rounded-2xl px-4 py-2 ${isMyMessage(message)
                     ? "bg-green-600 text-white rounded-br-sm"
                     : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
-                }`}
+                  }`}
               >
                 {/* Image Message */}
                 {message.message_type === "image" && message.media_url && (
@@ -331,9 +330,8 @@ const ChatRoom = () => {
                     href={message.media_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center gap-2 mb-2 p-2 rounded-lg ${
-                      isMyMessage(message) ? "bg-green-700" : "bg-gray-100"
-                    }`}
+                    className={`flex items-center gap-2 mb-2 p-2 rounded-lg ${isMyMessage(message) ? "bg-green-700" : "bg-gray-100"
+                      }`}
                   >
                     <File className="h-8 w-8" />
                     <span className="text-sm">ফাইল দেখুন</span>
@@ -347,9 +345,8 @@ const ChatRoom = () => {
 
                 {/* Time & Status */}
                 <div
-                  className={`flex items-center justify-end gap-1 mt-1 ${
-                    isMyMessage(message) ? "text-green-100" : "text-gray-400"
-                  }`}
+                  className={`flex items-center justify-end gap-1 mt-1 ${isMyMessage(message) ? "text-green-100" : "text-gray-400"
+                    }`}
                 >
                   <span className="text-xs">{formatMessageTime(message.created_at)}</span>
                   {isMyMessage(message) && (

@@ -56,7 +56,7 @@ const ExpertAvailabilityPage = () => {
       const response = await getMyAvailability();
       if (response.success && response.data) {
         const existingSlots = response.data as AvailabilitySlot[];
-        
+
         // Map existing slots to schedule
         const newSchedule = schedule.map((day) => {
           const daySlots = existingSlots.filter((slot) => slot.day_of_week === day.day);
@@ -202,10 +202,10 @@ const ExpertAvailabilityPage = () => {
 
       {/* Back Button Header */}
       <div className="bg-white px-4 py-3 flex items-center gap-3 border-b mt-14">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => navigate(-1)} 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
           className="-ml-2 hover:bg-gray-100 rounded-full h-9 w-9"
         >
           <ArrowLeft className="h-5 w-5 text-gray-600" />

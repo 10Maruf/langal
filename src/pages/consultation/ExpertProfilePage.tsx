@@ -76,11 +76,10 @@ const ExpertProfilePage = () => {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`h-5 w-5 ${
-              star <= rating
+            className={`h-5 w-5 ${star <= rating
                 ? "text-amber-400 fill-amber-400"
                 : "text-gray-300"
-            }`}
+              }`}
           />
         ))}
       </div>
@@ -129,13 +128,13 @@ const ExpertProfilePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
       <Header />
-      
+
       {/* Mobile Header with Back Button */}
       <div className="bg-white px-4 py-2 flex items-center gap-2 border-b">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => navigate(-1)} 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
           className="-ml-2 hover:bg-green-50 rounded-full h-8 w-8"
         >
           <ArrowLeft className="h-5 w-5 text-gray-600" />
@@ -155,7 +154,7 @@ const ExpertProfilePage = () => {
               {expert.user?.profile?.full_name?.charAt(0) || "?"}
             </AvatarFallback>
           </Avatar>
-          
+
           <h2 className="text-2xl font-bold flex flex-col items-center gap-1 text-gray-800">
             {expert.user?.profile?.full_name || "নাম নেই"}
             {expert.is_government_approved && (
@@ -164,11 +163,11 @@ const ExpertProfilePage = () => {
               </Badge>
             )}
           </h2>
-          
+
           <p className="text-green-600 font-medium mt-1 text-base">
             {expert.specialization_bn || expert.specialization}
           </p>
-          
+
           <div className="flex items-center gap-2 mt-3 bg-gray-50 px-3 py-1 rounded-full">
             {renderStars(expert.rating)}
             <span className="text-sm text-gray-600 font-medium">
