@@ -230,20 +230,27 @@ const VideoCallPage = () => {
         dimpuid
       );
 
-      // Create local tracks
-      const isVideoCall = appointment?.consultation_type === "video";
-
-      if (isVideoCall) {
+      // Create local tracks - always create both audio and video
+      // This allows users to toggle video on/off during the call
+      try {
         localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
         if (localVideoRef.current) {
           localTracksRef.current.videoTrack.play(localVideoRef.current);
         }
+        // If it's an audio call, start with video disabled
+        if (appointment?.consultation_type !== "video") {
+          localTracksRef.current.videoTrack.setEnabled(false);
+          setIsVideoOff(true);
+        }
+      } catch (videoErr) {
+        console.warn("Could not access camera:", videoErr);
+        setIsVideoOff(true);
       }
 
       localTracksRef.current.audioTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
 
-      // Publish tracks
-      const tracks = isVideoCall
+      // Publish tracks - publish both if video track exists
+      const tracks = localTracksRef.current.videoTrack
         ? [localTracksRef.current.audioTrack, localTracksRef.current.videoTrack]
         : [localTracksRef.current.audioTrack];
 
@@ -346,19 +353,22 @@ const VideoCallPage = () => {
     if (!appointment) return null;
     const isExpert = user?.type === "expert";
     if (isExpert) {
+      // Farmer side - get farmer's profile
+      const farmerProfile = appointment.farmer?.profile;
       return {
-        name: appointment.farmer?.profile?.full_name,
-        avatarUrl: appointment.farmer?.profile?.avatar_url
+        name: farmerProfile?.full_name,
+        avatarUrl: farmerProfile?.profile_photo_url_full || farmerProfile?.profile_photo_url || farmerProfile?.avatar_url
       };
     }
+    // Expert side - expert relation returns User model, so expert.profile works
+    const expertProfile = appointment.expert?.profile;
     return {
-      name: appointment.expert?.user?.profile?.full_name || appointment.expert?.profile?.full_name,
-      avatarUrl: appointment.expert?.user?.profile?.avatar_url || appointment.expert?.profile?.avatar_url
+      name: expertProfile?.full_name,
+      avatarUrl: expertProfile?.profile_photo_url_full || expertProfile?.profile_photo_url || expertProfile?.avatar_url
     };
   };
 
   const otherParty = getOtherParty();
-  const isVideoCall = appointment?.consultation_type === "video";
 
   if (loading) {
     return (
@@ -416,19 +426,17 @@ const VideoCallPage = () => {
           )}
         </div>
 
-        {/* Local Video (Small) */}
-        {isVideoCall && (
-          <div
-            ref={localVideoRef}
-            className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
-          >
-            {isVideoOff && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                <VideoOff className="h-8 w-8 text-gray-500" />
-              </div>
-            )}
-          </div>
-        )}
+        {/* Local Video (Small) - Always show for camera toggle */}
+        <div
+          ref={localVideoRef}
+          className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
+        >
+          {isVideoOff && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+              <VideoOff className="h-8 w-8 text-gray-500" />
+            </div>
+          )}
+        </div>
 
         {/* Call Duration */}
         {connected && (
@@ -466,23 +474,21 @@ const VideoCallPage = () => {
             )}
           </Button>
 
-          {/* Video Toggle (for video calls) */}
-          {isVideoCall && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-14 w-14 rounded-full ${isVideoOff ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
-                }`}
-              onClick={toggleVideo}
-              disabled={!connected}
-            >
-              {isVideoOff ? (
-                <VideoOff className="h-6 w-6 text-white" />
-              ) : (
-                <Video className="h-6 w-6 text-white" />
-              )}
-            </Button>
-          )}
+          {/* Video Toggle - Always show for all call types */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-14 w-14 rounded-full ${isVideoOff ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            onClick={toggleVideo}
+            disabled={!connected}
+          >
+            {isVideoOff ? (
+              <VideoOff className="h-6 w-6 text-white" />
+            ) : (
+              <Video className="h-6 w-6 text-white" />
+            )}
+          </Button>
 
           {/* Start/End Call Button */}
           {!connected ? (
@@ -508,18 +514,16 @@ const VideoCallPage = () => {
             </Button>
           )}
 
-          {/* Switch Camera (for video calls) */}
-          {isVideoCall && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
-              onClick={switchCamera}
-              disabled={!connected}
-            >
-              <RotateCcw className="h-6 w-6 text-white" />
-            </Button>
-          )}
+          {/* Switch Camera - Always show */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
+            onClick={switchCamera}
+            disabled={!connected || isVideoOff}
+          >
+            <RotateCcw className="h-6 w-6 text-white" />
+          </Button>
 
           {/* Chat Button */}
           <Button

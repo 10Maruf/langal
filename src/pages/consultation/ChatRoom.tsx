@@ -90,7 +90,12 @@ const ChatRoom = () => {
       }
 
       if (messagesRes.success) {
-        setMessages(messagesRes.data || []);
+        // Handle paginated response - messages are in data.data for paginated or data for non-paginated
+        const messagesArray = Array.isArray(messagesRes.data)
+          ? messagesRes.data
+          : (messagesRes.data?.data || []);
+        // Reverse to show oldest first (API returns newest first)
+        setMessages(messagesArray.reverse());
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -108,7 +113,12 @@ const ChatRoom = () => {
     try {
       const response = await getConversationMessages(parseInt(appointmentId!));
       if (response.success) {
-        setMessages(response.data || []);
+        // Handle paginated response - messages are in data.data for paginated or data for non-paginated
+        const messagesArray = Array.isArray(response.data)
+          ? response.data
+          : (response.data?.data || []);
+        // Reverse to show oldest first (API returns newest first)
+        setMessages(messagesArray.reverse());
       }
     } catch (err) {
       console.error("Error fetching messages:", err);
@@ -196,13 +206,23 @@ const ChatRoom = () => {
     return message.sender_id === parseInt(user?.id || '0') || message.sender_id === user?.user_id;
   };
 
-  const getOtherParty = (): { user?: { profile?: { full_name?: string; avatar_url?: string } }; profile?: { full_name?: string; avatar_url?: string } } | null => {
+  const getOtherParty = (): { name?: string; avatarUrl?: string } | null => {
     if (!appointment) return null;
     const isExpert = user?.type === "expert";
     if (isExpert) {
-      return { profile: appointment.farmer?.profile };
+      // Farmer side - get farmer's profile
+      const profile = appointment.farmer?.profile;
+      return {
+        name: profile?.full_name,
+        avatarUrl: profile?.profile_photo_url_full || profile?.profile_photo_url || profile?.avatar_url
+      };
     }
-    return { user: appointment.expert?.user, profile: appointment.expert?.profile };
+    // Expert side - expert relation returns User model, so expert.profile works
+    const profile = appointment.expert?.profile;
+    return {
+      name: profile?.full_name,
+      avatarUrl: profile?.profile_photo_url_full || profile?.profile_photo_url || profile?.avatar_url
+    };
   };
 
   const otherParty = getOtherParty();
@@ -234,18 +254,16 @@ const ChatRoom = () => {
 
         <Avatar className="h-10 w-10 border-2 border-white/30">
           <AvatarImage
-            src={getProfilePhotoUrl(
-              otherParty?.user?.profile?.avatar_url || otherParty?.profile?.avatar_url
-            )}
+            src={getProfilePhotoUrl(otherParty?.avatarUrl)}
           />
           <AvatarFallback className="bg-green-500 text-white">
-            {(otherParty?.user?.profile?.full_name || otherParty?.profile?.full_name)?.charAt(0) || "?"}
+            {otherParty?.name?.charAt(0) || "?"}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1">
           <h2 className="font-semibold">
-            {otherParty?.user?.profile?.full_name || otherParty?.profile?.full_name || "অজানা"}
+            {otherParty?.name || "অজানা"}
           </h2>
           <p className="text-xs text-green-100">
             {appointment?.expert?.specialization_bn || "অনলাইন"}
@@ -308,8 +326,8 @@ const ChatRoom = () => {
             >
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2 ${isMyMessage(message)
-                    ? "bg-green-600 text-white rounded-br-sm"
-                    : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
+                  ? "bg-green-600 text-white rounded-br-sm"
+                  : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
                   }`}
               >
                 {/* Image Message */}
