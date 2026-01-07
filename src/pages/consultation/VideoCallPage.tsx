@@ -179,7 +179,28 @@ const VideoCallPage = () => {
     try {
       setConnecting(true);
 
-      // Initialize Agora
+      // Clean up any existing connection before starting a new one
+      // This prevents UID_CONFLICT errors when rejoining
+      if (clientRef.current) {
+        try {
+          // Close existing tracks first
+          if (localTracksRef.current.audioTrack) {
+            localTracksRef.current.audioTrack.close();
+            localTracksRef.current.audioTrack = null;
+          }
+          if (localTracksRef.current.videoTrack) {
+            localTracksRef.current.videoTrack.close();
+            localTracksRef.current.videoTrack = null;
+          }
+          // Leave channel if connected
+          await clientRef.current.leave();
+        } catch (cleanupErr) {
+          console.log("Cleanup before join (expected if not connected):", cleanupErr);
+        }
+        clientRef.current = null;
+      }
+
+      // Initialize Agora (creates fresh client)
       const initialized = await initializeAgora();
       if (!initialized) {
         throw new Error("Agora SDK লোড করতে ব্যর্থ হয়েছে");
@@ -207,14 +228,15 @@ const VideoCallPage = () => {
       const agora_token = response.data.token || response.data.agora_token;
       const agora_app_id = (response.data.app_id || response.data.agora_app_id)?.toString().trim();
 
-      // Agora requires integer UID if the token was generated for an integer UID
-      const dimpuid = user?.id ? parseInt(String(user.id), 10) : 0;
+      // Use UID 0 for automatic assignment by Agora server
+      // This avoids UID_CONFLICT when the same user rejoins
+      const uid = 0;
 
       console.log('Agora Connection Debug:', {
         appId: agora_app_id,
         channel: agora_channel,
         tokenLength: agora_token?.length,
-        uid: dimpuid,
+        uid: uid,
         originalUid: user?.id
       });
 
@@ -227,7 +249,7 @@ const VideoCallPage = () => {
         agora_app_id,
         agora_channel,
         agora_token,
-        dimpuid
+        uid
       );
 
       // Create local tracks - always create both audio and video

@@ -64,10 +64,11 @@ class CallController extends Controller
                 ], 400);
             }
 
-            // Generate Agora token
+            // Generate Agora token with UID 0 for flexibility
+            // UID 0 allows any client to join with any UID
             $channelName = $appointment->agora_channel_name;
-            $uid = $user->user_id;
-            $role = $user->user_type === 'expert' ? 'publisher' : 'publisher'; // Both can publish
+            $uid = 0; // Use 0 to allow any UID to join
+            $role = 'publisher'; // Both can publish
             $expireTime = 3600; // 1 hour
 
             $token = $this->agoraService->generateToken($channelName, $uid, $role, $expireTime);
@@ -133,7 +134,7 @@ class CallController extends Controller
                  // This ensures users can rejoin if they disconnect or refresh
                  $token = $this->agoraService->generateToken(
                     $existingCall->agora_channel,
-                    $user->user_id,
+                    0, // Use UID 0 to allow any UID to join
                     'publisher',
                     3600
                 );
@@ -164,10 +165,10 @@ class CallController extends Controller
                 'initiated_at' => now(),
             ]);
 
-            // Generate token for caller
+            // Generate token for caller with UID 0
             $token = $this->agoraService->generateToken(
                 $appointment->agora_channel_name,
-                $user->user_id,
+                0, // Use UID 0 to allow any UID to join
                 'publisher',
                 3600
             );
@@ -242,10 +243,10 @@ class CallController extends Controller
                 'answered_at' => now(),
             ]);
 
-            // Generate token for receiver
+            // Generate token for receiver with UID 0
             $token = $this->agoraService->generateToken(
                 $call->agora_channel,
-                $user->user_id,
+                0, // Use UID 0 to allow any UID to join
                 'publisher',
                 3600
             );
