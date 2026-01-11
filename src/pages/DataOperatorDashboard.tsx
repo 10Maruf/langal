@@ -1,757 +1,277 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
-    UserCheck,
-    MapPin,
-    Sprout,
-    CloudSun,
-    Shield,
-    CheckCircle,
-    XCircle,
-    AlertTriangle,
-    Database,
-    Home,
-    ClipboardList,
-    BarChart3,
-    Users,
-    FileText,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+    UserCheck, 
+    CloudSun, 
+    BarChart3, 
+    Shield, 
+    Bell, 
+    User, 
+    LogOut,
     TrendingUp,
-    Activity,
-    PieChart
+    AlertCircle,
+    FileText,
+    CheckCircle2,
+    Clock
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import ProfileVerification from "@/components/data-operator/ProfileVerification";
-import CropVerification from "@/components/data-operator/CropVerification";
-import DashboardStats from "@/components/data-operator/DashboardStats";
-import RegisterFarmer from "@/components/data-operator/RegisterFarmer";
-import FieldDataCollection from "@/components/data-operator/FieldDataCollection";
-import SocialFeedReportMng from "@/components/data-operator/SocialFeedReportMng";
+import DataOperatorProfile from "@/components/data-operator/DataOperatorProfile";
+import DataOperatorHeader from "@/components/data-operator/DataOperatorHeader";
+import { getAssetPath } from "@/lib/utils";
 
-const DataOperatorDashboard = () => {
-    const [activeTab, setActiveTab] = useState("home-dashboard");
+const DataOperatorDashboardNew = () => {
     const navigate = useNavigate();
-    const location = useLocation();
+    const { user, logout, isLoading } = useAuth();
+    const [showProfile, setShowProfile] = useState(false);
+    const [notifications] = useState([
+        { id: 1, message: "৫টি নতুন প্রোফাইল যাচাইয়ের অপেক্ষায়", time: "৫ মিনিট আগে", unread: true },
+        { id: 2, message: "২টি ফসল যাচাই সম্পন্ন হয়েছে", time: "১ ঘণ্টা আগে", unread: true },
+        { id: 3, message: "৩টি নতুন সোশ্যাল ফিড রিপোর্ট", time: "২ ঘণ্টা আগে", unread: false },
+    ]);
 
-    // Set active tab based on URL hash on component mount
+    // Check user type only (ProtectedRoute handles authentication)
     useEffect(() => {
-        const hash = location.hash.replace('#', '');
-        if (hash && hash !== activeTab) {
-            setActiveTab(hash);
+        if (user && user.type !== 'data_operator') {
+            console.warn('Non data-operator user trying to access dashboard:', user.type);
+            navigate('/', { replace: true });
         }
-    }, [location.hash]);
+    }, [user, navigate]);
 
-    // Update URL hash when tab changes
-    const handleTabChange = (tabId: string) => {
-        setActiveTab(tabId);
-        navigate(`/data-operator/dashboard#${tabId}`, { replace: true });
+    // Don't render if no user (ProtectedRoute should handle this, but double check)
+    if (!user) {
+        return null;
+    }
+
+    const handleLogout = () => {
+        logout();
+        navigate('/data-operator');
     };
 
-    // Dashboard menu items with icons
-    const dashboardMenuItems = [
+    // Dashboard features - 4 main cards
+    const features = [
         {
             id: "profile-verification",
             title: "প্রোফাইল যাচাই",
-            description: "কৃষকদের প্রোফাইল যাচাই ও অনুমোদন",
+            description: "কৃষকদের প্রোফাইল যাচাই ও অনুমোদন করুন",
             icon: UserCheck,
-            bgColor: "bg-blue-500",
-            hoverColor: "hover:bg-blue-600",
-            count: 12
-        },
-        {
-            id: "crop-verification",
-            title: "ফসল যাচাই",
-            description: "ফসলের তথ্য যাচাই ও লোকেশন সামারি",
-            icon: Sprout,
-            bgColor: "bg-green-500",
-            hoverColor: "hover:bg-green-600",
-            count: 25
-        },
-        {
-            id: "register-farmer",
-            title: "কৃষক নিবন্ধন",
-            description: "নতুন কৃষক নিবন্ধন করুন",
-            icon: Users,
-            bgColor: "bg-purple-500",
-            hoverColor: "hover:bg-purple-600",
-            count: 8
+            bgGradient: "from-blue-500 to-blue-600",
+            count: 12,
+            countLabel: "অপেক্ষমান",
+            route: "/data-operator/profile-verification"
         },
         {
             id: "field-data",
-            title: "মাঠ পর্যায়ের তথ্য",
-            description: "আবহাওয়া ও কৃষি তথ্য সংগ্রহ",
+            title: "মাটি পরীক্ষা",
+            description: "সেন্সর দিয়ে মাটি পরীক্ষা ও বিশ্লেষণ",
             icon: CloudSun,
-            bgColor: "bg-orange-500",
-            hoverColor: "hover:bg-orange-600",
-            count: 15
+            bgGradient: "from-green-500 to-green-600",
+            count: 8,
+            countLabel: "নতুন পরীক্ষা",
+            route: "/data-operator/field-data"
         },
         {
-            id: "reports",
-            title: "রিপোর্ট ও বিশ্লেষণ",
-            description: "ডেটা রিপোর্ট ও পরিসংখ্যান",
-            icon: BarChart3,
-            bgColor: "bg-indigo-500",
-            hoverColor: "hover:bg-indigo-600",
-            count: 7
+            id: "field-collection",
+            title: "ফিল্ড ডেটা সংগ্রহ",
+            description: "মাঠ থেকে কৃষকের তথ্য সংগ্রহ করুন",
+            icon: FileText,
+            bgGradient: "from-amber-500 to-amber-600",
+            count: 0,
+            countLabel: "আজকের সংগ্রহ",
+            route: "/data-operator/field-data-collection"
         },
         {
             id: "statistics",
             title: "পরিসংখ্যান",
-            description: "সামগ্রিক পরিসংখ্যান ও ট্রেন্ড",
-            icon: TrendingUp,
-            bgColor: "bg-teal-500",
-            hoverColor: "hover:bg-teal-600",
-            count: 20
+            description: "সামগ্রিক পরিসংখ্যান ও ট্রেন্ড বিশ্লেষণ",
+            icon: BarChart3,
+            bgGradient: "from-teal-500 to-teal-600",
+            count: 156,
+            countLabel: "মোট কৃষক",
+            route: "/data-operator/statistics"
         },
         {
-            id: "social-feed-reports",
+            id: "social-feed-report",
             title: "সোশ্যাল ফিড রিপোর্ট",
-            description: "পোস্ট ও কমেন্ট রিপোর্ট পরিচালনা",
+            description: "পোস্ট ও কমেন্ট রিপোর্ট পরিচালনা করুন",
             icon: Shield,
-            bgColor: "bg-red-500",
-            hoverColor: "hover:bg-red-600",
-            count: 15
+            bgGradient: "from-red-500 to-red-600",
+            count: 3,
+            countLabel: "নতুন রিপোর্ট",
+            route: "/data-operator/social-feed-reports"
         }
     ];
 
-    console.log('Dashboard Menu Items:', dashboardMenuItems);
-    console.log('Social Feed Reports Item:', dashboardMenuItems.find(item => item.id === 'social-feed-reports'));
-
-    // Enhanced farmer data with NID verification
-    const [farmers, setFarmers] = useState([
+    // Quick stats
+    const quickStats = [
         {
-            id: 1,
-            name: "মোহাম্মদ রহিম",
-            nid: "1234567890123",
-            phone: "01712345678",
-            email: "rahim@example.com",
-            address: "গ্রাম: রামপুর, ডাকঘর: কুমিল্লা সদর",
-            district: "কুমিল্লা",
-            upazila: "কুমিল্লা সদর",
-            dateOfBirth: "১৫/০১/১৯৮০",
-            fatherName: "আবুল হাসেম",
-            motherName: "রহিমা খাতুন",
-            occupation: "কৃষক",
-            landOwnership: "নিজস্ব ৫ বিঘা",
-            registrationDate: "২৫/০৮/২০২৫",
-            nidVerificationStatus: "verified" as const,
-            profileVerificationStatus: "verified" as const,
-            documents: ["এনআইডি কার্ড", "জমির দলিল"],
+            label: "আজকের যাচাই",
+            value: "18",
+            icon: CheckCircle2,
+            color: "text-green-600",
+            bgColor: "bg-green-50"
         },
         {
-            id: 2,
-            name: "আবুল কাসেম",
-            nid: "9876543210987",
-            phone: "01812345678",
-            email: "kasem@example.com",
-            address: "গ্রাম: মিরপুর, ডাকঘর: সিলেট সদর",
-            district: "সিলেট",
-            upazila: "সিলেট সদর",
-            dateOfBirth: "২০/০৩/১৯৭৫",
-            fatherName: "মোহাম্মদ আলী",
-            motherName: "ফাতেমা খাতুন",
-            occupation: "কৃষক",
-            landOwnership: "নিজস্ব ৩ বিঘা",
-            registrationDate: "২৬/০৮/২০২৫",
-            nidVerificationStatus: "verified" as const,
-            profileVerificationStatus: "pending" as const,
-            documents: ["এনআইডি কার্ড", "জমির দলিল"],
+            label: "অপেক্ষমান",
+            value: "23",
+            icon: Clock,
+            color: "text-yellow-600",
+            bgColor: "bg-yellow-50"
         },
         {
-            id: 3,
-            name: "রহিমা খাতুন",
-            nid: "5678901234567",
-            phone: "01912345678",
-            email: "rahima@example.com",
-            address: "গ্রাম: পাতিকাবাড়ি, ডাকঘর: রংপুর সদর",
-            district: "রংপুর",
-            upazila: "রংপুর সদর",
-            dateOfBirth: "১০/০৬/১৯৮৫",
-            fatherName: "আব্দুল করিম",
-            motherName: "সালমা বেগম",
-            occupation: "কৃষক",
-            landOwnership: "নিজস্ব ২ বিঘা",
-            registrationDate: "২৭/০৮/২০২৫",
-            nidVerificationStatus: "pending" as const,
-            profileVerificationStatus: "pending" as const,
-            documents: ["এনআইডি কার্ড", "জমির দলিল"],
-        },
-    ]);
-
-    const [cropVerifications, setCropVerifications] = useState([
-        {
-            id: 1,
-            farmerId: 1,
-            farmerName: "মোহাম্মদ রহিম",
-            farmerPhone: "01712345678",
-            cropType: "ধান",
-            landArea: "৫",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: রামপুর",
-            district: "ঢাকা",
-            upazila: "সাভার",
-            union: "বিরুলিয়া",
-            landDocuments: ["জমির দলিল", "খতিয়ান"],
-            cropPhotos: ["ফসলের ছবি ১", "ফসলের ছবি ২"],
-            gpsCoordinates: {
-                latitude: 23.4607,
-                longitude: 91.1809
-            },
-            submissionDate: "২৫/০৮/২০২৫",
-            verificationStatus: "pending" as const,
-            verificationNotes: "",
-            estimatedYield: "৮০ মণ",
-            sowingDate: "১৫/০৭/২০২৫",
-            harvestDate: "১৫/১১/২০২৫",
+            label: "মাসিক লক্ষ্য",
+            value: "78%",
+            icon: TrendingUp,
+            color: "text-blue-600",
+            bgColor: "bg-blue-50"
         },
         {
-            id: 2,
-            farmerId: 2,
-            farmerName: "আবুল কাসেম",
-            farmerPhone: "01812345678",
-            cropType: "গম",
-            landArea: "৩",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: মিরপুর",
-            district: "সিলেট",
-            upazila: "সিলেট সদর",
-            union: "খাদিমনগর",
-            landDocuments: ["জমির দলিল"],
-            cropPhotos: ["ফসলের ছবি ১"],
-            gpsCoordinates: {
-                latitude: 24.8949,
-                longitude: 91.8687
-            },
-            submissionDate: "২৬/০৮/২০২৫",
-            verificationStatus: "pending" as const,
-            verificationNotes: "",
-            estimatedYield: "৪৫ মণ",
-            sowingDate: "২০/০৭/২০২৫",
-            harvestDate: "২০/১১/২০২৫",
-        },
-        {
-            id: 3,
-            farmerId: 3,
-            farmerName: "রহিমা খাতুন",
-            farmerPhone: "01912345678",
-            cropType: "পাট",
-            landArea: "২",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: পাতিকাবাড়ি",
-            district: "রংপুর",
-            upazila: "রংপুর সদর",
-            union: "আলমনগর",
-            landDocuments: ["জমির দলিল", "খতিয়ান"],
-            cropPhotos: ["ফসলের ছবি ১", "ফসলের ছবি ২"],
-            gpsCoordinates: {
-                latitude: 25.7439,
-                longitude: 89.2752
-            },
-            submissionDate: "২৭/০৮/২০২৫",
-            verificationStatus: "pending" as const,
-            verificationNotes: "",
-            estimatedYield: "৩০ মণ",
-            sowingDate: "১০/০৭/২০২৫",
-            harvestDate: "১০/১১/২০২৫",
-        },
-        {
-            id: 4,
-            farmerId: 4,
-            farmerName: "কামাল উদ্দিন",
-            farmerPhone: "01634567890",
-            cropType: "ভুট্টা",
-            landArea: "৪",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: নয়াপাড়া",
-            district: "ঢাকা",
-            upazila: "সাভার",
-            union: "আশুলিয়া",
-            landDocuments: ["জমির দলিল"],
-            cropPhotos: ["ফসলের ছবি ১", "ফসলের ছবি ২"],
-            gpsCoordinates: {
-                latitude: 23.4607,
-                longitude: 91.1809
-            },
-            submissionDate: "২৮/০৮/২০২৫",
-            verificationStatus: "verified" as const,
-            verificationNotes: "যাচাই সম্পন্ন",
-            estimatedYield: "৯০ মণ",
-            sowingDate: "১০/০৭/২০২৫",
-            harvestDate: "১০/১২/২০২৫",
-        },
-        {
-            id: 5,
-            farmerId: 5,
-            farmerName: "জামিল আহমেদ",
-            farmerPhone: "01756789012",
-            cropType: "আলু",
-            landArea: "১.৫",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: বাগানবাড়ি",
-            district: "রংপুর",
-            upazila: "রংপুর সদর",
-            union: "তাজহাট",
-            landDocuments: ["জমির দলিল", "খতিয়ান"],
-            cropPhotos: ["ফসলের ছবি ১"],
-            gpsCoordinates: {
-                latitude: 25.7439,
-                longitude: 89.2752
-            },
-            submissionDate: "৩০/০৮/২০২৫",
-            verificationStatus: "pending" as const,
-            verificationNotes: "",
-            estimatedYield: "৪০ মণ",
-            sowingDate: "০৫/০৮/২০২৫",
-            harvestDate: "০৫/১২/২০২৫",
-        },
-        {
-            id: 6,
-            farmerId: 6,
-            farmerName: "নাসির উদ্দিন",
-            farmerPhone: "01834567890",
-            cropType: "পেঁয়াজ",
-            landArea: "২.৫",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: কৃষ্ণনগর",
-            district: "সিলেট",
-            upazila: "সিলেট সদর",
-            union: "খাদিমনগর",
-            landDocuments: ["জমির দলিল", "খতিয়ান"],
-            cropPhotos: ["ফসলের ছবি ১", "ফসলের ছবি ২"],
-            gpsCoordinates: {
-                latitude: 24.8949,
-                longitude: 91.8687
-            },
-            submissionDate: "০১/০৯/২০২৫",
-            verificationStatus: "verified" as const,
-            verificationNotes: "যাচাই সম্পন্ন",
-            estimatedYield: "৬০ মণ",
-            sowingDate: "১৫/০৮/২০২৫",
-            harvestDate: "১৫/১২/২০২৫",
-        },
-        {
-            id: 7,
-            farmerId: 7,
-            farmerName: "শাহিনুর রহমান",
-            farmerPhone: "01745678901",
-            cropType: "টমেটো",
-            landArea: "১",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: শিববাড়ি",
-            district: "ঢাকা",
-            upazila: "সাভার",
-            union: "বিরুলিয়া",
-            landDocuments: ["জমির দলিল"],
-            cropPhotos: ["ফসলের ছবি ১"],
-            gpsCoordinates: {
-                latitude: 23.4607,
-                longitude: 91.1809
-            },
-            submissionDate: "০২/০৯/২০২৫",
-            verificationStatus: "pending" as const,
-            verificationNotes: "",
-            estimatedYield: "২৫ মণ",
-            sowingDate: "২০/০৮/২০২৫",
-            harvestDate: "২০/১২/২০২৫",
-        },
-        {
-            id: 8,
-            farmerId: 8,
-            farmerName: "রফিকুল ইসলাম",
-            farmerPhone: "01656789012",
-            cropType: "কাঁচামরিচ",
-            landArea: "০.৫",
-            landAreaUnit: "বিঘা" as const,
-            location: "গ্রাম: পূর্বপাড়া",
-            district: "রংপুর",
-            upazila: "রংপুর সদর",
-            union: "তাজহাট",
-            landDocuments: ["জমির দলিল", "খতিয়ান"],
-            cropPhotos: ["ফসলের ছবি ১", "ফসলের ছবি ২"],
-            gpsCoordinates: {
-                latitude: 25.7439,
-                longitude: 89.2752
-            },
-            submissionDate: "০৩/০৯/২০২৫",
-            verificationStatus: "verified" as const,
-            verificationNotes: "যাচাই সম্পন্ন",
-            estimatedYield: "১৫ মণ",
-            sowingDate: "২৫/০৮/২০২৫",
-            harvestDate: "২৫/১২/২০২৫",
-        },
-    ]);
-
-    const handleStatusUpdate = (farmerId: number, status: "verified" | "rejected") => {
-        setFarmers(prev =>
-            prev.map(farmer =>
-                farmer.id === farmerId
-                    ? { ...farmer, profileVerificationStatus: status as any }
-                    : farmer
-            )
-        );
-    };
-
-    const handleEditFarmer = (updatedFarmer: typeof farmers[0]) => {
-        setFarmers(prev =>
-            prev.map(farmer =>
-                farmer.id === updatedFarmer.id ? updatedFarmer : farmer
-            )
-        );
-    };
-
-    const handleCropStatusUpdate = (cropId: number, status: "verified" | "rejected", notes?: string) => {
-        setCropVerifications(prev =>
-            prev.map(crop =>
-                crop.id === cropId
-                    ? { ...crop, verificationStatus: status as any, verificationNotes: notes || "" }
-                    : crop
-            )
-        );
-    };
-
-    const handleAddCrop = (newCrop: Omit<typeof cropVerifications[0], 'id'>) => {
-        const id = Math.max(...cropVerifications.map(c => c.id)) + 1;
-        setCropVerifications(prev => [...prev, { ...newCrop, id }]);
-    };
-
-    const handleUpdateCrop = (cropId: number, updatedData: Partial<typeof cropVerifications[0]>) => {
-        setCropVerifications(prev =>
-            prev.map(crop =>
-                crop.id === cropId ? { ...crop, ...updatedData } : crop
-            )
-        );
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case "verified":
-                return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />অনুমোদিত</Badge>;
-            case "rejected":
-                return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />বাতিল</Badge>;
-            case "pending":
-            default:
-                return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />অপেক্ষমান</Badge>;
+            label: "জরুরি",
+            value: "5",
+            icon: AlertCircle,
+            color: "text-red-600",
+            bgColor: "bg-red-50"
         }
-    };
+    ];
+
+    const unreadCount = notifications.filter(n => n.unread).length;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <Database className="h-8 w-8 text-blue-600" />
-                                <div>
-                                    <h1 className="text-2xl font-bold text-gray-900">ডাটা অপারেটর প্যানেল</h1>
-                                    <p className="text-sm text-gray-600">সরকারি তথ্য ব্যবস্থাপনা</p>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <DataOperatorHeader />
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    {quickStats.map((stat, index) => (
+                        <Card key={index} className="hover:shadow-lg transition-shadow">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
+                                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                                    </div>
+                                    <div className={`${stat.bgColor} p-3 rounded-lg`}>
+                                        <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <Button
-                            onClick={() => navigate('/login')}
-                            variant="outline"
-                            className="flex items-center space-x-2"
-                        >
-                            <Home className="h-4 w-4" />
-                            <span>হোম পেজে ফিরুন</span>
-                        </Button>
-                    </div>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
+
+                {/* Main Feature Cards - 4 items - Redesigned for Mobile */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    {features.map((feature) => {
+                        const Icon = feature.icon;
+                        return (
+                            <Card
+                                key={feature.id}
+                                className="group relative overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-0"
+                                onClick={() => navigate(feature.route)}
+                            >
+                                {/* Gradient Background */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
+                                
+                                <CardContent className="relative p-6">
+                                    {/* Icon Circle with Animation */}
+                                    <div className="flex items-center justify-center mb-4">
+                                        <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${feature.bgGradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                            <Icon className="h-10 w-10 text-white" strokeWidth={2.5} />
+                                            
+                                            {/* Pulse ring animation */}
+                                            <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${feature.bgGradient} opacity-30 animate-ping`}></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Title */}
+                                    <h3 className="text-center text-lg font-bold text-gray-900 mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all">
+                                        {feature.title}
+                                    </h3>
+
+                                    {/* Description */}
+                                    <p className="text-center text-sm text-gray-600 mb-4 line-clamp-2 px-2">
+                                        {feature.description}
+                                    </p>
+
+                                    {/* Count Badge */}
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className={`inline-flex items-center justify-center px-4 py-2 rounded-full bg-gradient-to-r ${feature.bgGradient} text-white font-bold text-2xl shadow-md`}>
+                                            {feature.count}
+                                        </div>
+                                        <p className="text-xs font-medium text-gray-500">{feature.countLabel}</p>
+                                    </div>
+
+                                    {/* Hover Arrow Indicator */}
+                                    <div className="mt-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className={`text-sm font-semibold bg-gradient-to-r ${feature.bgGradient} bg-clip-text text-transparent flex items-center gap-1`}>
+                                            দেখুন
+                                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </CardContent>
+
+                                {/* Bottom Accent Line */}
+                                <div className={`h-1 bg-gradient-to-r ${feature.bgGradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
+                            </Card>
+                        );
+                    })}
+                </div>
+
+                {/* Recent Activity Section */}
+                <Card className="mt-8">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Clock className="h-5 w-5 text-gray-600" />
+                            সাম্প্রতিক কার্যক্রম
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {[
+                                { action: "প্রোফাইল অনুমোদন", name: "মোহাম্মদ করিম", time: "১০ মিনিট আগে", type: "success" },
+                                { action: "ফসল যাচাই", name: "আব্দুল হাকিম", time: "৩০ মিনিট আগে", type: "info" },
+                                { action: "রিপোর্ট প্রত্যাখ্যান", name: "সোশ্যাল পোস্ট #১২৩৪", time: "১ ঘণ্টা আগে", type: "warning" },
+                                { action: "মাঠ তথ্য এন্ট্রি", name: "কুমিল্লা সদর", time: "২ ঘণ্টা আগে", type: "info" },
+                            ].map((activity, index) => (
+                                <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`h-2 w-2 rounded-full ${
+                                            activity.type === 'success' ? 'bg-green-500' :
+                                            activity.type === 'warning' ? 'bg-yellow-500' :
+                                            'bg-blue-500'
+                                        }`}></div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                                            <p className="text-xs text-gray-600">{activity.name}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs text-gray-500">{activity.time}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            <div className="container mx-auto px-4 py-8">
-                {/* Dashboard Statistics */}
-                <DashboardStats farmers={farmers} cropVerifications={cropVerifications} />
-
-                <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-5">
-                        <TabsTrigger value="home-dashboard" className="flex items-center gap-2">
-                            <Home className="h-4 w-4" />
-                            <span className="hidden sm:inline">হোম ড্যাশবোর্ড</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="profile-verification" className="flex items-center gap-2">
-                            <UserCheck className="h-4 w-4" />
-                            <span className="hidden sm:inline">প্রফাইল যাচাই</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="crop-verification" className="flex items-center gap-2">
-                            <Sprout className="h-4 w-4" />
-                            <span className="hidden sm:inline">ফসল যাচাই</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="field-data" className="flex items-center gap-2">
-                            <ClipboardList className="h-4 w-4" />
-                            <span className="hidden sm:inline">ফিল্ড ডেটা</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="location-data" className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            <span className="hidden sm:inline">আবহাওয়া তথ্য</span>
-                        </TabsTrigger>
-                    </TabsList>          {/* কৃষকের প্রফাইল ভেরিফাই */}
-
-                    {/* হোম ড্যাশবোর্ড */}
-                    <TabsContent value="home-dashboard" className="space-y-6">
-                        <div className="text-center mb-8">
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">ডেটা অপারেটর ড্যাশবোর্ড</h1>
-                            <p className="text-lg text-gray-600">কৃষি তথ্য ব্যবস্থাপনা ও যাচাইকরণ কেন্দ্র</p>
-                        </div>
-
-                        {/* Quick Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-blue-100">মোট কৃষক</p>
-                                            <p className="text-3xl font-bold">{farmers.length}</p>
-                                        </div>
-                                        <Users className="h-12 w-12 text-blue-200" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-green-100">ফসল যাচাই</p>
-                                            <p className="text-3xl font-bold">{cropVerifications.length}</p>
-                                        </div>
-                                        <Sprout className="h-12 w-12 text-green-200" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-purple-100">অনুমোদিত প্রোফাইল</p>
-                                            <p className="text-3xl font-bold">
-                                                {farmers.filter(f => f.profileVerificationStatus === 'verified').length}
-                                            </p>
-                                        </div>
-                                        <CheckCircle className="h-12 w-12 text-purple-200" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-orange-100">মুলতুবি কাজ</p>
-                                            <p className="text-3xl font-bold">
-                                                {farmers.filter(f => f.profileVerificationStatus === 'pending').length}
-                                            </p>
-                                        </div>
-                                        <AlertTriangle className="h-12 w-12 text-orange-200" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Main Menu Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {dashboardMenuItems.map((item, index) => {
-                                const IconComponent = item.icon;
-                                console.log(`Rendering menu item ${index}:`, item.title, item.id);
-                                return (
-                                    <Card
-                                        key={item.id}
-                                        className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-0 shadow-md"
-                                        onClick={() => handleTabChange(item.id)}
-                                    >
-                                        <CardContent className="p-8 text-center">
-                                            <div className={`${item.bgColor} ${item.hoverColor} w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300`}>
-                                                <IconComponent className="h-10 w-10 text-white" />
-                                            </div>
-                                            <h3 className="text-xl font-semibold mb-2 text-gray-800">{item.title}</h3>
-                                            <p className="text-gray-600 mb-4 text-sm">{item.description}</p>
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Badge variant="secondary" className="bg-gray-100">
-                                                    {item.count} টি কাজ
-                                                </Badge>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-
-                        {/* Recent Activity */}
-                        <Card className="mt-8">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Activity className="h-5 w-5" />
-                                    সাম্প্রতিক কার্যক্রম
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <UserCheck className="h-5 w-5 text-blue-500" />
-                                            <div>
-                                                <p className="font-medium">নতুন কৃষক প্রোফাইল যাচাই</p>
-                                                <p className="text-sm text-gray-500">মোহাম্মদ রহিম - ২ মিনিট আগে</p>
-                                            </div>
-                                        </div>
-                                        <Badge className="bg-blue-500">নতুন</Badge>
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <Sprout className="h-5 w-5 text-green-500" />
-                                            <div>
-                                                <p className="font-medium">ফসল তথ্য আপডেট</p>
-                                                <p className="text-sm text-gray-500">আমন ধান - ৫ মিনিট আগে</p>
-                                            </div>
-                                        </div>
-                                        <Badge className="bg-green-500">সম্পন্ন</Badge>
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <CloudSun className="h-5 w-5 text-orange-500" />
-                                            <div>
-                                                <p className="font-medium">আবহাওয়া তথ্য আপডেট</p>
-                                                <p className="text-sm text-gray-500">কুমিল্লা জেলা - ১০ মিনিট আগে</p>
-                                            </div>
-                                        </div>
-                                        <Badge className="bg-orange-500">সম্পন্ন</Badge>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="profile-verification" className="space-y-4">
-                        <ProfileVerification
-                            farmers={farmers}
-                            onStatusUpdate={handleStatusUpdate}
-                            onEditFarmer={handleEditFarmer}
-                        />
-                    </TabsContent>
-
-                    {/* ফসল ও জমির পরিমান ভেরিফাই */}
-                    <TabsContent value="crop-verification" className="space-y-4">
-                        <CropVerification
-                            cropVerifications={cropVerifications}
-                            onStatusUpdate={handleCropStatusUpdate}
-                            onAddCrop={handleAddCrop}
-                            onUpdateCrop={handleUpdateCrop}
-                        />
-                    </TabsContent>
-
-                    {/* কৃষক নিবন্ধন */}
-                    <TabsContent value="register-farmer" className="space-y-4">
-                        <RegisterFarmer
-                        />
-                    </TabsContent>
-
-                    {/* ফিল্ড ডেটা সংগ্রহ */}
-                    <TabsContent value="field-data" className="space-y-4">
-                        <FieldDataCollection />
-                    </TabsContent>
-
-                    {/* লোকেশন অনুসারে তথ্য */}
-                    <TabsContent value="location-data" className="space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <CloudSun className="h-5 w-5" />
-                                    অঞ্চলভিত্তিক মাটি ও আবহাওয়া তথ্য
-                                </CardTitle>
-                                <CardDescription>
-                                    বিভিন্ন অঞ্চলের মাটির গুণাগুণ ও আবহাওয়া তথ্য আপডেট করুন
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2">জেলা</label>
-                                            <select className="w-full p-2 border rounded-lg">
-                                                <option>ঢাকা</option>
-                                                <option>চট্টগ্রাম</option>
-                                                <option>সিলেট</option>
-                                                <option>কুমিল্লা</option>
-                                                <option>রংপুর</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2">উপজেলা</label>
-                                            <input
-                                                type="text"
-                                                className="w-full p-2 border rounded-lg"
-                                                placeholder="উপজেলার নাম"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2">মাটির pH</label>
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                className="w-full p-2 border rounded-lg"
-                                                placeholder="6.5"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2">গড় তাপমাত্রা (°C)</label>
-                                            <input
-                                                type="number"
-                                                className="w-full p-2 border rounded-lg"
-                                                placeholder="25"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2">বৃষ্টিপাত (মিমি)</label>
-                                            <input
-                                                type="number"
-                                                className="w-full p-2 border rounded-lg"
-                                                placeholder="150"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium mb-2">মাটির ধরন</label>
-                                        <select className="w-full p-2 border rounded-lg">
-                                            <option>দোআঁশ মাটি</option>
-                                            <option>বেলে মাটি</option>
-                                            <option>এঁটেল মাটি</option>
-                                            <option>পলি মাটি</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium mb-2">সার সুপারিশ</label>
-                                        <textarea
-                                            className="w-full p-2 border rounded-lg h-20"
-                                            placeholder="এই অঞ্চলের জন্য সার সুপারিশ লিখুন"
-                                        ></textarea>
-                                    </div>
-
-                                    <Button className="bg-green-600 hover:bg-green-700">তথ্য আপডেট করুন</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    {/* সোশ্যাল ফিড রিপোর্ট ম্যানেজমেন্ট */}
-                    <TabsContent value="social-feed-reports" className="space-y-4">
-                        <SocialFeedReportMng />
-                    </TabsContent>
-                </Tabs>
-            </div>
+            {/* Profile Dialog */}
+            <DataOperatorProfile open={showProfile} onOpenChange={setShowProfile} />
         </div>
     );
 };
 
-export default DataOperatorDashboard;
+export default DataOperatorDashboardNew;

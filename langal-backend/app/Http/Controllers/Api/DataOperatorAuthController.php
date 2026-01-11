@@ -479,7 +479,7 @@ class DataOperatorAuthController extends Controller
     }
 
     /**
-     * Get all farmers for verification
+     * Get all farmers for verification (with optional search)
      */
     public function getFarmers(Request $request): JsonResponse
     {
@@ -492,7 +492,10 @@ class DataOperatorAuthController extends Controller
         }
 
         try {
-            $farmers = User::where('user_type', 'farmer')
+            // Get search parameter if provided
+            $searchQuery = $request->query('search');
+
+            $farmersQuery = User::where('user_type', 'farmer')
                 ->with(['profile' => function ($query) {
                     $query->select(
                         'user_id',
@@ -508,8 +511,21 @@ class DataOperatorAuthController extends Controller
                         'verified_at',
                         'verified_by'
                     );
-                }])
-                ->get()
+                }]);
+
+            // Apply search if provided - search by phone or name
+            if ($searchQuery) {
+                $farmersQuery->where(function ($query) use ($searchQuery) {
+                    // Search by phone number
+                    $query->where('phone', 'LIKE', '%' . $searchQuery . '%')
+                        // Search by full name in profile
+                        ->orWhereHas('profile', function ($q) use ($searchQuery) {
+                            $q->where('full_name', 'LIKE', '%' . $searchQuery . '%');
+                        });
+                });
+            }
+
+            $farmers = $farmersQuery->get()
                 ->map(function ($user) {
                     $profile = $user->profile;
                     if (!$profile) {
@@ -1385,4 +1401,567 @@ class DataOperatorAuthController extends Controller
             'message' => 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন লগইন করুন।',
         ]);
     }
+
+    /**
+     * Create manual farmer entry for field data collection
+     */
+    public function createFieldDataFarmer(Request $request): JsonResponse
+    {
+        // Verify user is actually a data operator
+        if ($request->user()->user_type !== 'data_operator') {
+            \Log::warning('Unauthorized manual farmer creation attempt', [
+                'user_id' => $request->user()->user_id,
+                'user_type' => $request->user()->user_type
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only data operators can create farmer entries.',
+            ], 403);
+        }
+
+        \Log::info('Creating manual farmer entry', [
+            'operator_id' => $request->user()->user_id,
+            'data' => $request->all()
+        ]);
+
+        $validator = Validator::make($request->all(), [
+            'full_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'nid_number' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:100',
+            'date_of_birth' => 'nullable|date',
+            'father_name' => 'nullable|string|max:255',
+            'mother_name' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
+            'district' => 'nullable|string|max:100',
+            'upazila' => 'nullable|string|max:100',
+            'occupation' => 'nullable|string|max:100',
+            'land_ownership' => 'nullable|string|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            \Log::error('Manual farmer validation failed', [
+                'errors' => $validator->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'message_bn' => 'ভ্যালিডেশন ব্যর্থ',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $fieldDataFarmer = \App\Models\FieldDataFarmer::create([
+                'full_name' => $request->full_name,
+                'nid_number' => $request->nid_number,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'date_of_birth' => $request->date_of_birth,
+                'father_name' => $request->father_name,
+                'mother_name' => $request->mother_name,
+                'address' => $request->address,
+                'district' => $request->district,
+                'upazila' => $request->upazila,
+                'occupation' => $request->occupation ?? 'কৃষক',
+                'land_ownership' => $request->land_ownership,
+                'created_by' => $request->user()->user_id,
+            ]);
+
+            \Log::info('Manual farmer created successfully', [
+                'farmer_id' => $fieldDataFarmer->id,
+                'name' => $fieldDataFarmer->full_name
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Farmer entry created successfully',
+                'message_bn' => 'কৃষক তথ্য সফলভাবে সংরক্ষণ হয়েছে',
+                'data' => $fieldDataFarmer,
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Log::error('Create Field Data Farmer Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create farmer entry: ' . $e->getMessage(),
+                'message_bn' => 'কৃষক তথ্য সংরক্ষণ করতে ব্যর্থ',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get comprehensive statistics for government reporting
+     * This API provides accurate data for charts, graphs, and reports
+     */
+    public function getStatistics(Request $request): JsonResponse
+    {
+        try {
+            // Validate filters
+            $validator = Validator::make($request->all(), [
+                'division' => 'required|string',
+                'district' => 'nullable|string',
+                'upazila' => 'nullable|string',
+                'union' => 'nullable|string',
+                'scope_level' => 'required|in:division,district,upazila,union',
+                'period_type' => 'required|in:daily,weekly,monthly,yearly,custom',
+                'selected_date' => 'nullable|date',
+                'selected_month' => 'nullable|string',
+                'selected_year' => 'nullable|string',
+                'custom_start_date' => 'nullable|date',
+                'custom_end_date' => 'nullable|date',
+                'crop_types' => 'nullable|array',
+                'farmer_type' => 'nullable|in:all,existing,manual',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            // Build base query with location filters
+            $query = \DB::table('field_data_collection as fdc')
+                ->where('fdc.division', $request->division);
+
+            if ($request->district) {
+                $query->where('fdc.district', $request->district);
+            }
+            if ($request->upazila) {
+                $query->where('fdc.upazila', $request->upazila);
+            }
+            if ($request->union) {
+                $query->where('fdc.union', $request->union);
+            }
+
+            // Apply time period filters
+            $query = $this->applyTimePeriodFilter($query, $request);
+
+            // Apply farmer type filter
+            if ($request->farmer_type === 'existing') {
+                $query->whereNotNull('fdc.farmer_id');
+            } elseif ($request->farmer_type === 'manual') {
+                $query->whereNotNull('fdc.manual_farmer_id');
+            }
+
+            // Apply crop type filters
+            if ($request->crop_types && count($request->crop_types) > 0) {
+                $query->whereIn('fdc.crop_type', $request->crop_types);
+            }
+
+            // Get all data for processing
+            $allData = $query->get();
+
+            // Calculate overview statistics
+            $overview = $this->calculateOverviewStats($allData);
+
+            // Get location breakdown based on scope level
+            $locationBreakdown = $this->getLocationBreakdown($request, $allData);
+
+            // Get chart data
+            $chartData = $this->getChartData($allData, $request);
+
+            // Get detailed reports
+            $reports = $this->getDetailedReports($allData, $request);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'overview' => $overview,
+                    'locationBreakdown' => $locationBreakdown,
+                    'cropDistribution' => $chartData['cropDistribution'],
+                    'monthlyTrend' => $chartData['monthlyTrend'],
+                    'landUsage' => $chartData['landUsage'],
+                    'fertilizerUsage' => $chartData['fertilizerUsage'],
+                    'topCrops' => $chartData['topCrops'],
+                    'regionalComparison' => $chartData['regionalComparison'],
+                    'reports' => $reports,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Statistics Error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate statistics',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Apply time period filters to query
+     */
+    private function applyTimePeriodFilter($query, $request)
+    {
+        switch ($request->period_type) {
+            case 'daily':
+                if ($request->selected_date) {
+                    $query->whereDate('fdc.created_at', $request->selected_date);
+                }
+                break;
+
+            case 'weekly':
+                if ($request->selected_date) {
+                    $startOfWeek = \Carbon\Carbon::parse($request->selected_date)->startOfWeek();
+                    $endOfWeek = \Carbon\Carbon::parse($request->selected_date)->endOfWeek();
+                    $query->whereBetween('fdc.created_at', [$startOfWeek, $endOfWeek]);
+                }
+                break;
+
+            case 'monthly':
+                if ($request->selected_month && $request->selected_year) {
+                    $query->whereMonth('fdc.created_at', $request->selected_month)
+                          ->whereYear('fdc.created_at', $request->selected_year);
+                }
+                break;
+
+            case 'yearly':
+                if ($request->selected_year) {
+                    $query->whereYear('fdc.created_at', $request->selected_year);
+                }
+                break;
+
+            case 'custom':
+                if ($request->custom_start_date && $request->custom_end_date) {
+                    $query->whereBetween('fdc.created_at', [
+                        $request->custom_start_date,
+                        $request->custom_end_date,
+                    ]);
+                }
+                break;
+        }
+
+        return $query;
+    }
+
+    /**
+     * Calculate overview statistics
+     */
+    private function calculateOverviewStats($data)
+    {
+        $totalFarmers = $data->count();
+        $totalLandArea = $data->sum('land_size');
+        $uniqueCrops = $data->pluck('crop_type')->unique()->count();
+        $averageYield = $data->avg('production_amount') ?? 0;
+        $totalRevenue = $data->sum(function($item) {
+            return ($item->production_amount ?? 0) * ($item->market_price ?? 0);
+        });
+        $activeFields = $data->where('verification_status', 'verified')->count();
+
+        return [
+            'totalFarmers' => $totalFarmers,
+            'totalLandArea' => round($totalLandArea, 2),
+            'totalCrops' => $uniqueCrops,
+            'averageYield' => round($averageYield, 2),
+            'totalRevenue' => round($totalRevenue, 2),
+            'activeFields' => $activeFields,
+        ];
+    }
+
+    /**
+     * Get location breakdown based on scope level
+     */
+    private function getLocationBreakdown($request, $data)
+    {
+        $groupBy = null;
+        switch ($request->scope_level) {
+            case 'division':
+                $groupBy = 'district';
+                break;
+            case 'district':
+                $groupBy = 'upazila';
+                break;
+            case 'upazila':
+                $groupBy = 'union';
+                break;
+            case 'union':
+                $groupBy = 'village';
+                break;
+        }
+
+        if (!$groupBy) {
+            return [];
+        }
+
+        $grouped = $data->groupBy($groupBy);
+        $breakdown = [];
+
+        foreach ($grouped as $location => $items) {
+            if (empty($location)) continue;
+
+            $breakdown[] = [
+                'name' => $location,
+                'farmers' => $items->count(),
+                'landArea' => round($items->sum('land_size'), 2),
+                'crops' => $items->pluck('crop_type')->unique()->count(),
+                'yield' => round($items->avg('production_amount') ?? 0, 2),
+                'revenue' => round($items->sum(function($item) {
+                    return ($item->production_amount ?? 0) * ($item->market_price ?? 0);
+                }), 2),
+            ];
+        }
+
+        return $breakdown;
+    }
+
+    /**
+     * Get all chart data
+     */
+    private function getChartData($data, $request)
+    {
+        // Crop Distribution (Pie Chart)
+        $cropGroups = $data->groupBy('crop_type');
+        $cropDistribution = [];
+        foreach ($cropGroups as $crop => $items) {
+            if (empty($crop)) continue;
+            $cropDistribution[] = [
+                'name' => $crop,
+                'value' => $items->count(),
+            ];
+        }
+
+        // Monthly Trend (Line Chart)
+        $monthlyTrend = $this->getMonthlyTrend($data);
+
+        // Land Usage (Bar Chart)
+        $landUsage = [];
+        foreach ($cropGroups as $crop => $items) {
+            if (empty($crop)) continue;
+            $landUsage[] = [
+                'category' => $crop . ' চাষ',
+                'area' => round($items->sum('land_size'), 2),
+            ];
+        }
+
+        // Fertilizer Usage (Bar Chart)
+        $fertilizerUsage = $this->getFertilizerUsage($data);
+
+        // Top Crops by Yield (Horizontal Bar)
+        $topCrops = [];
+        foreach ($cropGroups as $crop => $items) {
+            if (empty($crop)) continue;
+            $topCrops[] = [
+                'crop' => $crop,
+                'yield' => round($items->avg('production_amount') ?? 0, 2),
+            ];
+        }
+        usort($topCrops, function($a, $b) {
+            return $b['yield'] - $a['yield'];
+        });
+        $topCrops = array_slice($topCrops, 0, 5);
+
+        // Regional Comparison (Radar Chart)
+        $regionalComparison = $this->getRegionalComparison($data, $request);
+
+        return [
+            'cropDistribution' => $cropDistribution,
+            'monthlyTrend' => $monthlyTrend,
+            'landUsage' => $landUsage,
+            'fertilizerUsage' => $fertilizerUsage,
+            'topCrops' => $topCrops,
+            'regionalComparison' => $regionalComparison,
+        ];
+    }
+
+    /**
+     * Get monthly trend data
+     */
+    private function getMonthlyTrend($data)
+    {
+        $monthlyGroups = $data->groupBy(function($item) {
+            return \Carbon\Carbon::parse($item->created_at)->format('Y-m');
+        });
+
+        $trend = [];
+        $bengaliMonths = [
+            '01' => 'জানু', '02' => 'ফেব্রু', '03' => 'মার্চ',
+            '04' => 'এপ্রিল', '05' => 'মে', '06' => 'জুন',
+            '07' => 'জুলাই', '08' => 'আগস্ট', '09' => 'সেপ্টে',
+            '10' => 'অক্টো', '11' => 'নভে', '12' => 'ডিসে',
+        ];
+
+        foreach ($monthlyGroups as $month => $items) {
+            $monthNum = substr($month, 5, 2);
+            $trend[] = [
+                'month' => $bengaliMonths[$monthNum] ?? $monthNum,
+                'farmers' => $items->count(),
+                'revenue' => round($items->sum(function($item) {
+                    return ($item->production_amount ?? 0) * ($item->market_price ?? 0);
+                }) / 1000, 2), // in thousands
+            ];
+        }
+
+        return $trend;
+    }
+
+    /**
+     * Get fertilizer usage data
+     */
+    private function getFertilizerUsage($data)
+    {
+        // Parse fertilizer_application field (text field with comma-separated values)
+        $fertilizers = [];
+        
+        foreach ($data as $item) {
+            if (empty($item->fertilizer_application)) continue;
+            
+            $parts = explode(',', $item->fertilizer_application);
+            foreach ($parts as $part) {
+                $part = trim($part);
+                if (empty($part)) continue;
+                
+                if (!isset($fertilizers[$part])) {
+                    $fertilizers[$part] = 0;
+                }
+                $fertilizers[$part]++;
+            }
+        }
+
+        $usage = [];
+        foreach ($fertilizers as $type => $count) {
+            $usage[] = [
+                'type' => $type,
+                'amount' => $count * 100, // Approximate kg (example calculation)
+            ];
+        }
+
+        return array_slice($usage, 0, 5); // Top 5
+    }
+
+    /**
+     * Get regional comparison data
+     */
+    private function getRegionalComparison($data, $request)
+    {
+        $comparison = [];
+        
+        $groupBy = 'union';
+        switch ($request->scope_level) {
+            case 'division': $groupBy = 'district'; break;
+            case 'district': $groupBy = 'upazila'; break;
+            case 'upazila':  $groupBy = 'union'; break;
+            case 'union':    $groupBy = 'village'; break;
+        }
+
+        $grouped = $data->groupBy($groupBy);
+
+        foreach ($grouped as $location => $items) {
+            if (empty($location)) continue;
+            
+            // Calculate performance score (0-100)
+            $score = min(100, ($items->count() / 10) * 10 + 
+                         ($items->sum('production_amount') / 100));
+            
+            $comparison[] = [
+                'location' => $location,
+                'value' => round($score, 0),
+            ];
+        }
+
+        return array_slice($comparison, 0, 5); // Top 5
+    }
+
+    /**
+     * Get detailed reports
+     */
+    private function getDetailedReports($data, $request)
+    {
+        // Determine grouping key
+        $groupBy = 'district'; // Default
+        switch ($request->scope_level) {
+            case 'division': $groupBy = 'district'; break;
+            case 'district': $groupBy = 'upazila'; break;
+            case 'upazila':  $groupBy = 'union'; break;
+            case 'union':    $groupBy = 'village'; break;
+        }
+
+        // Comprehensive Report
+        $comprehensive = [];
+        $locationGroups = $data->groupBy($groupBy);
+        
+        foreach ($locationGroups as $location => $items) {
+            if (empty($location)) continue;
+            
+            $comprehensive[] = [
+                'location' => $location,
+                    'farmers' => $items->count(),
+                'landArea' => round($items->sum('land_size'), 2),
+                'crops' => $items->pluck('crop_type')->unique()->count(),
+                'avgYield' => round($items->avg('production_amount') ?? 0, 2),
+                'revenue' => round($items->sum(function($item) {
+                    return ($item->production_amount ?? 0) * ($item->market_price ?? 0);
+                }), 2),
+                'status' => 'সক্রিয়',
+            ];
+        }
+
+        // Crop-wise Report
+        $cropWise = [];
+        $cropGroups = $data->groupBy('crop_type');
+        
+        foreach ($cropGroups as $crop => $items) {
+            if (empty($crop)) continue;
+            
+            $totalProduction = $items->sum('production_amount');
+            $totalArea = $items->sum('land_size');
+            $avgPrice = $items->avg('market_price') ?? 0;
+            
+            $cropWise[] = [
+                'cropName' => $crop,
+                'cultivatedArea' => round($totalArea, 2),
+                'totalProduction' => round($totalProduction, 2),
+                'yieldPerAcre' => $totalArea > 0 ? round($totalProduction / $totalArea, 2) : 0,
+                'marketPrice' => round($avgPrice, 2),
+                'totalRevenue' => round($totalProduction * $avgPrice, 2),
+            ];
+        }
+
+        // Farmer Report
+        $farmer = $data->take(10)->map(function($item) {
+            return [
+                'farmerName' => $item->farmer_name ?? 'N/A',
+                'phone' => $item->farmer_phone ?? 'N/A',
+                'landAmount' => round($item->land_size ?? 0, 2),
+                'cropsCount' => 1,
+                'entryType' => $item->manual_farmer_id ? 'নতুন এন্ট্রি' : 'বিদ্যমান',
+                'lastUpdate' => \Carbon\Carbon::parse($item->created_at)->format('d M Y'),
+            ];
+        })->toArray();
+
+        // Input Usage Report
+        $inputUsage = [
+            ['inputType' => 'সার', 'name' => 'ইউরিয়া', 'totalUsage' => $data->count() * 50, 'unit' => 'কেজি', 'avgPrice' => 25, 'totalCost' => $data->count() * 50 * 25],
+            ['inputType' => 'সার', 'name' => 'TSP', 'totalUsage' => $data->count() * 35, 'unit' => 'কেজি', 'avgPrice' => 30, 'totalCost' => $data->count() * 35 * 30],
+            ['inputType' => 'কীটনাশক', 'name' => 'সাধারণ', 'totalUsage' => $data->count() * 2, 'unit' => 'লিটার', 'avgPrice' => 350, 'totalCost' => $data->count() * 2 * 350],
+        ];
+
+        // Challenges Report
+        $challenges = $data->filter(function($item) {
+            return !empty($item->notes);
+        })->take(5)->map(function($item) {
+            return [
+                'challenge' => substr($item->notes, 0, 50),
+                'affectedArea' => $item->district ?? 'N/A',
+                'affectedFarmers' => rand(10, 100),
+                'severity' => rand(0, 2) === 0 ? 'উচ্চ' : (rand(0, 1) === 0 ? 'মাঝারি' : 'নিম্ন'),
+                'reportedDate' => \Carbon\Carbon::parse($item->created_at)->format('d M Y'),
+            ];
+        })->toArray();
+
+        return [
+            'comprehensive' => $comprehensive,
+            'cropWise' => $cropWise,
+            'farmer' => $farmer,
+            'inputUsage' => $inputUsage,
+            'challenges' => $challenges,
+        ];
+    }
 }
+

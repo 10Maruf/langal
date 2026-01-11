@@ -53,7 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         // Check if user is stored in localStorage
         const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('auth_token');
+        // Check for both token keys (legacy 'token' and newer 'auth_token' used by api service)
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
         
         if (storedUser && token) {
             try {
@@ -66,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error('Error parsing stored user:', error);
                 // Clear corrupted data
                 localStorage.removeItem('user');
-                localStorage.removeItem('auth_token');
+                localStorage.removeItem('token');
             }
         }
         setIsLoading(false);
@@ -75,10 +76,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const setAuthUser = (user: User, token: string) => {
         console.log('AuthContext - Setting auth user:', user);
         console.log('AuthContext - User type being saved:', user.type);
+        
+        // Update state immediately
         setUser(user);
         setIsAuthenticated(true);
+        
+        // Store in localStorage
         localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
+        // Also store as auth_token as used by api.ts interceptor
         localStorage.setItem('auth_token', token);
+        
+        console.log('AuthContext - Auth state updated, user is now:', user);
+        console.log('AuthContext - isAuthenticated is now: true');
     };
 
     const login = async (email: string, password: string, userType: UserType): Promise<boolean> => {
@@ -118,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem('user');
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
         // Clear any other stored data
         sessionStorage.clear();
     };

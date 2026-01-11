@@ -1,0 +1,99 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('field_data_collection', function (Blueprint $table) {
+            $table->id();
+            
+            // Data Operator Information
+            $table->unsignedBigInteger('data_operator_id');
+            $table->unsignedBigInteger('farmer_id');
+            
+            // Farmer Basic Info (কৃষক তথ্য)
+            $table->string('farmer_name');
+            $table->text('farmer_address')->nullable();
+            $table->string('farmer_phone')->nullable();
+            
+            // Land & Crop Info (ফসল ও বীজ তথ্য)
+            $table->decimal('land_size', 10, 2)->nullable()->comment('জমির মাপ (in decimal/bigha)');
+            $table->string('land_size_unit')->default('decimal')->comment('decimal, bigha, katha');
+            $table->string('livestock_info')->nullable()->comment('পশুপাল তথ্য');
+            $table->date('land_service_date')->nullable()->comment('ভূমি সেবার তারিখ');
+            $table->string('irrigation_status')->nullable()->comment('সেচের স্থিতি - Available/Not Available');
+            
+            // Crop & Environment Info (ফসল ও পরিবেশ)
+            $table->string('season')->nullable()->comment('মৌসম - Rabi/Kharif/Zaid');
+            $table->string('crop_type')->nullable()->comment('ফসল প্রকার');
+            $table->text('organic_fertilizer_application')->nullable()->comment('জৈব সার প্রয়োগ');
+            $table->text('fertilizer_application')->nullable()->comment('রাসায়নিক সার প্রয়োগ');
+            $table->text('tree_fertilizer_info')->nullable()->comment('গাছের সার বিধান');
+            
+            // Economic Info (অর্থনৈতিক তথ্য)
+            $table->decimal('market_price', 10, 2)->nullable()->comment('বাজার দাম');
+            $table->decimal('ph_value', 4, 2)->nullable()->comment('মাটির PH মান');
+            $table->decimal('expenses', 10, 2)->nullable()->comment('খরচ');
+            $table->decimal('production_amount', 10, 2)->nullable()->comment('উৎপাদিত পরিমাণ (kg/maund)');
+            $table->string('production_unit')->default('kg')->comment('kg, maund, ton');
+            
+            // Agricultural Lead Info (কৃষাগ্রলয়েড তথ্য)
+            $table->string('crop_calculation')->nullable()->comment('ফসলের হিসাব');
+            $table->text('available_resources')->nullable()->comment('প্রাপ্ত সম্পদ তথ্য');
+            $table->string('seminar_name')->nullable()->comment('সেমিনার/প্রশিক্ষণের নাম');
+            $table->string('identity_number')->nullable()->comment('পরিচয় নম্বর');
+            $table->year('collection_year')->nullable()->comment('তথ্য সংগ্রহের বছর');
+            
+            // Additional Notes
+            $table->text('notes')->nullable()->comment('অতিরিক্ত মন্তব্য');
+            
+            // Location Info
+            $table->string('division')->nullable();
+            $table->string('district')->nullable();
+            $table->string('upazila')->nullable();
+            $table->string('union')->nullable();
+            $table->string('village')->nullable();
+            $table->string('postal_code')->nullable();
+            
+            // GPS Coordinates
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
+            
+            // Status
+            $table->enum('verification_status', ['pending', 'verified', 'rejected'])->default('pending');
+            $table->text('verification_notes')->nullable();
+            $table->timestamp('verified_at')->nullable();
+            $table->unsignedBigInteger('verified_by')->nullable();
+            
+            $table->timestamps();
+            $table->softDeletes();
+            
+            // Foreign keys
+            $table->foreign('data_operator_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('farmer_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('verified_by')->references('id')->on('users')->onDelete('set null');
+            
+            // Indexes
+            $table->index('data_operator_id');
+            $table->index('farmer_id');
+            $table->index('collection_year');
+            $table->index('verification_status');
+            $table->index('created_at');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('field_data_collection');
+    }
+};

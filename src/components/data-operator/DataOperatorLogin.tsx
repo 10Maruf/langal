@@ -20,6 +20,7 @@ const clearOldSession = () => {
     console.log('Clearing old session data...');
     localStorage.removeItem('user');
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('token'); // Also clear the legacy token key
     sessionStorage.clear();
 };
 
@@ -29,14 +30,20 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-    const { setAuthUser } = useAuth();
+    const { setAuthUser, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
 
     // Clear old session on component mount
     useEffect(() => {
+        // Only clear session if not already logged in as data operator
+        // This prevents clearing session when redirecting from dashboard or refreshing
+        if (isAuthenticated && user?.type === 'data_operator') {
+            console.log('DataOperatorLogin - User already logged in, skipping session clear');
+            return;
+        }
         clearOldSession();
-    }, []);
+    }, [isAuthenticated, user]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

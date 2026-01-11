@@ -136,7 +136,13 @@ const SoilTestCollection = () => {
       setReports(response.data.data || []);
     } catch (error: any) {
       console.error('Error fetching reports:', error);
-      toast.error(error.response?.data?.message || 'রিপোর্ট লোড করতে ব্যর্থ');
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response?.data?.message || 'রিপোর্ট লোড করতে ব্যর্থ');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,16 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { UserCheck, LogIn, UserPlus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import DataOperatorRegistration from "@/components/data-operator/DataOperatorRegistration";
 import DataOperatorLogin from "@/components/data-operator/DataOperatorLogin";
 import { getAssetPath } from "@/lib/utils";
 
 const DataOperatorAuth = () => {
     const navigate = useNavigate();
+    const { user, isAuthenticated, isLoading } = useAuth();
     const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+
+    // If already logged in as data operator, redirect to dashboard
+    useEffect(() => {
+        if (!isLoading && isAuthenticated && user?.type === 'data_operator') {
+            console.log('DataOperatorAuth - Already logged in, redirecting to dashboard');
+            navigate('/data-operator-dashboard', { replace: true });
+        }
+    }, [isAuthenticated, user, isLoading, navigate]);
+
+    // Show loading while checking auth
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
