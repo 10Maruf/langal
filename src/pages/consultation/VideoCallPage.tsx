@@ -58,6 +58,10 @@ const VideoCallPage = () => {
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  // Remote user state tracking
+  const [remoteUserJoined, setRemoteUserJoined] = useState(false);
+  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(false);
+
   // Agora client and tracks
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef = useRef<any>(null);
@@ -68,6 +72,8 @@ const VideoCallPage = () => {
     audioTrack: null,
     videoTrack: null,
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const remoteUsersRef = useRef<Map<number, any>>(new Map());
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -131,10 +137,93 @@ const VideoCallPage = () => {
         codec: "vp8",
       });
 
-      // Set up event handlers
-      clientRef.current.on("user-published", handleUserPublished);
-      clientRef.current.on("user-unpublished", handleUserUnpublished);
-      clientRef.current.on("user-left", handleUserLeft);
+      // Set up event handlers for remote users
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-published", async (remoteUser: any, mediaType: string) => {
+        console.log('[Agora] Remote user published:', { uid: remoteUser.uid, mediaType });
+
+        try {
+          // Subscribe to the remote user's track
+          await clientRef.current.subscribe(remoteUser, mediaType);
+          console.log('[Agora] Subscribed to remote user:', { uid: remoteUser.uid, mediaType });
+
+          // Store remote user reference
+          remoteUsersRef.current.set(remoteUser.uid, remoteUser);
+          setRemoteUserJoined(true);
+
+          if (mediaType === "video") {
+            console.log('[Agora] Playing remote video track...');
+            const remoteVideoTrack = remoteUser.videoTrack;
+            if (remoteVideoTrack) {
+              // Wait a bit for DOM to be ready
+              setTimeout(() => {
+                if (remoteVideoRef.current) {
+                  // Clear any existing content
+                  remoteVideoRef.current.innerHTML = "";
+                  remoteVideoTrack.play(remoteVideoRef.current);
+                  setRemoteVideoEnabled(true);
+                  console.log('[Agora] Remote video playing successfully');
+                } else {
+                  console.error('[Agora] remoteVideoRef.current is null');
+                }
+              }, 100);
+            }
+          }
+
+          if (mediaType === "audio") {
+            console.log('[Agora] Playing remote audio track...');
+            const remoteAudioTrack = remoteUser.audioTrack;
+            if (remoteAudioTrack) {
+              remoteAudioTrack.play();
+              console.log('[Agora] Remote audio playing successfully');
+            }
+          }
+        } catch (err) {
+          console.error('[Agora] Error subscribing to remote user:', err);
+        }
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-unpublished", (remoteUser: any, mediaType: string) => {
+        console.log('[Agora] Remote user unpublished:', { uid: remoteUser.uid, mediaType });
+        if (mediaType === "video") {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.innerHTML = "";
+          }
+          setRemoteVideoEnabled(false);
+        }
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-joined", (remoteUser: any) => {
+        console.log('[Agora] Remote user joined:', { uid: remoteUser.uid });
+        setRemoteUserJoined(true);
+        toast({
+          title: "সংযুক্ত",
+          description: "অপর পক্ষ কলে যোগ দিয়েছেন",
+        });
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-left", (remoteUser: any, reason: string) => {
+        console.log('[Agora] Remote user left:', { uid: remoteUser.uid, reason });
+        remoteUsersRef.current.delete(remoteUser.uid);
+        setRemoteUserJoined(false);
+        setRemoteVideoEnabled(false);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.innerHTML = "";
+        }
+        toast({
+          title: "কল শেষ",
+          description: "অপর পক্ষ কল থেকে বের হয়ে গেছেন",
+        });
+        handleEndCall();
+      });
+
+      // Connection state change
+      clientRef.current.on("connection-state-change", (curState: string, prevState: string) => {
+        console.log('[Agora] Connection state changed:', { prevState, curState });
+      });
 
       return true;
     } catch (err) {
@@ -145,266 +234,259 @@ const VideoCallPage = () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleUserPublished = async (remoteUser: any, mediaType: string) => {
-    await clientRef.current.subscribe(remoteUser, mediaType);
-
-    if (mediaType === "video") {
-      const remoteVideoTrack = remoteUser.videoTrack;
-      if (remoteVideoRef.current) {
-        remoteVideoTrack.play(remoteVideoRef.current);
-      }
-    }
-
-    if (mediaType === "audio") {
-      const remoteAudioTrack = remoteUser.audioTrack;
-      remoteAudioTrack.play();
-    }
+    // This is now handled inside initializeAgora for proper closure
+    console.log('[Agora] handleUserPublished called (legacy):', { uid: remoteUser.uid, mediaType });
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleUserUnpublished = (remoteUser: any, mediaType: string) => {
-    if (mediaType === "video" && remoteVideoRef.current) {
-      remoteVideoRef.current.innerHTML = "";
-    }
+    // This is now handled inside initializeAgora for proper closure
+    console.log('[Agora] handleUserUnpublished called (legacy):', { uid: remoteUser.uid, mediaType });
   };
 
   const handleUserLeft = () => {
-    toast({
-      title: "কল শেষ",
-      description: "অপর পক্ষ কল থেকে বের হয়ে গেছেন",
-    });
-    handleEndCall();
+    // This is now handled inside initializeAgora for proper closure
+    console.log('[Agora] handleUserLeft called (legacy)');
   };
+  handleEndCall();
+};
 
-  const startCallSession = async () => {
+const startCallSession = async () => {
+  try {
+    setConnecting(true);
+
+    // Initialize Agora
+    const initialized = await initializeAgora();
+    if (!initialized) {
+      throw new Error("Agora SDK লোড করতে ব্যর্থ হয়েছে");
+    }
+
+    // Get call token from server
+    // Convert consultation_type to call_type format
+    let callType = appointment?.consultation_type || "video";
+    if (callType === "video_call") callType = "video";
+    if (callType === "audio_call") callType = "audio";
+
+    const response = await startCall({
+      appointment_id: parseInt(appointmentId!),
+      call_type: callType,
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || "কল শুরু করতে ব্যর্থ হয়েছে");
+    }
+
+    setCallData(response.data);
+
+    // Map backend response keys to what we need
+    const agora_channel = response.data.channel_name || response.data.agora_channel;
+    const agora_token = response.data.token || response.data.agora_token;
+    const agora_app_id = (response.data.app_id || response.data.agora_app_id)?.toString().trim();
+
+    // Agora requires integer UID if the token was generated for an integer UID
+    const dimpuid = user?.id ? parseInt(String(user.id), 10) : 0;
+
+    console.log('Agora Connection Debug:', {
+      appId: agora_app_id,
+      channel: agora_channel,
+      tokenLength: agora_token?.length,
+      uid: dimpuid,
+      originalUid: user?.id
+    });
+
+    if (!agora_app_id) {
+      throw new Error("Agora App ID পাওয়া যায়নি। দয়া করে অ্যাডমিনের সাথে যোগাযোগ করুন।");
+    }
+
+    // Join channel
+    await clientRef.current.join(
+      agora_app_id,
+      agora_channel,
+      agora_token,
+      dimpuid
+    );
+
+    // Create local tracks - always create both audio and video
+    // This allows users to toggle video on/off during the call
     try {
-      setConnecting(true);
-
-      // Initialize Agora
-      const initialized = await initializeAgora();
-      if (!initialized) {
-        throw new Error("Agora SDK লোড করতে ব্যর্থ হয়েছে");
+      localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
+      if (localVideoRef.current) {
+        localTracksRef.current.videoTrack.play(localVideoRef.current);
       }
-
-      // Get call token from server
-      // Convert consultation_type to call_type format
-      let callType = appointment?.consultation_type || "video";
-      if (callType === "video_call") callType = "video";
-      if (callType === "audio_call") callType = "audio";
-
-      const response = await startCall({
-        appointment_id: parseInt(appointmentId!),
-        call_type: callType,
-      });
-
-      if (!response.success) {
-        throw new Error(response.message || "কল শুরু করতে ব্যর্থ হয়েছে");
-      }
-
-      setCallData(response.data);
-
-      // Map backend response keys to what we need
-      const agora_channel = response.data.channel_name || response.data.agora_channel;
-      const agora_token = response.data.token || response.data.agora_token;
-      const agora_app_id = (response.data.app_id || response.data.agora_app_id)?.toString().trim();
-
-      // Agora requires integer UID if the token was generated for an integer UID
-      const dimpuid = user?.id ? parseInt(String(user.id), 10) : 0;
-
-      console.log('Agora Connection Debug:', {
-        appId: agora_app_id,
-        channel: agora_channel,
-        tokenLength: agora_token?.length,
-        uid: dimpuid,
-        originalUid: user?.id
-      });
-
-      if (!agora_app_id) {
-        throw new Error("Agora App ID পাওয়া যায়নি। দয়া করে অ্যাডমিনের সাথে যোগাযোগ করুন।");
-      }
-
-      // Join channel
-      await clientRef.current.join(
-        agora_app_id,
-        agora_channel,
-        agora_token,
-        dimpuid
-      );
-
-      // Create local tracks - always create both audio and video
-      // This allows users to toggle video on/off during the call
-      try {
-        localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
-        if (localVideoRef.current) {
-          localTracksRef.current.videoTrack.play(localVideoRef.current);
-        }
-        // If it's an audio call, start with video disabled
-        if (appointment?.consultation_type !== "video") {
-          localTracksRef.current.videoTrack.setEnabled(false);
-          setIsVideoOff(true);
-        }
-      } catch (videoErr) {
-        console.warn("Could not access camera:", videoErr);
+      // If it's an audio call, start with video disabled
+      if (appointment?.consultation_type !== "video") {
+        localTracksRef.current.videoTrack.setEnabled(false);
         setIsVideoOff(true);
       }
+    } catch (videoErr) {
+      console.warn("Could not access camera:", videoErr);
+      setIsVideoOff(true);
+    }
 
-      localTracksRef.current.audioTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
+    localTracksRef.current.audioTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
 
-      // Publish tracks - publish both if video track exists
-      const tracks = localTracksRef.current.videoTrack
-        ? [localTracksRef.current.audioTrack, localTracksRef.current.videoTrack]
-        : [localTracksRef.current.audioTrack];
+    // Publish tracks - publish both if video track exists
+    const tracks = localTracksRef.current.videoTrack
+      ? [localTracksRef.current.audioTrack, localTracksRef.current.videoTrack]
+      : [localTracksRef.current.audioTrack];
 
-      await clientRef.current.publish(tracks);
+    await clientRef.current.publish(tracks);
 
-      setConnected(true);
+    setConnected(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    console.error("Error starting call:", err);
+    toast({
+      title: "ত্রুটি",
+      description: err.message || "কল শুরু করতে ব্যর্থ হয়েছে",
+      variant: "destructive",
+    });
+  } finally {
+    setConnecting(false);
+  }
+};
+
+const handleEndCall = async () => {
+  try {
+    if (callData?.call_id) {
+      await endCall(callData.call_id);
+    }
+  } catch (err) {
+    console.error("Error ending call:", err);
+  } finally {
+    cleanup();
+    navigate(-1);
+  }
+};
+
+const cleanup = () => {
+  // Stop duration counter
+  if (durationIntervalRef.current) {
+    clearInterval(durationIntervalRef.current);
+  }
+
+  // Close local tracks
+  if (localTracksRef.current.audioTrack) {
+    localTracksRef.current.audioTrack.close();
+  }
+  if (localTracksRef.current.videoTrack) {
+    localTracksRef.current.videoTrack.close();
+  }
+
+  // Leave channel
+  if (clientRef.current) {
+    clientRef.current.leave();
+  }
+
+  // Reset remote user state
+  remoteUsersRef.current.clear();
+  setRemoteUserJoined(false);
+  setRemoteVideoEnabled(false);
+  setConnected(false);
+};
+
+const toggleMute = () => {
+  if (localTracksRef.current.audioTrack) {
+    localTracksRef.current.audioTrack.setEnabled(isMuted);
+    setIsMuted(!isMuted);
+  }
+};
+
+const toggleVideo = () => {
+  if (localTracksRef.current.videoTrack) {
+    localTracksRef.current.videoTrack.setEnabled(isVideoOff);
+    setIsVideoOff(!isVideoOff);
+  }
+};
+
+const toggleSpeaker = () => {
+  setIsSpeakerOn(!isSpeakerOn);
+  // In a real implementation, you would change the audio output device
+};
+
+const switchCamera = async () => {
+  if (localTracksRef.current.videoTrack) {
+    const devices = await window.AgoraRTC.getCameras();
+    if (devices.length > 1) {
+      const currentDevice = localTracksRef.current.videoTrack.getTrackLabel();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error("Error starting call:", err);
-      toast({
-        title: "ত্রুটি",
-        description: err.message || "কল শুরু করতে ব্যর্থ হয়েছে",
-        variant: "destructive",
-      });
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const handleEndCall = async () => {
-    try {
-      if (callData?.call_id) {
-        await endCall(callData.call_id);
-      }
-    } catch (err) {
-      console.error("Error ending call:", err);
-    } finally {
-      cleanup();
-      navigate(-1);
-    }
-  };
-
-  const cleanup = () => {
-    // Stop duration counter
-    if (durationIntervalRef.current) {
-      clearInterval(durationIntervalRef.current);
-    }
-
-    // Close local tracks
-    if (localTracksRef.current.audioTrack) {
-      localTracksRef.current.audioTrack.close();
-    }
-    if (localTracksRef.current.videoTrack) {
-      localTracksRef.current.videoTrack.close();
-    }
-
-    // Leave channel
-    if (clientRef.current) {
-      clientRef.current.leave();
-    }
-
-    setConnected(false);
-  };
-
-  const toggleMute = () => {
-    if (localTracksRef.current.audioTrack) {
-      localTracksRef.current.audioTrack.setEnabled(isMuted);
-      setIsMuted(!isMuted);
-    }
-  };
-
-  const toggleVideo = () => {
-    if (localTracksRef.current.videoTrack) {
-      localTracksRef.current.videoTrack.setEnabled(isVideoOff);
-      setIsVideoOff(!isVideoOff);
-    }
-  };
-
-  const toggleSpeaker = () => {
-    setIsSpeakerOn(!isSpeakerOn);
-    // In a real implementation, you would change the audio output device
-  };
-
-  const switchCamera = async () => {
-    if (localTracksRef.current.videoTrack) {
-      const devices = await window.AgoraRTC.getCameras();
-      if (devices.length > 1) {
-        const currentDevice = localTracksRef.current.videoTrack.getTrackLabel();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const nextDevice = devices.find((d: any) => d.label !== currentDevice);
-        if (nextDevice) {
-          await localTracksRef.current.videoTrack.setDevice(nextDevice.deviceId);
-        }
+      const nextDevice = devices.find((d: any) => d.label !== currentDevice);
+      if (nextDevice) {
+        await localTracksRef.current.videoTrack.setDevice(nextDevice.deviceId);
       }
     }
-  };
+  }
+};
 
-  const formatDuration = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+const formatDuration = (seconds: number) => {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
 
-    if (hrs > 0) {
-      return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
 
-  const getOtherParty = (): { name?: string; avatarUrl?: string } | null => {
-    if (!appointment) return null;
-    const isExpert = user?.type === "expert";
-    if (isExpert) {
-      // Farmer side - get farmer's profile
-      const farmerProfile = appointment.farmer?.profile;
-      return {
-        name: farmerProfile?.full_name,
-        avatarUrl: farmerProfile?.profile_photo_url_full || farmerProfile?.profile_photo_url || farmerProfile?.avatar_url
-      };
-    }
-    // Expert side - expert relation returns User model, so expert.profile works
-    const expertProfile = appointment.expert?.profile;
+const getOtherParty = (): { name?: string; avatarUrl?: string } | null => {
+  if (!appointment) return null;
+  const isExpert = user?.type === "expert";
+  if (isExpert) {
+    // Farmer side - get farmer's profile
+    const farmerProfile = appointment.farmer?.profile;
     return {
-      name: expertProfile?.full_name,
-      avatarUrl: expertProfile?.profile_photo_url_full || expertProfile?.profile_photo_url || expertProfile?.avatar_url
+      name: farmerProfile?.full_name,
+      avatarUrl: farmerProfile?.profile_photo_url_full || farmerProfile?.profile_photo_url || farmerProfile?.avatar_url
     };
+  }
+  // Expert side - expert relation returns User model, so expert.profile works
+  const expertProfile = appointment.expert?.profile;
+  return {
+    name: expertProfile?.full_name,
+    avatarUrl: expertProfile?.profile_photo_url_full || expertProfile?.profile_photo_url || expertProfile?.avatar_url
   };
+};
 
-  const otherParty = getOtherParty();
+const otherParty = getOtherParty();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 text-green-500 animate-spin mx-auto mb-3" />
-          <p className="text-white">লোড হচ্ছে...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <p className="text-white mb-4">{error}</p>
-          <Button onClick={() => navigate(-1)} variant="outline">
-            ফিরে যান
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
+if (loading) {
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      {/* Video Area */}
-      <div className="flex-1 relative">
-        {/* Remote Video (Full Screen) */}
-        <div
-          ref={remoteVideoRef}
-          className="absolute inset-0 bg-gray-800 flex items-center justify-center"
-        >
-          {!connected && (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="h-10 w-10 text-green-500 animate-spin mx-auto mb-3" />
+        <p className="text-white">লোড হচ্ছে...</p>
+      </div>
+    </div>
+  );
+}
+
+if (error) {
+  return (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+        <p className="text-white mb-4">{error}</p>
+        <Button onClick={() => navigate(-1)} variant="outline">
+          ফিরে যান
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+return (
+  <div className="min-h-screen bg-gray-900 flex flex-col">
+    {/* Video Area */}
+    <div className="flex-1 relative">
+      {/* Remote Video (Full Screen) */}
+      <div
+        ref={remoteVideoRef}
+        className="absolute inset-0 bg-gray-800"
+      >
+        {/* Show placeholder when not connected or remote video not available */}
+        {(!connected || !remoteVideoEnabled) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
             <div className="text-center">
               <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
                 <AvatarImage
@@ -417,144 +499,161 @@ const VideoCallPage = () => {
               <h2 className="text-white text-xl font-semibold mb-2">
                 {otherParty?.name || "অজানা"}
               </h2>
-              {connecting ? (
+              {!connected && connecting && (
                 <p className="text-gray-400">সংযোগ হচ্ছে...</p>
-              ) : (
+              )}
+              {!connected && !connecting && (
                 <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
               )}
+              {connected && !remoteUserJoined && (
+                <p className="text-yellow-400">অপর পক্ষের অপেক্ষায়...</p>
+              )}
+              {connected && remoteUserJoined && !remoteVideoEnabled && (
+                <p className="text-blue-400">ক্যামেরা বন্ধ আছে</p>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Local Video (Small) - Always show for camera toggle */}
-        <div
-          ref={localVideoRef}
-          className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
-        >
-          {isVideoOff && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-              <VideoOff className="h-8 w-8 text-gray-500" />
-            </div>
-          )}
-        </div>
-
-        {/* Call Duration */}
-        {connected && (
-          <div className="absolute top-4 left-4 bg-black/50 rounded-full px-4 py-2 z-10">
-            <p className="text-white text-sm font-mono">{formatDuration(callDuration)}</p>
-          </div>
-        )}
-
-        {/* Mute Indicator */}
-        {isMuted && connected && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1 z-10">
-            <p className="text-white text-xs flex items-center gap-1">
-              <MicOff className="h-3 w-3" /> মিউট
-            </p>
           </div>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="bg-gray-900/90 backdrop-blur-lg py-6 px-4">
-        <div className="flex items-center justify-center gap-4">
-          {/* Mute Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-14 w-14 rounded-full ${isMuted ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
-              }`}
-            onClick={toggleMute}
-            disabled={!connected}
-          >
-            {isMuted ? (
-              <MicOff className="h-6 w-6 text-white" />
-            ) : (
-              <Mic className="h-6 w-6 text-white" />
-            )}
-          </Button>
+      {/* Local Video (Small) - Always show for camera toggle */}
+      <div
+        ref={localVideoRef}
+        className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
+      >
+        {isVideoOff && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <VideoOff className="h-8 w-8 text-gray-500" />
+          </div>
+        )}
+      </div>
 
-          {/* Video Toggle - Always show for all call types */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-14 w-14 rounded-full ${isVideoOff ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
-              }`}
-            onClick={toggleVideo}
-            disabled={!connected}
-          >
-            {isVideoOff ? (
-              <VideoOff className="h-6 w-6 text-white" />
-            ) : (
-              <Video className="h-6 w-6 text-white" />
-            )}
-          </Button>
+      {/* Call Duration */}
+      {connected && (
+        <div className="absolute top-4 left-4 bg-black/50 rounded-full px-4 py-2 z-10">
+          <p className="text-white text-sm font-mono">{formatDuration(callDuration)}</p>
+        </div>
+      )}
 
-          {/* Start/End Call Button */}
-          {!connected ? (
-            <Button
-              size="icon"
-              className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600"
-              onClick={startCallSession}
-              disabled={connecting}
-            >
-              {connecting ? (
-                <Loader2 className="h-8 w-8 text-white animate-spin" />
-              ) : (
-                <Phone className="h-8 w-8 text-white" />
-              )}
-            </Button>
+      {/* Mute Indicator */}
+      {isMuted && connected && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1 z-10">
+          <p className="text-white text-xs flex items-center gap-1">
+            <MicOff className="h-3 w-3" /> মিউট
+          </p>
+        </div>
+      )}
+
+      {/* Remote User Joined Indicator */}
+      {connected && remoteUserJoined && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 rounded-full px-3 py-1 z-10 mt-8">
+          <p className="text-white text-xs flex items-center gap-1">
+            সংযুক্ত
+          </p>
+        </div>
+      )}
+    </div>
+
+    {/* Controls */}
+    <div className="bg-gray-900/90 backdrop-blur-lg py-6 px-4">
+      <div className="flex items-center justify-center gap-4">
+        {/* Mute Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-14 w-14 rounded-full ${isMuted ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
+            }`}
+          onClick={toggleMute}
+          disabled={!connected}
+        >
+          {isMuted ? (
+            <MicOff className="h-6 w-6 text-white" />
           ) : (
-            <Button
-              size="icon"
-              className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600"
-              onClick={handleEndCall}
-            >
-              <PhoneOff className="h-8 w-8 text-white" />
-            </Button>
+            <Mic className="h-6 w-6 text-white" />
           )}
+        </Button>
 
-          {/* Switch Camera - Always show */}
+        {/* Video Toggle - Always show for all call types */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-14 w-14 rounded-full ${isVideoOff ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
+            }`}
+          onClick={toggleVideo}
+          disabled={!connected}
+        >
+          {isVideoOff ? (
+            <VideoOff className="h-6 w-6 text-white" />
+          ) : (
+            <Video className="h-6 w-6 text-white" />
+          )}
+        </Button>
+
+        {/* Start/End Call Button */}
+        {!connected ? (
           <Button
-            variant="ghost"
             size="icon"
-            className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
-            onClick={switchCamera}
-            disabled={!connected || isVideoOff}
+            className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600"
+            onClick={startCallSession}
+            disabled={connecting}
           >
-            <RotateCcw className="h-6 w-6 text-white" />
-          </Button>
-
-          {/* Chat Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
-            onClick={() => navigate(`/consultation/chat/${appointmentId}`)}
-          >
-            <MessageCircle className="h-6 w-6 text-white" />
-          </Button>
-        </div>
-
-        {/* Secondary Controls */}
-        <div className="flex items-center justify-center gap-6 mt-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-            onClick={toggleSpeaker}
-          >
-            {isSpeakerOn ? (
-              <Volume2 className="h-5 w-5 mr-1" />
+            {connecting ? (
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
             ) : (
-              <VolumeX className="h-5 w-5 mr-1" />
+              <Phone className="h-8 w-8 text-white" />
             )}
-            {isSpeakerOn ? "স্পিকার চালু" : "স্পিকার বন্ধ"}
           </Button>
-        </div>
+        ) : (
+          <Button
+            size="icon"
+            className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600"
+            onClick={handleEndCall}
+          >
+            <PhoneOff className="h-8 w-8 text-white" />
+          </Button>
+        )}
+
+        {/* Switch Camera - Always show */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
+          onClick={switchCamera}
+          disabled={!connected || isVideoOff}
+        >
+          <RotateCcw className="h-6 w-6 text-white" />
+        </Button>
+
+        {/* Chat Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
+          onClick={() => navigate(`/consultation/chat/${appointmentId}`)}
+        >
+          <MessageCircle className="h-6 w-6 text-white" />
+        </Button>
+      </div>
+
+      {/* Secondary Controls */}
+      <div className="flex items-center justify-center gap-6 mt-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-gray-400 hover:text-white"
+          onClick={toggleSpeaker}
+        >
+          {isSpeakerOn ? (
+            <Volume2 className="h-5 w-5 mr-1" />
+          ) : (
+            <VolumeX className="h-5 w-5 mr-1" />
+          )}
+          {isSpeakerOn ? "স্পিকার চালু" : "স্পিকার বন্ধ"}
+        </Button>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default VideoCallPage;
