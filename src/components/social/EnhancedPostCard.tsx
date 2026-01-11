@@ -394,7 +394,7 @@ export const EnhancedPostCard = ({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="general">সাধারণ পোস্ট</SelectItem>
-                                <SelectItem value="marketplace">বিক্রয়/ভাড়া</SelectItem>
+                                <SelectItem value="marketplace">বাজার</SelectItem>
                                 <SelectItem value="question">প্রশ্ন</SelectItem>
                                 <SelectItem value="advice">পরামর্শ</SelectItem>
                                 {postAuthor.isExpert && (
