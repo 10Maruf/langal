@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Image, MapPin, ShoppingCart, X, UserCheck, Loader2 } from "lucide-react";
+import { Image, MapPin, ShoppingCart, X, UserCheck, Loader2, ExternalLink, Tag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from '@/services/api';
+import { marketplaceService } from '@/services/marketplaceService';
+import { MarketplaceListing } from '@/types/marketplace';
+import { MarketplaceReference } from '@/types/social';
 import axios from "axios";
 
 interface CreatePostProps {
@@ -22,11 +25,44 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
   const [postType, setPostType] = useState(user?.type === 'expert' ? "expert_advice" : "general");
   const [images, setImages] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Marketplace listing states
+  const [userMarketplaceListings, setUserMarketplaceListings] = useState<MarketplaceListing[]>([]);
+  const [selectedMarketplaceListing, setSelectedMarketplaceListing] = useState<MarketplaceListing | null>(null);
+  const [loadingMarketplace, setLoadingMarketplace] = useState(false);
+  
+  // Legacy marketplace data (for backward compatibility)
   const [marketplaceData, setMarketplaceData] = useState({
     title: "",
     price: "",
     category: ""
   });
+
+  // Fetch user's marketplace listings when postType changes to marketplace
+  useEffect(() => {
+    const fetchUserListings = async () => {
+      if (postType === "marketplace") {
+        const userId = user?.user_id || (user?.id ? parseInt(user.id) : null);
+        if (!userId) return;
+        
+        setLoadingMarketplace(true);
+        try {
+          const listings = await marketplaceService.getActiveUserListings(userId);
+          setUserMarketplaceListings(listings);
+        } catch (error) {
+          console.error('Error fetching user marketplace listings:', error);
+        } finally {
+          setLoadingMarketplace(false);
+        }
+      } else {
+        // Reset marketplace selection when switching away from marketplace type
+        setSelectedMarketplaceListing(null);
+        setUserMarketplaceListings([]);
+      }
+    };
+
+    fetchUserListings();
+  }, [postType, user]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -75,24 +111,62 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
         }
       }
 
+      // Prepare marketplace reference if a listing is selected
+      let marketplaceReference: MarketplaceReference | undefined;
+      if (postType === "marketplace" && selectedMarketplaceListing) {
+        marketplaceReference = {
+          listing_id: selectedMarketplaceListing.id,
+          title: selectedMarketplaceListing.title,
+          description: selectedMarketplaceListing.description,
+          price: selectedMarketplaceListing.price,
+          currency: selectedMarketplaceListing.currency,
+          category: selectedMarketplaceListing.category,
+          categoryNameBn: selectedMarketplaceListing.categoryNameBn,
+          images: selectedMarketplaceListing.images,
+          listing_type: selectedMarketplaceListing.type,
+          listingTypeBn: selectedMarketplaceListing.listingTypeBn,
+          location: selectedMarketplaceListing.location,
+        };
+      }
+
       const postData = {
         user_id: userId,
         content,
         type: postType,
         images: uploadedImageUrls,
-        marketplaceLink: postType === "marketplace" ? marketplaceData : undefined
+        marketplaceReference,
+        // Keep legacy for backward compatibility
+        marketplaceLink: (postType === "marketplace" && !selectedMarketplaceListing) ? marketplaceData : undefined
       };
 
       onPost(postData);
     } catch (error) {
       console.error('Error uploading images:', error);
       // Still try to post without images
+      let marketplaceReference: MarketplaceReference | undefined;
+      if (postType === "marketplace" && selectedMarketplaceListing) {
+        marketplaceReference = {
+          listing_id: selectedMarketplaceListing.id,
+          title: selectedMarketplaceListing.title,
+          description: selectedMarketplaceListing.description,
+          price: selectedMarketplaceListing.price,
+          currency: selectedMarketplaceListing.currency,
+          category: selectedMarketplaceListing.category,
+          categoryNameBn: selectedMarketplaceListing.categoryNameBn,
+          images: selectedMarketplaceListing.images,
+          listing_type: selectedMarketplaceListing.type,
+          listingTypeBn: selectedMarketplaceListing.listingTypeBn,
+          location: selectedMarketplaceListing.location,
+        };
+      }
+      
       const postData = {
         user_id: userId,
         content,
         type: postType,
         images: [],
-        marketplaceLink: postType === "marketplace" ? marketplaceData : undefined
+        marketplaceReference,
+        marketplaceLink: (postType === "marketplace" && !selectedMarketplaceListing) ? marketplaceData : undefined
       };
       onPost(postData);
     } finally {
@@ -147,7 +221,7 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="general">সাধারণ পোস্ট</SelectItem>
-            <SelectItem value="marketplace">বিক্রয়/ভাড়া</SelectItem>
+            <SelectItem value="marketplace">বাজার</SelectItem>
             <SelectItem value="question">প্রশ্ন</SelectItem>
             <SelectItem value="advice">পরামর্শ</SelectItem>
             {user?.type === 'expert' && (
@@ -174,37 +248,94 @@ export const CreatePost = ({ onPost, onCancel }: CreatePostProps) => {
           <div className="space-y-3 p-3 bg-accent/5 rounded-lg border">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShoppingCart className="h-4 w-4" />
-              <span>বাজার তথ্য</span>
+              <span>আপনার বাজার পোস্ট নির্বাচন করুন</span>
             </div>
 
-            <Input
-              placeholder="পণ্যের নাম"
-              value={marketplaceData.title}
-              onChange={(e) => setMarketplaceData({ ...marketplaceData, title: e.target.value })}
-            />
+            {loadingMarketplace ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">লোড হচ্ছে...</span>
+              </div>
+            ) : userMarketplaceListings.length > 0 ? (
+              <>
+                {/* Marketplace listing dropdown */}
+                <Select
+                  value={selectedMarketplaceListing?.id || ""}
+                  onValueChange={(value) => {
+                    const listing = userMarketplaceListings.find(l => l.id === value);
+                    setSelectedMarketplaceListing(listing || null);
+                    // Auto-suggest content if empty
+                    if (!content && listing) {
+                      setContent(`আমার ${listing.title} এখন পাওয়া যাচ্ছে!`);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="একটি পণ্য নির্বাচন করুন" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userMarketplaceListings.map((listing) => (
+                      <SelectItem key={listing.id} value={listing.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{listing.title}</span>
+                          <span className="text-muted-foreground">• ৳{listing.price}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                placeholder="দাম (৳)"
-                type="number"
-                value={marketplaceData.price}
-                onChange={(e) => setMarketplaceData({ ...marketplaceData, price: e.target.value })}
-              />
-              <Select
-                value={marketplaceData.category}
-                onValueChange={(value) => setMarketplaceData({ ...marketplaceData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="ক্যাটেগরি" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="machinery">যন্ত্রপাতি</SelectItem>
-                  <SelectItem value="crops">ফসল</SelectItem>
-                  <SelectItem value="seeds">বীজ</SelectItem>
-                  <SelectItem value="fertilizer">সার</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Selected listing preview */}
+                {selectedMarketplaceListing && (
+                  <div className="border rounded-lg p-3 bg-background space-y-2">
+                    <div className="flex items-start gap-3">
+                      {selectedMarketplaceListing.images[0] && (
+                        <img
+                          src={selectedMarketplaceListing.images[0]}
+                          alt={selectedMarketplaceListing.title}
+                          className="w-20 h-20 object-cover rounded-md"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm line-clamp-1">
+                          {selectedMarketplaceListing.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {selectedMarketplaceListing.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="secondary" className="text-xs">
+                            ৳{selectedMarketplaceListing.price}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {selectedMarketplaceListing.categoryNameBn || selectedMarketplaceListing.category}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {selectedMarketplaceListing.location}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => setSelectedMarketplaceListing(null)}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      নির্বাচন বাতিল করুন
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>আপনার কোনো সক্রিয় বাজার পোস্ট নেই</p>
+                <p className="text-xs mt-1">প্রথমে বাজারে একটি পণ্য যোগ করুন</p>
+              </div>
+            )}
           </div>
         )}
 

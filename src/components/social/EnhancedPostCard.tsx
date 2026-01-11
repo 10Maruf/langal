@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { API_URL } from '@/services/api';
+import { MarketplacePreviewCard } from './MarketplacePreviewCard';
 import {
     Heart,
     MessageCircle,
@@ -394,7 +395,7 @@ export const EnhancedPostCard = ({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="general">সাধারণ পোস্ট</SelectItem>
-                                <SelectItem value="marketplace">বিক্রয়/ভাড়া</SelectItem>
+                                <SelectItem value="marketplace">বাজার</SelectItem>
                                 <SelectItem value="question">প্রশ্ন</SelectItem>
                                 <SelectItem value="advice">পরামর্শ</SelectItem>
                                 {postAuthor.isExpert && (
@@ -558,8 +559,8 @@ export const EnhancedPostCard = ({
                     </div>
                 )}
 
-                {/* Marketplace Link */}
-                {post.marketplaceLink && (
+                {/* Marketplace Link - Legacy */}
+                {post.marketplaceLink && !post.marketplaceReference && (
                     <Card className="border-2 border-accent/20 bg-accent/5">
                         <CardContent className="p-3">
                             <div className="flex items-center justify-between">
@@ -583,6 +584,11 @@ export const EnhancedPostCard = ({
                             </div>
                         </CardContent>
                     </Card>
+                )}
+
+                {/* Marketplace Reference - Enhanced Preview Card */}
+                {post.marketplaceReference && (
+                    <MarketplacePreviewCard marketplaceData={post.marketplaceReference} />
                 )}
             </CardContent>
 

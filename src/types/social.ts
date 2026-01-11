@@ -19,13 +19,29 @@ export interface MarketplaceLink {
     category: string;
 }
 
+// Full marketplace post reference for social feed integration
+export interface MarketplaceReference {
+    listing_id: string;        // Original marketplace post ID
+    title: string;
+    description: string;
+    price: number;
+    currency: string;
+    category: string;
+    categoryNameBn?: string;
+    images: string[];
+    listing_type: string;      // sell/rent/buy/service
+    listingTypeBn?: string;
+    location: string;
+}
+
 export interface SocialPost {
     id: string;
     author: PostAuthor;
     content: string;
     images: string[];
     type: PostType;
-    marketplaceLink?: MarketplaceLink;
+    marketplaceLink?: MarketplaceLink;  // Keep for backward compatibility
+    marketplaceReference?: MarketplaceReference;  // NEW: Full marketplace post data
     likes: number;
     comments: number;
     reports?: number;
@@ -176,8 +192,7 @@ export const FEED_FILTERS: FeedFilter[] = [
     {
         id: "expert_advice",
         label: "বিশেষজ্ঞ পরামর্শ",
-        icon: "UserCheck",
-        userTypes: ["expert"]
+        icon: "UserCheck"
     }
 ];
 

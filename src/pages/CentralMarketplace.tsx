@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { MarketplaceCard } from "@/components/marketplace/MarketplaceCard";
 import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
@@ -26,6 +26,8 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
     const { toast } = useToast();
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const highlightId = searchParams.get('highlight');
 
     // State management
     const [listings, setListings] = useState<MarketplaceListing[]>([]);
@@ -46,6 +48,8 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
 
     // Debounce ref for search
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Ref for highlighted card
+    const highlightedCardRef = useRef<HTMLDivElement>(null);
 
     // Memoize user location to prevent infinite re-renders
     const userLocation = useMemo(() => {
@@ -93,6 +97,18 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
             }
         };
     }, [filters, loadListings]);
+
+    // Scroll to highlighted listing when available
+    useEffect(() => {
+        if (highlightId && listings.length > 0 && highlightedCardRef.current) {
+            setTimeout(() => {
+                highlightedCardRef.current?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }, 300);
+        }
+    }, [highlightId, listings]);
 
     // Handle new listing creation
     const handleCreateListing = async (listingData: unknown) => {
@@ -320,20 +336,24 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {listings.map((listing) => (
-                                <MarketplaceCard
+                                <div
                                     key={listing.id}
-                                    item={{
-                                        id: listing.id,
-                                        title: listing.title,
-                                        description: listing.description,
-                                        price: listing.price,
-                                        currency: listing.currency,
-                                        category: listing.category,
-                                        category_name_bn: listing.categoryNameBn,
-                                        type: listing.type,
-                                        listing_type_bn: listing.listingTypeBn,
-                                        location: listing.location,
-                                        seller: {
+                                    ref={highlightId === listing.id ? highlightedCardRef : null}
+                                    className={highlightId === listing.id ? "ring-4 ring-primary ring-offset-4 rounded-lg transition-all duration-300" : ""}
+                                >
+                                    <MarketplaceCard
+                                        item={{
+                                            id: listing.id,
+                                            title: listing.title,
+                                            description: listing.description,
+                                            price: listing.price,
+                                            currency: listing.currency,
+                                            category: listing.category,
+                                            category_name_bn: listing.categoryNameBn,
+                                            type: listing.type,
+                                            listing_type_bn: listing.listingTypeBn,
+                                            location: listing.location,
+                                            seller: {
                                             name: listing.author.name,
                                             avatar: listing.author.avatar,
                                             rating: listing.author.rating || 0,
@@ -347,6 +367,7 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
                                     onContact={() => handleContact(listing)}
                                     onSave={() => handleSave(listing)}
                                 />
+                                </div>
                             ))}
                         </div>
                     )}

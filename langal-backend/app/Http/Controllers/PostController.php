@@ -27,11 +27,35 @@ class PostController extends Controller
                 (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) as comments_count,
                 (SELECT COUNT(*) FROM post_reports WHERE post_id = p.post_id) as reports_count,
                 EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.post_id AND user_id = ?) as is_liked,
-                EXISTS(SELECT 1 FROM post_reports WHERE post_id = p.post_id AND user_id = ?) as is_reported
+                EXISTS(SELECT 1 FROM post_reports WHERE post_id = p.post_id AND user_id = ?) as is_reported,
+                ml.listing_id as ml_listing_id,
+                ml.title as ml_title,
+                ml.description as ml_description,
+                ml.price as ml_price,
+                ml.currency as ml_currency,
+                ml.listing_type as ml_listing_type,
+                ml.images as ml_images,
+                ml.full_location_bn as ml_location,
+                mc.category_name as ml_category,
+                mc.category_name_bn as ml_category_bn,
+                CASE ml.listing_type
+                    WHEN 'sell' THEN 'বিক্রয়ের জন্য'
+                    WHEN 'rent' THEN 'ভাড়া'
+                    WHEN 'buy' THEN 'কিনতে চাই'
+                    WHEN 'service' THEN 'সেবা'
+                    ELSE ml.listing_type
+                END as ml_listing_type_bn
             FROM posts p
             JOIN users u ON p.author_id = u.user_id
             LEFT JOIN user_profiles up ON u.user_id = up.user_id
+            LEFT JOIN marketplace_listings ml ON p.marketplace_listing_id = ml.listing_id AND ml.status = 'active'
+            LEFT JOIN marketplace_categories mc ON ml.category_id = mc.category_id
             WHERE p.is_deleted = 0
+            AND (
+                p.post_type != 'marketplace' 
+                OR p.marketplace_listing_id IS NULL 
+                OR (p.marketplace_listing_id IS NOT NULL AND ml.listing_id IS NOT NULL AND ml.status = 'active')
+            )
         ";
 
         $params = [$request->user_id ?? 0, $request->user_id ?? 0];
@@ -57,8 +81,62 @@ class PostController extends Controller
                 if (str_starts_with($post->author_avatar, 'http')) {
                     $avatarUrl = $post->author_avatar;
                 } else {
-                    $avatarUrl = url('storage/' . $post->author_avatar);
+                    // Check if it's an Azure path or relative path
+                    if (str_contains($post->author_avatar, '/')) {
+                        try {
+                            // Try to generate Azure URL
+                            $accountName = config('filesystems.disks.azure.name');
+                            $container = config('filesystems.disks.azure.container');
+
+                            if ($accountName && $container) {
+                                $avatarUrl = sprintf(
+                                    'https://%s.blob.core.windows.net/%s/%s',
+                                    $accountName,
+                                    $container,
+                                    $post->author_avatar
+                                );
+                            } else {
+                                $avatarUrl = url('storage/' . $post->author_avatar);
+                            }
+                        } catch (\Exception $e) {
+                            $avatarUrl = url('storage/' . $post->author_avatar);
+                        }
+                    } else {
+                        $avatarUrl = url('storage/' . $post->author_avatar);
+                    }
                 }
+            }
+
+            // Process marketplace images if listing exists
+            $marketplaceImages = [];
+            if ($post->ml_listing_id && $post->ml_images) {
+                $rawImages = json_decode($post->ml_images) ?? [];
+                $marketplaceImages = array_map(function ($image) {
+                    // If it's already a full URL, return as-is
+                    if (filter_var($image, FILTER_VALIDATE_URL)) {
+                        return $image;
+                    }
+                    
+                    // Generate Azure URL
+                    try {
+                        $accountName = config('filesystems.disks.azure.name');
+                        $container = config('filesystems.disks.azure.container');
+                        
+                        if ($accountName && $container) {
+                            return sprintf(
+                                'https://%s.blob.core.windows.net/%s/%s',
+                                $accountName,
+                                $container,
+                                $image
+                            );
+                        }
+                    } catch (\Exception $e) {
+                        // Fallback to local storage URL
+                        return url('storage/' . $image);
+                    }
+                    
+                    return url('storage/' . $image);
+                }, $rawImages);
             }
 
             return [
@@ -73,6 +151,20 @@ class PostController extends Controller
                 'content' => $post->content,
                 'images' => json_decode($post->images) ?? [],
                 'type' => $post->post_type,
+                // Add marketplace reference if listing exists
+                'marketplaceReference' => $post->ml_listing_id ? [
+                    'listing_id' => (string)$post->ml_listing_id,
+                    'title' => $post->ml_title,
+                    'description' => $post->ml_description,
+                    'price' => (float)$post->ml_price,
+                    'currency' => $post->ml_currency ?? 'BDT',
+                    'category' => $post->ml_category,
+                    'categoryNameBn' => $post->ml_category_bn,
+                    'images' => $marketplaceImages,
+                    'listing_type' => $post->ml_listing_type,
+                    'listingTypeBn' => $post->ml_listing_type_bn,
+                    'location' => $post->ml_location,
+                ] : null,
                 'likes' => (int)$post->likes_count,
                 'comments' => (int)$post->comments_count,
                 'reports' => (int)$post->reports_count,
@@ -93,7 +185,8 @@ class PostController extends Controller
             'content' => 'required|string',
             'type' => 'required|in:general,marketplace,question,advice,expert_advice',
             'images' => 'nullable|array',
-            'user_id' => 'required|integer'
+            'user_id' => 'required|integer',
+            'marketplace_listing_id' => 'nullable|integer' // NEW: Support marketplace listing reference
         ]);
 
         // Log incoming request for debugging
@@ -106,14 +199,22 @@ class PostController extends Controller
         $images = $request->input('images', []);
         $imagesJson = json_encode($images);
 
-        $postId = DB::table('posts')->insertGetId([
+        // Prepare insert data
+        $insertData = [
             'author_id' => $request->user_id,
             'content' => $request->content,
             'post_type' => $request->type,
             'images' => $imagesJson,
             'created_at' => now(),
             'updated_at' => now()
-        ]);
+        ];
+
+        // Add marketplace_listing_id if provided
+        if ($request->has('marketplace_listing_id') && $request->marketplace_listing_id) {
+            $insertData['marketplace_listing_id'] = $request->marketplace_listing_id;
+        }
+
+        $postId = DB::table('posts')->insertGetId($insertData);
 
         return response()->json(['message' => 'Post created successfully', 'id' => $postId], 201);
     }
@@ -194,6 +295,7 @@ class PostController extends Controller
                 c.*,
                 up.full_name as author_name,
                 u.user_type as author_type,
+                u.user_id as author_user_id,
                 up.profile_photo_url as author_avatar
             FROM comments c
             JOIN users u ON c.author_id = u.user_id
@@ -209,7 +311,30 @@ class PostController extends Controller
                 if (str_starts_with($comment->author_avatar, 'http')) {
                     $avatarUrl = $comment->author_avatar;
                 } else {
-                    $avatarUrl = url('storage/' . $comment->author_avatar);
+                    // Check if it's an Azure path or relative path
+                    if (str_contains($comment->author_avatar, '/')) {
+                        try {
+                            // Try to generate Azure URL
+                            $accountName = config('filesystems.disks.azure.name');
+                            $container = config('filesystems.disks.azure.container');
+
+                            if ($accountName && $container) {
+                                $avatarUrl = sprintf(
+                                    'https://%s.blob.core.windows.net/%s/%s',
+                                    $accountName,
+                                    $container,
+                                    $comment->author_avatar
+                                );
+                            } else {
+                                // Fallback to storage URL
+                                $avatarUrl = url('storage/' . $comment->author_avatar);
+                            }
+                        } catch (\Exception $e) {
+                            $avatarUrl = url('storage/' . $comment->author_avatar);
+                        }
+                    } else {
+                        $avatarUrl = url('storage/' . $comment->author_avatar);
+                    }
                 }
             }
 

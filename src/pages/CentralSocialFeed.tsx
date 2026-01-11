@@ -305,11 +305,6 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
                                 >
                                     <IconComponent className="h-4 w-4 mr-1" />
                                     {filter.label}
-                                    {isExpertAdvice && (
-                                        <Badge variant="secondary" className="ml-1 text-xs bg-blue-100 text-blue-700">
-                                            নতুন
-                                        </Badge>
-                                    )}
                                 </Button>
                             );
                         })}

@@ -35,7 +35,15 @@ export class SocialFeedService {
     // Create a new post
     async createPost(postData: any): Promise<SocialPost | null> {
         try {
-            const response = await axios.post(`${API_URL}/posts`, postData);
+            // Prepare the payload with marketplace reference support
+            const payload = {
+                ...postData,
+                // Include marketplace_listing_id if marketplace reference exists
+                marketplace_listing_id: postData.marketplaceReference?.listing_id || null
+            };
+            
+            console.log('[SocialFeedService] Creating post with payload:', payload);
+            const response = await axios.post(`${API_URL}/posts`, payload);
             return response.data;
         } catch (error) {
             console.error('Error creating post:', error);

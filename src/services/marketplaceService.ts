@@ -815,6 +815,28 @@ class MarketplaceService {
         if (!this.initialized) this.initializeDummyData();
         return this.listings.filter(listing => listing.saved === true);
     }
+
+    // Get user's own active marketplace listings (for social feed sharing)
+    async getActiveUserListings(userId: number): Promise<MarketplaceListing[]> {
+        try {
+            console.log(`[MarketplaceService] Fetching active user listings for user_id: ${userId}`);
+            const res = await this.fetchJSON<ApiResponse<Pagination<DbListing>>>(`/marketplace/user/${userId}?status=active`);
+            
+            if (res && res.success && res.data) {
+                const listings = Array.isArray(res.data) ? res.data : res.data.data || [];
+                return listings
+                    .map((db) => this.mapDbListingToUi(db))
+                    .filter(listing => listing.status === 'active')
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            }
+            
+            console.log('[MarketplaceService] No active user listings found from API');
+            return [];
+        } catch (error) {
+            console.error('[MarketplaceService] Error fetching active user listings:', error);
+            return [];
+        }
+    }
 }
 
 export const marketplaceService = new MarketplaceService();
