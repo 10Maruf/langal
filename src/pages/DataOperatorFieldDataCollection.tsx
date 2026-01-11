@@ -21,14 +21,11 @@ import Step7AdditionalInfo from '@/components/field-data-collection/Step7Additio
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 export interface FieldDataFormData {
-  // Step 1: Basic Information - Existing Farmer (Option A)
-  farmer_id?: number;
+  // Step 1: Farmer Information (Manual Entry)
   farmer_name: string;
   farmer_phone: string;
   farmer_address: string;
-  
-  // Step 1: Manual Entry Farmer (Option B)
-  manual_farmer_id?: number; // After saving to backend
+
   manual_farmer_name?: string;
   manual_farmer_nid?: string;
   manual_farmer_phone?: string;
@@ -41,12 +38,22 @@ export interface FieldDataFormData {
   manual_farmer_upazila?: string;
   manual_farmer_occupation?: string;
   manual_farmer_land?: string;
-  
+
+  // Location fields from LocationSelector
+  division?: string;
+  division_bn?: string;
+  district?: string;
+  district_bn?: string;
+  upazila?: string;
+  upazila_bn?: string;
+  post_office?: string;
+  post_office_bn?: string;
+
   // Common fields
   village: string;
   postal_code: string;
   collection_date: string;
-  
+
   // Step 2: Land Details
   total_land: string;
   cultivable_land: string;
@@ -56,7 +63,7 @@ export interface FieldDataFormData {
   number_of_plots: string;
   irrigation_facility: string;
   irrigation_status: string;
-  
+
   // Step 3: Crop Information
   primary_crops: string[];
   secondary_crops: string;
@@ -68,7 +75,7 @@ export interface FieldDataFormData {
   seed_dealers: string;
   production_amount: string;
   production_unit: string;
-  
+
   // Step 4: Fertilizer & Pesticide
   urea_amount: string;
   tsp_amount: string;
@@ -86,7 +93,7 @@ export interface FieldDataFormData {
   pesticide_usage_amount: string;
   fertilizer_dealers: string;
   pesticide_dealers: string;
-  
+
   // Step 5: Market Information
   market_price: string;
   current_market_price: string;
@@ -100,7 +107,7 @@ export interface FieldDataFormData {
   agricultural_officer_name: string;
   officer_contact: string;
   market_suggestions: string;
-  
+
   // Step 6: Financial Information
   seed_cost: string;
   fertilizer_cost: string;
@@ -116,7 +123,7 @@ export interface FieldDataFormData {
   sale_price: string;
   total_income: string;
   net_profit: string;
-  
+
   // Step 7: Additional Information
   disease_name: string;
   pest_attack: string;
@@ -130,7 +137,7 @@ export interface FieldDataFormData {
   notes: string;
   follow_up_required: string;
   follow_up_date: string;
-  
+
   // Legacy fields
   livestock_info: string;
   land_service_date: string;
@@ -159,16 +166,14 @@ const DataOperatorFieldDataCollectionNew = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<FieldDataFormData>({
-    // Step 1 - Existing farmer
-    farmer_id: undefined,
+    // Step 1 - Farmer info
     farmer_name: '',
     farmer_phone: '',
     farmer_address: '',
-    
-    // Step 1 - Manual farmer
-    manual_farmer_id: undefined,
+
+    // Manual farmer details
     manual_farmer_name: '',
     manual_farmer_nid: '',
     manual_farmer_phone: '',
@@ -181,11 +186,21 @@ const DataOperatorFieldDataCollectionNew = () => {
     manual_farmer_upazila: '',
     manual_farmer_occupation: 'কৃষক',
     manual_farmer_land: '',
-    
+
+    // Location fields
+    division: '',
+    division_bn: '',
+    district: '',
+    district_bn: '',
+    upazila: '',
+    upazila_bn: '',
+    post_office: '',
+    post_office_bn: '',
+
     village: '',
     postal_code: '',
     collection_date: new Date().toISOString().split('T')[0],
-    
+
     // Step 2
     total_land: '',
     cultivable_land: '',
@@ -195,7 +210,7 @@ const DataOperatorFieldDataCollectionNew = () => {
     number_of_plots: '',
     irrigation_facility: 'yes',
     irrigation_status: '',
-    
+
     // Step 3
     primary_crops: [],
     secondary_crops: '',
@@ -207,7 +222,7 @@ const DataOperatorFieldDataCollectionNew = () => {
     seed_dealers: '',
     production_amount: '',
     production_unit: 'kg',
-    
+
     // Step 4
     urea_amount: '',
     tsp_amount: '',
@@ -225,7 +240,7 @@ const DataOperatorFieldDataCollectionNew = () => {
     pesticide_usage_amount: '',
     fertilizer_dealers: '',
     pesticide_dealers: '',
-    
+
     // Step 5
     market_price: '',
     current_market_price: '',
@@ -239,7 +254,7 @@ const DataOperatorFieldDataCollectionNew = () => {
     agricultural_officer_name: '',
     officer_contact: '',
     market_suggestions: '',
-    
+
     // Step 6
     seed_cost: '',
     fertilizer_cost: '',
@@ -255,7 +270,7 @@ const DataOperatorFieldDataCollectionNew = () => {
     sale_price: '',
     total_income: '',
     net_profit: '',
-    
+
     // Step 7
     disease_name: '',
     pest_attack: '',
@@ -269,7 +284,7 @@ const DataOperatorFieldDataCollectionNew = () => {
     notes: '',
     follow_up_required: 'no',
     follow_up_date: '',
-    
+
     // Legacy
     livestock_info: '',
     land_service_date: '',
@@ -308,22 +323,22 @@ const DataOperatorFieldDataCollectionNew = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate farmer selection or manual entry
-    if (!formData.farmer_id && !formData.manual_farmer_name) {
+    // Validate farmer info
+    if (!formData.manual_farmer_name || !formData.manual_farmer_phone) {
       toast({
-        title: "কৃষক তথ্য প্রয়োজন",
-        description: "দয়া করে একজন কৃষক সার্চ করে নির্বাচন করুন বা নতুন কৃষক এন্ট্রি করুন",
+        title: "তথ্য অসম্পূর্ণ",
+        description: "কৃষকের নাম এবং ফোন নম্বর প্রয়োজন",
         variant: "destructive",
       });
       setCurrentStep(1);
       return;
     }
 
-    // Validate manual farmer required fields
-    if (!formData.farmer_id && (!formData.manual_farmer_name || !formData.manual_farmer_phone)) {
+    // Validate location
+    if (!formData.postal_code || !formData.division) {
       toast({
         title: "তথ্য অসম্পূর্ণ",
-        description: "নতুন কৃষক এন্ট্রির জন্য নাম এবং ফোন নম্বর প্রয়োজন",
+        description: "অনুগ্রহ করে অবস্থান নির্বাচন করুন",
         variant: "destructive",
       });
       setCurrentStep(1);
@@ -332,133 +347,58 @@ const DataOperatorFieldDataCollectionNew = () => {
 
     setLoading(true);
     try {
-      let manualFarmerId = formData.manual_farmer_id;
-
-      // If manual farmer data exists and not yet saved, create it first
-      if (!formData.farmer_id && formData.manual_farmer_name && !manualFarmerId) {
-        const manualFarmerResponse = await axios.post(
-          `${API_URL}/api/data-operator/field-data-farmers`,
-          {
-            full_name: formData.manual_farmer_name,
-            nid_number: formData.manual_farmer_nid,
-            phone: formData.manual_farmer_phone,
-            email: formData.manual_farmer_email,
-            date_of_birth: formData.manual_farmer_dob,
-            father_name: formData.manual_farmer_father,
-            mother_name: formData.manual_farmer_mother,
-            address: formData.manual_farmer_address,
-            district: formData.manual_farmer_district,
-            upazila: formData.manual_farmer_upazila,
-            occupation: formData.manual_farmer_occupation,
-            land_ownership: formData.manual_farmer_land,
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-              'Content-Type': 'application/json',
-            }
-          }
-        );
-
-        if (manualFarmerResponse.data.success) {
-          manualFarmerId = manualFarmerResponse.data.data.id;
-          updateFormData({ manual_farmer_id: manualFarmerId });
-        } else {
-          throw new Error('Failed to create manual farmer entry');
-        }
-      }
-
-      // Prepare data for field data submission
+      // Prepare data for field data submission (merged table)
       const submitData = {
-        farmer_id: formData.farmer_id || null,
-        manual_farmer_id: manualFarmerId || null,
-        
-        // Step 1 fields
+        // Farmer info (directly in field_data_collection)
+        farmer_name: formData.manual_farmer_name,
+        farmer_phone: formData.manual_farmer_phone,
+        farmer_nid: formData.manual_farmer_nid,
+        farmer_email: formData.manual_farmer_email,
+        farmer_dob: formData.manual_farmer_dob,
+        farmer_father: formData.manual_farmer_father,
+        farmer_mother: formData.manual_farmer_mother,
+        farmer_occupation: formData.manual_farmer_occupation,
+        farmer_land_ownership: formData.manual_farmer_land,
+        farmer_address: formData.manual_farmer_address || formData.farmer_address,
+
+        // Location info from LocationSelector
+        division: formData.division,
+        division_bn: formData.division_bn,
+        district: formData.district,
+        district_bn: formData.district_bn,
+        upazila: formData.upazila,
+        upazila_bn: formData.upazila_bn,
+        post_office: formData.post_office,
+        post_office_bn: formData.post_office_bn,
         village: formData.village,
         postal_code: formData.postal_code,
-        collection_date: formData.collection_date,
-        
-        // Step 2 - Land Details
-        total_land: formData.total_land,
-        cultivable_land: formData.cultivable_land,
+
+        // Land Details
+        land_size: formData.total_land,
         land_size_unit: formData.land_size_unit,
-        land_ownership_type: formData.land_ownership_type,
-        is_cultivable: formData.is_cultivable,
-        number_of_plots: formData.number_of_plots,
-        irrigation_facility: formData.irrigation_facility,
         irrigation_status: formData.irrigation_status,
-        
-        // Step 3 - Crop Info
-        primary_crops: formData.primary_crops.join(', '),
-        secondary_crops: formData.secondary_crops,
+
+        // Crop Info
         crop_type: formData.crop_type,
         season: formData.season,
-        crop_frequency: formData.crop_frequency,
-        crop_rotation: formData.crop_rotation,
-        seeds_source: formData.seeds_source,
-        seed_dealers: formData.seed_dealers,
         production_amount: formData.production_amount,
         production_unit: formData.production_unit,
-        
-        // Step 4 - Fertilizer & Pesticide
-        urea_amount: formData.urea_amount,
-        tsp_amount: formData.tsp_amount,
-        mp_amount: formData.mp_amount,
-        dap_amount: formData.dap_amount,
-        gypsum_amount: formData.gypsum_amount,
-        zinc_amount: formData.zinc_amount,
-        cow_dung: formData.cow_dung,
-        compost: formData.compost,
-        vermicompost: formData.vermicompost,
+
+        // Fertilizer info
         organic_fertilizer_application: formData.organic_fertilizer_application,
-        insecticide_names: formData.insecticide_names,
-        fungicide_names: formData.fungicide_names,
-        herbicide_names: formData.herbicide_names,
-        pesticide_usage_amount: formData.pesticide_usage_amount,
-        fertilizer_dealers: formData.fertilizer_dealers,
-        pesticide_dealers: formData.pesticide_dealers,
-        
-        // Step 5 - Market Info
+        fertilizer_application: [
+          formData.urea_amount && `ইউরিয়া: ${formData.urea_amount}`,
+          formData.tsp_amount && `টিএসপি: ${formData.tsp_amount}`,
+          formData.mp_amount && `এমপি: ${formData.mp_amount}`,
+          formData.dap_amount && `ডিএপি: ${formData.dap_amount}`,
+        ].filter(Boolean).join(', '),
+
+        // Market & financial info
         market_price: formData.market_price,
-        current_market_price: formData.current_market_price,
-        expected_price: formData.expected_price,
-        local_market_name: formData.local_market_name,
-        local_market_distance: formData.local_market_distance,
-        distant_market_name: formData.distant_market_name,
-        distant_market_distance: formData.distant_market_distance,
-        profitable_market: formData.profitable_market,
-        transport_cost: formData.transport_cost,
-        agricultural_officer_name: formData.agricultural_officer_name,
-        officer_contact: formData.officer_contact,
-        market_suggestions: formData.market_suggestions,
-        
-        // Step 6 - Financial Info
-        seed_cost: formData.seed_cost,
-        fertilizer_cost: formData.fertilizer_cost,
-        pesticide_cost: formData.pesticide_cost,
-        labor_cost: formData.labor_cost,
-        irrigation_cost: formData.irrigation_cost,
-        land_preparation_cost: formData.land_preparation_cost,
-        equipment_rent: formData.equipment_rent,
-        transport_cost_production: formData.transport_cost_production,
-        total_expenses: formData.total_expenses,
-        total_production: formData.total_production,
-        sold_quantity: formData.sold_quantity,
-        sale_price: formData.sale_price,
-        total_income: formData.total_income,
-        net_profit: formData.net_profit,
-        
-        // Step 7 - Additional Info
-        disease_name: formData.disease_name,
-        pest_attack: formData.pest_attack,
-        severity_level: formData.severity_level,
-        challenges: formData.challenges.join(', '),
-        farmer_education: formData.farmer_education,
-        farming_experience: formData.farming_experience,
-        training_received: formData.training_received,
+        expenses: formData.total_expenses,
+
+        // Additional info
         notes: formData.notes,
-        follow_up_required: formData.follow_up_required,
-        follow_up_date: formData.follow_up_date,
         collection_year: formData.collection_year,
       };
 
@@ -521,7 +461,7 @@ const DataOperatorFieldDataCollectionNew = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <DataOperatorHeader />
-      
+
       {/* Page Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -565,22 +505,20 @@ const DataOperatorFieldDataCollectionNew = () => {
                 <button
                   key={step.id}
                   onClick={() => goToStep(step.id)}
-                  className={`p-3 rounded-lg text-center transition-all ${
-                    currentStep === step.id
+                  className={`p-3 rounded-lg text-center transition-all ${currentStep === step.id
                       ? 'bg-green-600 text-white shadow-lg scale-105'
                       : currentStep > step.id
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                 >
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${
-                      currentStep === step.id
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${currentStep === step.id
                         ? 'bg-white text-green-600'
                         : currentStep > step.id
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-300 text-gray-600'
-                    }`}>
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-300 text-gray-600'
+                      }`}>
                       {currentStep > step.id ? (
                         <CheckCircle2 className="h-5 w-5" />
                       ) : (

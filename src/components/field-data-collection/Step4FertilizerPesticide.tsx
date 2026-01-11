@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Beaker, Leaf, Bug } from "lucide-react";
-import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollectionNew';
+import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollection';
 
 interface Step4Props {
   formData: FieldDataFormData;

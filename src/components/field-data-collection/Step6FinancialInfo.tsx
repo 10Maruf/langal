@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
-import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollectionNew';
+import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollection';
 
 interface Step6Props {
   formData: FieldDataFormData;
@@ -43,10 +43,10 @@ const Step6FinancialInfo: React.FC<Step6Props> = ({ formData, updateFormData }) 
     const soldQty = parseFloat(formData.sold_quantity || '0');
     const salePrice = parseFloat(formData.sale_price || '0');
     const totalIncome = soldQty * salePrice;
-    
+
     const totalExpenses = parseFloat(formData.total_expenses || '0');
     const netProfit = totalIncome - totalExpenses;
-    
+
     updateFormData({
       total_income: totalIncome.toFixed(2),
       net_profit: netProfit.toFixed(2),
@@ -251,11 +251,10 @@ const Step6FinancialInfo: React.FC<Step6Props> = ({ formData, updateFormData }) 
               type="number"
               value={formData.net_profit}
               readOnly
-              className={`text-xl font-bold ${
-                isProfitable 
-                  ? 'bg-green-100 border-green-400 text-green-800' 
+              className={`text-xl font-bold ${isProfitable
+                  ? 'bg-green-100 border-green-400 text-green-800'
                   : 'bg-red-100 border-red-400 text-red-800'
-              }`}
+                }`}
             />
           </div>
 

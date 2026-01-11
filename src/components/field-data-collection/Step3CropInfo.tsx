@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sprout } from "lucide-react";
-import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollectionNew';
+import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollection';
 
 interface Step3Props {
   formData: FieldDataFormData;
@@ -20,7 +20,7 @@ interface Step3Props {
 }
 
 const CROP_OPTIONS = [
-  'ধান', 'গম', 'ভুট্টা', 'আলু', 'পেঁয়াজ', 'রসুন', 'মরিচ', 
+  'ধান', 'গম', 'ভুট্টা', 'আলু', 'পেঁয়াজ', 'রসুন', 'মরিচ',
   'টমেটো', 'বেগুন', 'শিম', 'লাউ', 'মিষ্টি কুমড়া', 'পাট', 'আখ'
 ];
 
