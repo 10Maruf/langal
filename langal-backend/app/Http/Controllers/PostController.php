@@ -63,7 +63,7 @@ class PostController extends Controller
                             // Try to generate Azure URL
                             $accountName = config('filesystems.disks.azure.name');
                             $container = config('filesystems.disks.azure.container');
-                            
+
                             if ($accountName && $container) {
                                 $avatarUrl = sprintf(
                                     'https://%s.blob.core.windows.net/%s/%s',
@@ -238,7 +238,7 @@ class PostController extends Controller
                             // Try to generate Azure URL
                             $accountName = config('filesystems.disks.azure.name');
                             $container = config('filesystems.disks.azure.container');
-                            
+
                             if ($accountName && $container) {
                                 $avatarUrl = sprintf(
                                     'https://%s.blob.core.windows.net/%s/%s',
