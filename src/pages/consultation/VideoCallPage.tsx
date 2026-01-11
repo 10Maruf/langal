@@ -58,6 +58,10 @@ const VideoCallPage = () => {
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  // Remote user state tracking
+  const [remoteUserJoined, setRemoteUserJoined] = useState(false);
+  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(false);
+
   // Agora client and tracks
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef = useRef<any>(null);
@@ -68,6 +72,8 @@ const VideoCallPage = () => {
     audioTrack: null,
     videoTrack: null,
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const remoteUsersRef = useRef<Map<number, any>>(new Map());
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -131,10 +137,93 @@ const VideoCallPage = () => {
         codec: "vp8",
       });
 
-      // Set up event handlers
-      clientRef.current.on("user-published", handleUserPublished);
-      clientRef.current.on("user-unpublished", handleUserUnpublished);
-      clientRef.current.on("user-left", handleUserLeft);
+      // Set up event handlers for remote users
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-published", async (remoteUser: any, mediaType: string) => {
+        console.log('[Agora] Remote user published:', { uid: remoteUser.uid, mediaType });
+
+        try {
+          // Subscribe to the remote user's track
+          await clientRef.current.subscribe(remoteUser, mediaType);
+          console.log('[Agora] Subscribed to remote user:', { uid: remoteUser.uid, mediaType });
+
+          // Store remote user reference
+          remoteUsersRef.current.set(remoteUser.uid, remoteUser);
+          setRemoteUserJoined(true);
+
+          if (mediaType === "video") {
+            console.log('[Agora] Playing remote video track...');
+            const remoteVideoTrack = remoteUser.videoTrack;
+            if (remoteVideoTrack) {
+              // Wait a bit for DOM to be ready
+              setTimeout(() => {
+                if (remoteVideoRef.current) {
+                  // Clear any existing content
+                  remoteVideoRef.current.innerHTML = "";
+                  remoteVideoTrack.play(remoteVideoRef.current);
+                  setRemoteVideoEnabled(true);
+                  console.log('[Agora] Remote video playing successfully');
+                } else {
+                  console.error('[Agora] remoteVideoRef.current is null');
+                }
+              }, 100);
+            }
+          }
+
+          if (mediaType === "audio") {
+            console.log('[Agora] Playing remote audio track...');
+            const remoteAudioTrack = remoteUser.audioTrack;
+            if (remoteAudioTrack) {
+              remoteAudioTrack.play();
+              console.log('[Agora] Remote audio playing successfully');
+            }
+          }
+        } catch (err) {
+          console.error('[Agora] Error subscribing to remote user:', err);
+        }
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-unpublished", (remoteUser: any, mediaType: string) => {
+        console.log('[Agora] Remote user unpublished:', { uid: remoteUser.uid, mediaType });
+        if (mediaType === "video") {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.innerHTML = "";
+          }
+          setRemoteVideoEnabled(false);
+        }
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-joined", (remoteUser: any) => {
+        console.log('[Agora] Remote user joined:', { uid: remoteUser.uid });
+        setRemoteUserJoined(true);
+        toast({
+          title: "সংযুক্ত",
+          description: "অপর পক্ষ কলে যোগ দিয়েছেন",
+        });
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clientRef.current.on("user-left", (remoteUser: any, reason: string) => {
+        console.log('[Agora] Remote user left:', { uid: remoteUser.uid, reason });
+        remoteUsersRef.current.delete(remoteUser.uid);
+        setRemoteUserJoined(false);
+        setRemoteVideoEnabled(false);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.innerHTML = "";
+        }
+        toast({
+          title: "কল শেষ",
+          description: "অপর পক্ষ কল থেকে বের হয়ে গেছেন",
+        });
+        handleEndCall();
+      });
+
+      // Connection state change
+      clientRef.current.on("connection-state-change", (curState: string, prevState: string) => {
+        console.log('[Agora] Connection state changed:', { prevState, curState });
+      });
 
       return true;
     } catch (err) {
@@ -145,34 +234,19 @@ const VideoCallPage = () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleUserPublished = async (remoteUser: any, mediaType: string) => {
-    await clientRef.current.subscribe(remoteUser, mediaType);
-
-    if (mediaType === "video") {
-      const remoteVideoTrack = remoteUser.videoTrack;
-      if (remoteVideoRef.current) {
-        remoteVideoTrack.play(remoteVideoRef.current);
-      }
-    }
-
-    if (mediaType === "audio") {
-      const remoteAudioTrack = remoteUser.audioTrack;
-      remoteAudioTrack.play();
-    }
+    // This is now handled inside initializeAgora for proper closure
+    console.log('[Agora] handleUserPublished called (legacy):', { uid: remoteUser.uid, mediaType });
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleUserUnpublished = (remoteUser: any, mediaType: string) => {
-    if (mediaType === "video" && remoteVideoRef.current) {
-      remoteVideoRef.current.innerHTML = "";
-    }
+    // This is now handled inside initializeAgora for proper closure
+    console.log('[Agora] handleUserUnpublished called (legacy):', { uid: remoteUser.uid, mediaType });
   };
 
   const handleUserLeft = () => {
-    toast({
-      title: "কল শেষ",
-      description: "অপর পক্ষ কল থেকে বের হয়ে গেছেন",
-    });
-    handleEndCall();
+    // This is now handled inside initializeAgora for proper closure
+    console.log('[Agora] handleUserLeft called (legacy)');
   };
 
   const startCallSession = async () => {
@@ -333,6 +407,10 @@ const VideoCallPage = () => {
       clientRef.current.leave();
     }
 
+    // Reset remote user state
+    remoteUsersRef.current.clear();
+    setRemoteUserJoined(false);
+    setRemoteVideoEnabled(false);
     setConnected(false);
   };
 
@@ -451,26 +529,36 @@ const VideoCallPage = () => {
         {/* Remote Video (Full Screen) */}
         <div
           ref={remoteVideoRef}
-          className="absolute inset-0 bg-gray-800 flex items-center justify-center"
+          className="absolute inset-0 bg-gray-800"
         >
-          {!connected && (
-            <div className="text-center">
-              <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
-                <AvatarImage
-                  src={getProfilePhotoUrl(otherParty?.avatarUrl)}
-                />
-                <AvatarFallback className="bg-gray-700 text-white text-4xl">
-                  {otherParty?.name?.charAt(0) || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <h2 className="text-white text-xl font-semibold mb-2">
-                {otherParty?.name || "অজানা"}
-              </h2>
-              {connecting ? (
-                <p className="text-gray-400">সংযোগ হচ্ছে...</p>
-              ) : (
-                <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
-              )}
+          {/* Show placeholder when not connected or remote video not available */}
+          {(!connected || !remoteVideoEnabled) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+              <div className="text-center">
+                <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
+                  <AvatarImage
+                    src={getProfilePhotoUrl(otherParty?.avatarUrl)}
+                  />
+                  <AvatarFallback className="bg-gray-700 text-white text-4xl">
+                    {otherParty?.name?.charAt(0) || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <h2 className="text-white text-xl font-semibold mb-2">
+                  {otherParty?.name || "অজানা"}
+                </h2>
+                {!connected && connecting && (
+                  <p className="text-gray-400">সংযোগ হচ্ছে...</p>
+                )}
+                {!connected && !connecting && (
+                  <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
+                )}
+                {connected && !remoteUserJoined && (
+                  <p className="text-yellow-400">অপর পক্ষের অপেক্ষায়...</p>
+                )}
+                {connected && remoteUserJoined && !remoteVideoEnabled && (
+                  <p className="text-blue-400">ক্যামেরা বন্ধ আছে</p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -499,6 +587,15 @@ const VideoCallPage = () => {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1 z-10">
             <p className="text-white text-xs flex items-center gap-1">
               <MicOff className="h-3 w-3" /> মিউট
+            </p>
+          </div>
+        )}
+
+        {/* Remote User Joined Indicator */}
+        {connected && remoteUserJoined && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 rounded-full px-3 py-1 z-10 mt-8">
+            <p className="text-white text-xs flex items-center gap-1">
+              সংযুক্ত
             </p>
           </div>
         )}
