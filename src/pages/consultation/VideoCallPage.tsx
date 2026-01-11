@@ -250,98 +250,98 @@ const VideoCallPage = () => {
   };
 
   const startCallSession = async () => {
-  try {
-    setConnecting(true);
-
-    // Initialize Agora
-    const initialized = await initializeAgora();
-    if (!initialized) {
-      throw new Error("Agora SDK লোড করতে ব্যর্থ হয়েছে");
-    }
-
-    // Get call token from server
-    // Convert consultation_type to call_type format
-    let callType = appointment?.consultation_type || "video";
-    if (callType === "video_call") callType = "video";
-    if (callType === "audio_call") callType = "audio";
-
-    const response = await startCall({
-      appointment_id: parseInt(appointmentId!),
-      call_type: callType,
-    });
-
-    if (!response.success) {
-      throw new Error(response.message || "কল শুরু করতে ব্যর্থ হয়েছে");
-    }
-
-    setCallData(response.data);
-
-    // Map backend response keys to what we need
-    const agora_channel = response.data.channel_name || response.data.agora_channel;
-    const agora_token = response.data.token || response.data.agora_token;
-    const agora_app_id = (response.data.app_id || response.data.agora_app_id)?.toString().trim();
-
-    // Agora requires integer UID if the token was generated for an integer UID
-    const dimpuid = user?.id ? parseInt(String(user.id), 10) : 0;
-
-    console.log('Agora Connection Debug:', {
-      appId: agora_app_id,
-      channel: agora_channel,
-      tokenLength: agora_token?.length,
-      uid: dimpuid,
-      originalUid: user?.id
-    });
-
-    if (!agora_app_id) {
-      throw new Error("Agora App ID পাওয়া যায়নি। দয়া করে অ্যাডমিনের সাথে যোগাযোগ করুন।");
-    }
-
-    // Join channel
-    await clientRef.current.join(
-      agora_app_id,
-      agora_channel,
-      agora_token,
-      dimpuid
-    );
-
-    // Create local tracks - always create both audio and video
-    // This allows users to toggle video on/off during the call
     try {
-      localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
-      if (localVideoRef.current) {
-        localTracksRef.current.videoTrack.play(localVideoRef.current);
+      setConnecting(true);
+
+      // Initialize Agora
+      const initialized = await initializeAgora();
+      if (!initialized) {
+        throw new Error("Agora SDK লোড করতে ব্যর্থ হয়েছে");
       }
-      // If it's an audio call, start with video disabled
-      if (appointment?.consultation_type !== "video") {
-        localTracksRef.current.videoTrack.setEnabled(false);
+
+      // Get call token from server
+      // Convert consultation_type to call_type format
+      let callType = appointment?.consultation_type || "video";
+      if (callType === "video_call") callType = "video";
+      if (callType === "audio_call") callType = "audio";
+
+      const response = await startCall({
+        appointment_id: parseInt(appointmentId!),
+        call_type: callType,
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || "কল শুরু করতে ব্যর্থ হয়েছে");
+      }
+
+      setCallData(response.data);
+
+      // Map backend response keys to what we need
+      const agora_channel = response.data.channel_name || response.data.agora_channel;
+      const agora_token = response.data.token || response.data.agora_token;
+      const agora_app_id = (response.data.app_id || response.data.agora_app_id)?.toString().trim();
+
+      // Agora requires integer UID if the token was generated for an integer UID
+      const dimpuid = user?.id ? parseInt(String(user.id), 10) : 0;
+
+      console.log('Agora Connection Debug:', {
+        appId: agora_app_id,
+        channel: agora_channel,
+        tokenLength: agora_token?.length,
+        uid: dimpuid,
+        originalUid: user?.id
+      });
+
+      if (!agora_app_id) {
+        throw new Error("Agora App ID পাওয়া যায়নি। দয়া করে অ্যাডমিনের সাথে যোগাযোগ করুন।");
+      }
+
+      // Join channel
+      await clientRef.current.join(
+        agora_app_id,
+        agora_channel,
+        agora_token,
+        dimpuid
+      );
+
+      // Create local tracks - always create both audio and video
+      // This allows users to toggle video on/off during the call
+      try {
+        localTracksRef.current.videoTrack = await window.AgoraRTC.createCameraVideoTrack();
+        if (localVideoRef.current) {
+          localTracksRef.current.videoTrack.play(localVideoRef.current);
+        }
+        // If it's an audio call, start with video disabled
+        if (appointment?.consultation_type !== "video") {
+          localTracksRef.current.videoTrack.setEnabled(false);
+          setIsVideoOff(true);
+        }
+      } catch (videoErr) {
+        console.warn("Could not access camera:", videoErr);
         setIsVideoOff(true);
       }
-    } catch (videoErr) {
-      console.warn("Could not access camera:", videoErr);
-      setIsVideoOff(true);
+
+      localTracksRef.current.audioTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
+
+      // Publish tracks - publish both if video track exists
+      const tracks = localTracksRef.current.videoTrack
+        ? [localTracksRef.current.audioTrack, localTracksRef.current.videoTrack]
+        : [localTracksRef.current.audioTrack];
+
+      await clientRef.current.publish(tracks);
+
+      setConnected(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error("Error starting call:", err);
+      toast({
+        title: "ত্রুটি",
+        description: err.message || "কল শুরু করতে ব্যর্থ হয়েছে",
+        variant: "destructive",
+      });
+    } finally {
+      setConnecting(false);
     }
-
-    localTracksRef.current.audioTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
-
-    // Publish tracks - publish both if video track exists
-    const tracks = localTracksRef.current.videoTrack
-      ? [localTracksRef.current.audioTrack, localTracksRef.current.videoTrack]
-      : [localTracksRef.current.audioTrack];
-
-    await clientRef.current.publish(tracks);
-
-    setConnected(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
-    console.error("Error starting call:", err);
-    toast({
-      title: "ত্রুটি",
-      description: err.message || "কল শুরু করতে ব্যর্থ হয়েছে",
-      variant: "destructive",
-    });
-  } finally {
-    setConnecting(false);
-  }
   };
 
   const handleEndCall = async () => {
@@ -488,170 +488,170 @@ const VideoCallPage = () => {
               <div className="text-center">
                 <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
                   <AvatarImage
-                  src={getProfilePhotoUrl(otherParty?.avatarUrl)}
-                />
-                <AvatarFallback className="bg-gray-700 text-white text-4xl">
-                  {otherParty?.name?.charAt(0) || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <h2 className="text-white text-xl font-semibold mb-2">
-                {otherParty?.name || "অজানা"}
-              </h2>
-              {!connected && connecting && (
-                <p className="text-gray-400">সংযোগ হচ্ছে...</p>
-              )}
-              {!connected && !connecting && (
-                <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
-              )}
-              {connected && !remoteUserJoined && (
-                <p className="text-yellow-400">অপর পক্ষের অপেক্ষায়...</p>
-              )}
-              {connected && remoteUserJoined && !remoteVideoEnabled && (
-                <p className="text-blue-400">ক্যামেরা বন্ধ আছে</p>
-              )}
+                    src={getProfilePhotoUrl(otherParty?.avatarUrl)}
+                  />
+                  <AvatarFallback className="bg-gray-700 text-white text-4xl">
+                    {otherParty?.name?.charAt(0) || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <h2 className="text-white text-xl font-semibold mb-2">
+                  {otherParty?.name || "অজানা"}
+                </h2>
+                {!connected && connecting && (
+                  <p className="text-gray-400">সংযোগ হচ্ছে...</p>
+                )}
+                {!connected && !connecting && (
+                  <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
+                )}
+                {connected && !remoteUserJoined && (
+                  <p className="text-yellow-400">অপর পক্ষের অপেক্ষায়...</p>
+                )}
+                {connected && remoteUserJoined && !remoteVideoEnabled && (
+                  <p className="text-blue-400">ক্যামেরা বন্ধ আছে</p>
+                )}
+              </div>
             </div>
+          )}
+        </div>
+
+        {/* Local Video (Small) - Always show for camera toggle */}
+        <div
+          ref={localVideoRef}
+          className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
+        >
+          {isVideoOff && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+              <VideoOff className="h-8 w-8 text-gray-500" />
+            </div>
+          )}
+        </div>
+
+        {/* Call Duration */}
+        {connected && (
+          <div className="absolute top-4 left-4 bg-black/50 rounded-full px-4 py-2 z-10">
+            <p className="text-white text-sm font-mono">{formatDuration(callDuration)}</p>
+          </div>
+        )}
+
+        {/* Mute Indicator */}
+        {isMuted && connected && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1 z-10">
+            <p className="text-white text-xs flex items-center gap-1">
+              <MicOff className="h-3 w-3" /> মিউট
+            </p>
+          </div>
+        )}
+
+        {/* Remote User Joined Indicator */}
+        {connected && remoteUserJoined && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 rounded-full px-3 py-1 z-10 mt-8">
+            <p className="text-white text-xs flex items-center gap-1">
+              সংযুক্ত
+            </p>
           </div>
         )}
       </div>
 
-      {/* Local Video (Small) - Always show for camera toggle */}
-      <div
-        ref={localVideoRef}
-        className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
-      >
-        {isVideoOff && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-            <VideoOff className="h-8 w-8 text-gray-500" />
-          </div>
-        )}
-      </div>
-
-      {/* Call Duration */}
-      {connected && (
-        <div className="absolute top-4 left-4 bg-black/50 rounded-full px-4 py-2 z-10">
-          <p className="text-white text-sm font-mono">{formatDuration(callDuration)}</p>
-        </div>
-      )}
-
-      {/* Mute Indicator */}
-      {isMuted && connected && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1 z-10">
-          <p className="text-white text-xs flex items-center gap-1">
-            <MicOff className="h-3 w-3" /> মিউট
-          </p>
-        </div>
-      )}
-
-      {/* Remote User Joined Indicator */}
-      {connected && remoteUserJoined && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 rounded-full px-3 py-1 z-10 mt-8">
-          <p className="text-white text-xs flex items-center gap-1">
-            সংযুক্ত
-          </p>
-        </div>
-      )}
-    </div>
-
-    {/* Controls */}
-    <div className="bg-gray-900/90 backdrop-blur-lg py-6 px-4">
-      <div className="flex items-center justify-center gap-4">
-        {/* Mute Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-14 w-14 rounded-full ${isMuted ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          onClick={toggleMute}
-          disabled={!connected}
-        >
-          {isMuted ? (
-            <MicOff className="h-6 w-6 text-white" />
-          ) : (
-            <Mic className="h-6 w-6 text-white" />
-          )}
-        </Button>
-
-        {/* Video Toggle - Always show for all call types */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-14 w-14 rounded-full ${isVideoOff ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          onClick={toggleVideo}
-          disabled={!connected}
-        >
-          {isVideoOff ? (
-            <VideoOff className="h-6 w-6 text-white" />
-          ) : (
-            <Video className="h-6 w-6 text-white" />
-          )}
-        </Button>
-
-        {/* Start/End Call Button */}
-        {!connected ? (
+      {/* Controls */}
+      <div className="bg-gray-900/90 backdrop-blur-lg py-6 px-4">
+        <div className="flex items-center justify-center gap-4">
+          {/* Mute Button */}
           <Button
+            variant="ghost"
             size="icon"
-            className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600"
-            onClick={startCallSession}
-            disabled={connecting}
+            className={`h-14 w-14 rounded-full ${isMuted ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            onClick={toggleMute}
+            disabled={!connected}
           >
-            {connecting ? (
-              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            {isMuted ? (
+              <MicOff className="h-6 w-6 text-white" />
             ) : (
-              <Phone className="h-8 w-8 text-white" />
+              <Mic className="h-6 w-6 text-white" />
             )}
           </Button>
-        ) : (
+
+          {/* Video Toggle - Always show for all call types */}
           <Button
+            variant="ghost"
             size="icon"
-            className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600"
-            onClick={handleEndCall}
+            className={`h-14 w-14 rounded-full ${isVideoOff ? "bg-red-500 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            onClick={toggleVideo}
+            disabled={!connected}
           >
-            <PhoneOff className="h-8 w-8 text-white" />
+            {isVideoOff ? (
+              <VideoOff className="h-6 w-6 text-white" />
+            ) : (
+              <Video className="h-6 w-6 text-white" />
+            )}
           </Button>
-        )}
 
-        {/* Switch Camera - Always show */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
-          onClick={switchCamera}
-          disabled={!connected || isVideoOff}
-        >
-          <RotateCcw className="h-6 w-6 text-white" />
-        </Button>
-
-        {/* Chat Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
-          onClick={() => navigate(`/consultation/chat/${appointmentId}`)}
-        >
-          <MessageCircle className="h-6 w-6 text-white" />
-        </Button>
-      </div>
-
-      {/* Secondary Controls */}
-      <div className="flex items-center justify-center gap-6 mt-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-gray-400 hover:text-white"
-          onClick={toggleSpeaker}
-        >
-          {isSpeakerOn ? (
-            <Volume2 className="h-5 w-5 mr-1" />
+          {/* Start/End Call Button */}
+          {!connected ? (
+            <Button
+              size="icon"
+              className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600"
+              onClick={startCallSession}
+              disabled={connecting}
+            >
+              {connecting ? (
+                <Loader2 className="h-8 w-8 text-white animate-spin" />
+              ) : (
+                <Phone className="h-8 w-8 text-white" />
+              )}
+            </Button>
           ) : (
-            <VolumeX className="h-5 w-5 mr-1" />
+            <Button
+              size="icon"
+              className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600"
+              onClick={handleEndCall}
+            >
+              <PhoneOff className="h-8 w-8 text-white" />
+            </Button>
           )}
-          {isSpeakerOn ? "স্পিকার চালু" : "স্পিকার বন্ধ"}
-        </Button>
+
+          {/* Switch Camera - Always show */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
+            onClick={switchCamera}
+            disabled={!connected || isVideoOff}
+          >
+            <RotateCcw className="h-6 w-6 text-white" />
+          </Button>
+
+          {/* Chat Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
+            onClick={() => navigate(`/consultation/chat/${appointmentId}`)}
+          >
+            <MessageCircle className="h-6 w-6 text-white" />
+          </Button>
+        </div>
+
+        {/* Secondary Controls */}
+        <div className="flex items-center justify-center gap-6 mt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-white"
+            onClick={toggleSpeaker}
+          >
+            {isSpeakerOn ? (
+              <Volume2 className="h-5 w-5 mr-1" />
+            ) : (
+              <VolumeX className="h-5 w-5 mr-1" />
+            )}
+            {isSpeakerOn ? "স্পিকার চালু" : "স্পিকার বন্ধ"}
+          </Button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default VideoCallPage;
