@@ -22,6 +22,9 @@ return [
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:5173'),
         'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
+        'http://localhost:5176',
         'https://langal.vercel.app',
         'http://127.0.0.1:5500',
         'http://localhost:5500',

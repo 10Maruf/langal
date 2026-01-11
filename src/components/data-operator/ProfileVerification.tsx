@@ -138,7 +138,13 @@ const ProfileVerification = () => {
       setFarmers(response.data.data || []);
     } catch (error: any) {
       console.error('Error fetching farmers:', error);
-      toast.error(error.response?.data?.message || 'কৃষক তালিকা লোড করতে ব্যর্থ');
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response?.data?.message || 'কৃষক তালিকা লোড করতে ব্যর্থ');
+      }
     }
   };
 
@@ -148,7 +154,13 @@ const ProfileVerification = () => {
       setCustomers(response.data.data || []);
     } catch (error: any) {
       console.error('Error fetching customers:', error);
-      toast.error(error.response?.data?.message || 'ক্রেতা তালিকা লোড করতে ব্যর্থ');
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response?.data?.message || 'ক্রেতা তালিকা লোড করতে ব্যর্থ');
+      }
     }
   };
 
@@ -158,7 +170,13 @@ const ProfileVerification = () => {
       setExperts(response.data.data || []);
     } catch (error: any) {
       console.error('Error fetching experts:', error);
-      toast.error(error.response?.data?.message || 'বিশেষজ্ঞ তালিকা লোড করতে ব্যর্থ');
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response?.data?.message || 'বিশেষজ্ঞ তালিকা লোড করতে ব্যর্থ');
+      }
     }
   };
 

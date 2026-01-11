@@ -38,7 +38,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(false);
 
     const fetchNotifications = async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || !user) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+        }
 
         setLoading(true);
         try {
@@ -91,8 +95,15 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                     setNotifications([]);
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch notifications:', error);
+            // If 401, token is invalid - clear auth state
+            if (error.response?.status === 401) {
+                console.log('Token invalid, clearing authentication');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
         } finally {
             setLoading(false);
         }

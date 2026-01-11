@@ -28,15 +28,15 @@ import CustomerProfile from "./pages/CustomerProfile";
 import ConsultantDashboard from "./pages/ConsultantDashboard";
 import ConsultantProfile from "./pages/ConsultantProfile";
 import DataOperatorDashboard from "./pages/DataOperatorDashboard";
-import DataOperatorDashboardNew from "./pages/DataOperatorDashboardNew";
 import DataOperatorHome from "./pages/DataOperatorHome";
 import DataOperatorAuth from "./pages/DataOperatorAuth";
 import DataOperatorProfileVerification from "./pages/DataOperatorProfileVerification";
 import DataOperatorCropVerification from "./pages/DataOperatorCropVerification";
 import DataOperatorRegisterFarmer from "./pages/DataOperatorRegisterFarmer";
 import DataOperatorFieldData from "./pages/DataOperatorFieldData";
+import DataOperatorFieldDataCollection from "./pages/DataOperatorFieldDataCollection";
 import DataOperatorReports from "./pages/DataOperatorReports";
-import DataOperatorStatistics from "./pages/DataOperatorStatistics";
+import DataOperatorStatistics from "./pages/DataOperatorStatisticsNew2";
 import SocialFeedReportMng from "./components/data-operator/SocialFeedReportMng";
 import MarketPrices from "./pages/MarketPrices";
 import AgriculturalNews from "./pages/AgriculturalNews";
@@ -152,11 +152,7 @@ const App = () => {
                 />
                 <Route
                   path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
+                  element={<Index />}
                 />
                 <Route
                   path="/social-feed"
@@ -304,11 +300,11 @@ const App = () => {
                 />
                 <Route
                   path="/data-operator-dashboard"
-                  element={<DataOperatorDashboardNew />}
-                />
-                <Route
-                  path="/data-operator-dashboard-old"
-                  element={<DataOperatorDashboard />}
+                  element={
+                    <ProtectedRoute>
+                      <DataOperatorDashboard />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/data-operator/profile-verification"
@@ -325,6 +321,10 @@ const App = () => {
                 <Route
                   path="/data-operator/field-data"
                   element={<DataOperatorFieldData />}
+                />
+                <Route
+                  path="/data-operator/field-data-collection"
+                  element={<DataOperatorFieldDataCollection />}
                 />
                 <Route
                   path="/data-operator/reports"

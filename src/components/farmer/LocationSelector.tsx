@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import api from "@/services/api";
 import { englishToBangla, banglaToEnglish } from "@/lib/banglaUtils";
 
-interface LocationData {
+export interface LocationData {
     division: string;
     division_bn: string;
     district: string;
@@ -21,7 +21,7 @@ interface LocationData {
     village: string; // User input in Bangla
 }
 
-interface LocationSelectorProps {
+export interface LocationSelectorProps {
     value: LocationData | null;
     onChange: (location: LocationData) => void;
     onAddressChange?: (fullAddress: string) => void;

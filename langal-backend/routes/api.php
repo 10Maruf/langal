@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\FarmerAuthController;
 use App\Http\Controllers\Api\CustomerAuthController;
 use App\Http\Controllers\Api\ExpertAuthController;
 use App\Http\Controllers\Api\DataOperatorAuthController;
+use App\Http\Controllers\Api\FieldDataCollectionController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\DocumentUploadController;
@@ -148,6 +149,9 @@ Route::prefix('data-operator')->group(function () {
     Route::post('/forgot-password/send-otp', [DataOperatorAuthController::class, 'forgotPasswordSendOtp']);
     Route::post('/forgot-password/reset', [DataOperatorAuthController::class, 'forgotPasswordReset']);
 
+    // Statistics route - PUBLIC for testing (move back to protected in production)
+    Route::match(['get', 'post'], '/statistics', [DataOperatorAuthController::class, 'getStatistics']);
+
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/profile', [DataOperatorAuthController::class, 'profile']);
@@ -169,7 +173,21 @@ Route::prefix('data-operator')->group(function () {
         Route::get('/soil-tests', [DataOperatorAuthController::class, 'getSoilTestReports']);
         Route::post('/soil-tests', [DataOperatorAuthController::class, 'createSoilTestReport']);
         Route::delete('/soil-tests/{reportId}', [DataOperatorAuthController::class, 'deleteSoilTestReport']);
+
+        // Manual farmer entry for field data collection
+        Route::post('/field-data-farmers', [DataOperatorAuthController::class, 'createFieldDataFarmer']);
     });
+});
+
+// Field Data Collection Routes (Protected - Data Operators only)
+Route::prefix('field-data')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [FieldDataCollectionController::class, 'index']);
+    Route::post('/', [FieldDataCollectionController::class, 'store']);
+    Route::get('/statistics', [FieldDataCollectionController::class, 'statistics']);
+    Route::get('/{id}', [FieldDataCollectionController::class, 'show']);
+    Route::put('/{id}', [FieldDataCollectionController::class, 'update']);
+    Route::delete('/{id}', [FieldDataCollectionController::class, 'destroy']);
+    Route::post('/{id}/verify', [FieldDataCollectionController::class, 'verify']);
 });
 
 // Test route for authenticated farmer
