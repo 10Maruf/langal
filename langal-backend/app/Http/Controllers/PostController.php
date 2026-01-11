@@ -57,7 +57,29 @@ class PostController extends Controller
                 if (str_starts_with($post->author_avatar, 'http')) {
                     $avatarUrl = $post->author_avatar;
                 } else {
-                    $avatarUrl = url('storage/' . $post->author_avatar);
+                    // Check if it's an Azure path or relative path
+                    if (str_contains($post->author_avatar, '/')) {
+                        try {
+                            // Try to generate Azure URL
+                            $accountName = config('filesystems.disks.azure.name');
+                            $container = config('filesystems.disks.azure.container');
+                            
+                            if ($accountName && $container) {
+                                $avatarUrl = sprintf(
+                                    'https://%s.blob.core.windows.net/%s/%s',
+                                    $accountName,
+                                    $container,
+                                    $post->author_avatar
+                                );
+                            } else {
+                                $avatarUrl = url('storage/' . $post->author_avatar);
+                            }
+                        } catch (\Exception $e) {
+                            $avatarUrl = url('storage/' . $post->author_avatar);
+                        }
+                    } else {
+                        $avatarUrl = url('storage/' . $post->author_avatar);
+                    }
                 }
             }
 
@@ -194,6 +216,7 @@ class PostController extends Controller
                 c.*,
                 up.full_name as author_name,
                 u.user_type as author_type,
+                u.user_id as author_user_id,
                 up.profile_photo_url as author_avatar
             FROM comments c
             JOIN users u ON c.author_id = u.user_id
@@ -209,7 +232,30 @@ class PostController extends Controller
                 if (str_starts_with($comment->author_avatar, 'http')) {
                     $avatarUrl = $comment->author_avatar;
                 } else {
-                    $avatarUrl = url('storage/' . $comment->author_avatar);
+                    // Check if it's an Azure path or relative path
+                    if (str_contains($comment->author_avatar, '/')) {
+                        try {
+                            // Try to generate Azure URL
+                            $accountName = config('filesystems.disks.azure.name');
+                            $container = config('filesystems.disks.azure.container');
+                            
+                            if ($accountName && $container) {
+                                $avatarUrl = sprintf(
+                                    'https://%s.blob.core.windows.net/%s/%s',
+                                    $accountName,
+                                    $container,
+                                    $comment->author_avatar
+                                );
+                            } else {
+                                // Fallback to storage URL
+                                $avatarUrl = url('storage/' . $comment->author_avatar);
+                            }
+                        } catch (\Exception $e) {
+                            $avatarUrl = url('storage/' . $comment->author_avatar);
+                        }
+                    } else {
+                        $avatarUrl = url('storage/' . $comment->author_avatar);
+                    }
                 }
             }
 
