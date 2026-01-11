@@ -17,6 +17,13 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     CheckCircle,
     XCircle,
     Flag,
@@ -50,6 +57,7 @@ const SocialFeedReportMng = () => {
     const [activeTab, setActiveTab] = useState("pending");
     const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null);
+    const [viewDetailsReport, setViewDetailsReport] = useState<ReportDetail | null>(null);
     const [adminNote, setAdminNote] = useState("");
     const { toast } = useToast();
 
@@ -253,33 +261,56 @@ const SocialFeedReportMng = () => {
                                                             </div>
 
                                                             <div className="bg-gray-50 p-3 rounded-lg mb-3">
-                                                                <div className="flex items-center space-x-2 mb-2">
-                                                                    <Avatar className="w-6 h-6">
-                                                                        <AvatarImage src={report.content.author.avatar} />
-                                                                        <AvatarFallback>
-                                                                            {report.content.author.name.charAt(0)}
-                                                                        </AvatarFallback>
-                                                                    </Avatar>
-                                                                    <span className="text-sm font-medium">{report.content.author.name}</span>
-                                                                    <span className="text-xs text-gray-500">
-                                                                        {formatDate(report.content.postedAt)}
-                                                                    </span>
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <Avatar className="w-6 h-6">
+                                                                            <AvatarImage src={report.content.author.avatar} />
+                                                                            <AvatarFallback>
+                                                                                {report.content.author.name.charAt(0)}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
+                                                                        <span className="text-sm font-medium">{report.content.author.name}</span>
+                                                                        <span className="text-xs text-gray-500">
+                                                                            {formatDate(report.content.postedAt)}
+                                                                        </span>
+                                                                    </div>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => setViewDetailsReport(report)}
+                                                                        className="h-7 text-xs"
+                                                                    >
+                                                                        <Eye className="w-3 h-3 mr-1" />
+                                                                        বিস্তারিত
+                                                                    </Button>
                                                                 </div>
                                                                 <p className="text-sm text-gray-700 line-clamp-3">
                                                                     {report.content.text}
                                                                 </p>
                                                                 {report.content.images && report.content.images.length > 0 && (
-                                                                    <div className="mt-2">
-                                                                        <span className="text-xs text-gray-500">
-                                                                            {report.content.images.length} টি ছবি সংযুক্ত
-                                                                        </span>
+                                                                    <div className="mt-2 flex gap-2 overflow-x-auto">
+                                                                        {report.content.images.map((image, idx) => (
+                                                                            <img
+                                                                                key={idx}
+                                                                                src={image}
+                                                                                alt={`পোস্ট ছবি ${idx + 1}`}
+                                                                                className="h-20 w-20 object-cover rounded border"
+                                                                            />
+                                                                        ))}
                                                                     </div>
                                                                 )}
                                                             </div>
 
                                                             <div className="text-sm text-gray-600">
-                                                                <div className="flex items-center space-x-4">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <Avatar className="w-6 h-6">
+                                                                        <AvatarImage src={report.reportedBy.avatar} />
+                                                                        <AvatarFallback>
+                                                                            {report.reportedBy.name.charAt(0)}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
                                                                     <span>রিপোর্টকারী: {report.reportedBy.name}</span>
+                                                                    <span className="text-gray-400">•</span>
                                                                     <span>তারিখ: {formatDate(report.reportedAt)}</span>
                                                                 </div>
                                                                 {report.description && (
@@ -383,7 +414,251 @@ const SocialFeedReportMng = () => {
                         </TabsContent>
                     </Tabs>
                 </CardContent>
-            </Card>            </div>        </div>
+            </Card>
+
+            {/* Detailed Post View Dialog */}
+            <Dialog open={!!viewDetailsReport} onOpenChange={(open) => !open && setViewDetailsReport(null)}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    {viewDetailsReport && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    {getReportTypeIcon(viewDetailsReport.reportType)}
+                                    {viewDetailsReport.reportType === "post" ? "পোস্টের" : "কমেন্টের"} বিস্তারিত তথ্য
+                                </DialogTitle>
+                                <DialogDescription>
+                                    রিপোর্ট আইডি: {viewDetailsReport.id}
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4 mt-4">
+                                {/* Report Info */}
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="font-semibold text-red-900">রিপোর্টের তথ্য</h3>
+                                        {getStatusBadge(viewDetailsReport.status)}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <span className="font-medium text-gray-700">কারণ:</span>
+                                            <Badge variant="destructive" className="ml-2">
+                                                {viewDetailsReport.reason.label}
+                                            </Badge>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium text-gray-700">রিপোর্টের তারিখ:</span>
+                                            <span className="ml-2">{formatDate(viewDetailsReport.reportedAt)}</span>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <span className="font-medium text-gray-700">বিবরণ:</span>
+                                            <p className="mt-1 text-gray-600">{viewDetailsReport.reason.description}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Reporter Info */}
+                                    <div className="mt-3 pt-3 border-t border-red-200">
+                                        <span className="font-medium text-gray-700 block mb-2">রিপোর্টকারী:</span>
+                                        <div className="flex items-center space-x-2">
+                                            <Avatar className="w-8 h-8">
+                                                <AvatarImage src={viewDetailsReport.reportedBy.avatar} />
+                                                <AvatarFallback>
+                                                    {viewDetailsReport.reportedBy.name.charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{viewDetailsReport.reportedBy.name}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {viewDetailsReport.reportedBy.userType === 'farmer' ? 'কৃষক' : 
+                                                     viewDetailsReport.reportedBy.userType === 'expert' ? 'বিশেষজ্ঞ' : 
+                                                     'ডেটা অপারেটর'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Content Details */}
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <h3 className="font-semibold text-gray-900 mb-3">
+                                        {viewDetailsReport.reportType === "post" ? "পোস্টের" : "কমেন্টের"} বিষয়বস্তু
+                                    </h3>
+                                    
+                                    {/* Author Info */}
+                                    <div className="flex items-center space-x-3 mb-3 pb-3 border-b">
+                                        <Avatar className="w-10 h-10">
+                                            <AvatarImage src={viewDetailsReport.content.author.avatar} />
+                                            <AvatarFallback>
+                                                {viewDetailsReport.content.author.name.charAt(0)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold">{viewDetailsReport.content.author.name}</p>
+                                                {viewDetailsReport.content.author.verified && (
+                                                    <CheckCircle className="w-4 h-4 text-blue-500" />
+                                                )}
+                                                {viewDetailsReport.content.author.isExpert && (
+                                                    <Badge variant="outline" className="text-xs">বিশেষজ্ঞ</Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-gray-500">{viewDetailsReport.content.author.location}</p>
+                                            <p className="text-xs text-gray-400">{formatDate(viewDetailsReport.content.postedAt)}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Full Content */}
+                                    <div className="space-y-3">
+                                        <div className="prose max-w-none">
+                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                                {viewDetailsReport.content.text}
+                                            </p>
+                                        </div>
+
+                                        {/* Images - Full Size */}
+                                        {viewDetailsReport.content.images && viewDetailsReport.content.images.length > 0 && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-medium text-gray-700">
+                                                    সংযুক্ত ছবি ({viewDetailsReport.content.images.length}টি):
+                                                </p>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {viewDetailsReport.content.images.map((image, idx) => (
+                                                        <div key={idx} className="relative group">
+                                                            <img
+                                                                src={image}
+                                                                alt={`ছবি ${idx + 1}`}
+                                                                className="w-full h-auto rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-colors cursor-pointer"
+                                                                onClick={() => window.open(image, '_blank')}
+                                                            />
+                                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                                                                <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                {viewDetailsReport.status === "pending" && (
+                                    <div className="flex gap-3 pt-4 border-t">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="destructive"
+                                                    className="flex-1"
+                                                    onClick={() => setSelectedReport(viewDetailsReport)}
+                                                >
+                                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                                    রিপোর্ট গ্রহণ করুন
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>রিপোর্ট গ্রহণ করুন</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        আপনি কি নিশ্চিত যে এই রিপোর্ট গ্রহণ করতে চান এবং কন্টেন্ট মুছে ফেলতে চান?
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <div className="my-4">
+                                                    <label className="text-sm font-medium">প্রশাসনিক নোট (ঐচ্ছিক):</label>
+                                                    <Textarea
+                                                        placeholder="এই সিদ্ধান্তের কারণ লিখুন..."
+                                                        value={adminNote}
+                                                        onChange={(e) => setAdminNote(e.target.value)}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={() => setAdminNote("")}>
+                                                        বাতিল
+                                                    </AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => {
+                                                            if (selectedReport) {
+                                                                handleAcceptReport(selectedReport.id, true);
+                                                                setViewDetailsReport(null);
+                                                            }
+                                                        }}
+                                                        className="bg-red-600 hover:bg-red-700"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-1" />
+                                                        গ্রহণ করুন ও মুছে দিন
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1"
+                                                    onClick={() => setSelectedReport(viewDetailsReport)}
+                                                >
+                                                    <XCircle className="w-4 h-4 mr-2" />
+                                                    রিপোর্ট প্রত্যাখ্যান করুন
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>রিপোর্ট প্রত্যাখ্যান করুন</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        আপনি কি নিশ্চিত যে এই রিপোর্ট প্রত্যাখ্যান করতে চান? কন্টেন্ট অপরিবর্তিত থাকবে।
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <div className="my-4">
+                                                    <label className="text-sm font-medium">প্রশাসনিক নোট (ঐচ্ছিক):</label>
+                                                    <Textarea
+                                                        placeholder="এই সিদ্ধান্তের কারণ লিখুন..."
+                                                        value={adminNote}
+                                                        onChange={(e) => setAdminNote(e.target.value)}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={() => setAdminNote("")}>
+                                                        বাতিল
+                                                    </AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => {
+                                                            if (selectedReport) {
+                                                                handleDeclineReport(selectedReport.id);
+                                                                setViewDetailsReport(null);
+                                                            }
+                                                        }}
+                                                    >
+                                                        প্রত্যাখ্যান করুন
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                )}
+
+                                {/* Review Info for accepted/declined reports */}
+                                {viewDetailsReport.status !== "pending" && viewDetailsReport.reviewedAt && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <h3 className="font-semibold text-blue-900 mb-2">পর্যালোচনার তথ্য</h3>
+                                        <div className="text-sm space-y-1">
+                                            <p>
+                                                <span className="font-medium">স্ট্যাটাস:</span> 
+                                                <span className="ml-2">{getStatusBadge(viewDetailsReport.status)}</span>
+                                            </p>
+                                            <p>
+                                                <span className="font-medium">পর্যালোচনার তারিখ:</span>
+                                                <span className="ml-2">{formatDate(viewDetailsReport.reviewedAt)}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+            </div>        </div>
     );
 };
 

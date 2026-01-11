@@ -370,7 +370,14 @@ export const EnhancedPostCard = ({
                                     </>
                                 )}
                                 {!isOwnPost && (
-                                    <DropdownMenuItem onClick={handleReportClick}>
+                                    <DropdownMenuItem onClick={() => {
+                                        if (post.reported) {
+                                            handleReportClick();
+                                        } else {
+                                            setReportCommentId(null);
+                                            setShowReportDialog(true);
+                                        }
+                                    }}>
                                         <Flag className={cn("h-4 w-4 mr-2", post.reported && "text-orange-500 fill-current")} />
                                         {post.reported ? 'রিপোর্ট বাতিল' : 'রিপোর্ট করুন'}
                                         {(post.reports || 0) > 0 && (

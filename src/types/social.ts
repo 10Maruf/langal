@@ -208,6 +208,7 @@ export interface ReportDetail {
     reportedBy: {
         id: string;
         name: string;
+        avatar?: string;
         userType: UserType;
     };
     reason: PostReportReason | CommentReportReason;

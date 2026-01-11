@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 03, 2026 at 12:44 PM
+-- Generation Time: Jan 11, 2026 at 12:59 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,30 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `langol_krishi_sahayak`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `cache`
---
-
-CREATE TABLE `cache` (
-  `key` varchar(255) NOT NULL,
-  `value` mediumtext NOT NULL,
-  `expiration` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `cache_locks`
---
-
-CREATE TABLE `cache_locks` (
-  `key` varchar(255) NOT NULL,
-  `owner` varchar(255) NOT NULL,
-  `expiration` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -81,20 +57,14 @@ INSERT INTO `comments` (`comment_id`, `post_id`, `author_id`, `content`, `likes_
 (10, 9, 29, 'darun', 0, 0, 0, NULL, '2025-12-17 15:52:28', '2025-12-17 15:52:28'),
 (11, 13, 29, 'বেগম খালেদা জিয়া আজ মারা গেছে।', 0, 0, 0, NULL, '2025-12-30 11:30:22', '2025-12-30 11:30:22'),
 (12, 13, 29, 'খুবই কষ্ট লাগলো 😓', 0, 0, 0, NULL, '2025-12-30 11:42:45', '2025-12-30 11:42:45'),
-(13, 13, 33, 'asholei kaptesi ami!!!!', 0, 0, 0, NULL, '2025-12-31 17:53:07', '2025-12-31 17:53:07');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `comment_likes`
---
-
-CREATE TABLE `comment_likes` (
-  `like_id` int(11) NOT NULL,
-  `comment_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `liked_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+(13, 13, 33, 'asholei kaptesi ami!!!!', 0, 0, 0, NULL, '2025-12-31 17:53:07', '2025-12-31 17:53:07'),
+(14, 13, 61, 'চমৎকার', 0, 0, 0, NULL, '2026-01-04 14:48:21', '2026-01-04 14:48:21'),
+(15, 11, 61, 'Nice', 0, 0, 0, NULL, '2026-01-04 14:49:03', '2026-01-04 14:49:03'),
+(16, 14, 29, 'areh sera!!', 0, 0, 0, NULL, '2026-01-04 15:17:09', '2026-01-04 15:17:09'),
+(17, 14, 33, 'dui kamla', 0, 0, 0, NULL, '2026-01-05 02:17:36', '2026-01-05 02:17:36'),
+(18, 13, 29, 'wesxdrcfvgbhjnkml,', 0, 0, 0, NULL, '2026-01-05 23:55:03', '2026-01-05 23:55:03'),
+(19, 14, 71, 'valo laglo dekhe', 0, 0, 0, NULL, '2026-01-06 20:25:02', '2026-01-06 20:25:02'),
+(20, 17, 29, 'Wow', 0, 0, 0, NULL, '2026-01-11 09:16:06', '2026-01-11 09:16:06');
 
 -- --------------------------------------------------------
 
@@ -128,21 +98,191 @@ CREATE TABLE `consultations` (
   `consultation_id` int(11) NOT NULL,
   `farmer_id` int(11) NOT NULL,
   `expert_id` int(11) DEFAULT NULL,
-  `topic` varchar(150) DEFAULT NULL,
-  `crop_type` varchar(50) DEFAULT NULL,
-  `issue_description` text NOT NULL,
-  `priority` enum('low','medium','high') DEFAULT 'medium',
-  `status` enum('pending','in_progress','resolved','cancelled') DEFAULT 'pending',
-  `location` varchar(100) DEFAULT NULL,
-  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`images`)),
+  `topic` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `crop_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `issue_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `priority` enum('low','medium','high') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
+  `status` enum('pending','in_progress','resolved','cancelled') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `location` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `consultation_fee` decimal(6,2) DEFAULT NULL,
-  `payment_status` enum('pending','paid','refunded') DEFAULT NULL,
-  `preferred_time` varchar(50) DEFAULT NULL,
-  `consultation_type` enum('voice','video','chat','in_person') DEFAULT 'chat',
-  `urgency` enum('low','medium','high') DEFAULT 'medium',
+  `payment_status` enum('pending','paid','refunded') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `preferred_time` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `consultation_type` enum('voice','video','chat','in_person') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'chat',
+  `urgency` enum('low','medium','high') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `resolved_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `consultation_appointments`
+--
+
+CREATE TABLE `consultation_appointments` (
+  `appointment_id` int(10) UNSIGNED NOT NULL,
+  `farmer_id` int(11) NOT NULL COMMENT 'FK to users (farmer)',
+  `expert_id` int(11) NOT NULL COMMENT 'FK to users (expert)',
+  `appointment_date` date NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `consultation_type` varchar(255) NOT NULL DEFAULT 'audio_call',
+  `status` varchar(255) NOT NULL DEFAULT 'pending',
+  `problem_description` text DEFAULT NULL,
+  `problem_description_bn` text DEFAULT NULL,
+  `crop_type` varchar(255) DEFAULT NULL,
+  `urgency_level` int(11) NOT NULL DEFAULT 1 COMMENT '1: Low, 2: Medium, 3: High',
+  `farmer_notes` text DEFAULT NULL,
+  `expert_notes` text DEFAULT NULL,
+  `cancellation_reason` text DEFAULT NULL,
+  `cancelled_by` int(11) DEFAULT NULL,
+  `rescheduled_from` int(11) DEFAULT NULL,
+  `reminder_sent` tinyint(1) NOT NULL DEFAULT 0,
+  `agora_channel_name` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `consultation_appointments`
+--
+
+INSERT INTO `consultation_appointments` (`appointment_id`, `farmer_id`, `expert_id`, `appointment_date`, `start_time`, `end_time`, `consultation_type`, `status`, `problem_description`, `problem_description_bn`, `crop_type`, `urgency_level`, `farmer_notes`, `expert_notes`, `cancellation_reason`, `cancelled_by`, `rescheduled_from`, `reminder_sent`, `agora_channel_name`, `created_at`, `updated_at`) VALUES
+(1, 29, 71, '2026-01-07', '03:45:00', '04:15:00', 'video_call', 'cancelled', 'এমনে টেস্টিং এর জন্য', NULL, NULL, 3, NULL, NULL, 'কৃষক কর্তৃক বাতিল', 29, NULL, 0, 'consultation_adff8ff6-0337-4c1d-92ab-af9a2ded12a6', '2026-01-07 03:26:50', '2026-01-07 03:57:14'),
+(2, 29, 71, '2026-01-07', '04:00:00', '04:30:00', 'video_call', 'confirmed', 'test 2', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, 0, 'consultation_3959257b-fa7b-4837-830f-00ae18554404', '2026-01-07 03:42:30', '2026-01-07 04:08:20'),
+(3, 29, 71, '2026-01-07', '17:00:00', '17:30:00', 'video_call', 'cancelled', 'test 3', NULL, NULL, 3, NULL, NULL, NULL, 71, NULL, 0, 'consultation_f608a3c2-c59e-4758-8cc7-d0f85f090de4', '2026-01-07 15:31:58', '2026-01-07 15:39:51'),
+(4, 29, 71, '2026-01-07', '17:00:00', '17:30:00', 'video_call', 'cancelled', 'test 4', NULL, NULL, 2, NULL, NULL, NULL, 71, NULL, 0, 'consultation_43ea01c6-200d-4cbd-b13b-4bd638edec79', '2026-01-07 15:40:44', '2026-01-07 21:14:34'),
+(5, 29, 71, '2026-01-07', '18:00:00', '18:30:00', 'video_call', 'confirmed', 'test 5', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, 0, 'consultation_cff9a571-5f95-489b-97cf-38240547aad4', '2026-01-07 17:45:33', '2026-01-07 17:56:31'),
+(6, 29, 71, '2026-01-07', '20:00:00', '20:30:00', 'video_call', 'cancelled', 'TEST 6', NULL, NULL, 2, NULL, NULL, 'ব্যবহারকারী কর্তৃক বাতিল', 29, NULL, 0, 'consultation_8482c2dc-1ec5-4eeb-89b5-9a44b1bf00fc', '2026-01-07 19:03:08', '2026-01-07 20:59:32'),
+(7, 29, 71, '2026-01-07', '22:00:00', '22:30:00', 'video_call', 'confirmed', 'Test 8', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, 0, 'consultation_0bb98bba-0274-4422-bda2-4ce872493e3e', '2026-01-07 21:36:58', '2026-01-07 21:37:15');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `consultation_calls`
+--
+
+CREATE TABLE `consultation_calls` (
+  `call_id` bigint(20) UNSIGNED NOT NULL,
+  `appointment_id` int(10) UNSIGNED NOT NULL,
+  `caller_id` int(11) NOT NULL COMMENT 'Who initiated the call',
+  `callee_id` int(11) NOT NULL COMMENT 'Who received the call',
+  `call_type` enum('audio','video') NOT NULL,
+  `call_status` enum('ringing','answered','busy','rejected','missed','ended','failed') NOT NULL DEFAULT 'ringing',
+  `agora_channel` varchar(100) NOT NULL,
+  `agora_app_id` varchar(50) DEFAULT NULL,
+  `caller_uid` int(10) UNSIGNED DEFAULT NULL COMMENT 'Agora UID for caller',
+  `callee_uid` int(10) UNSIGNED DEFAULT NULL COMMENT 'Agora UID for callee',
+  `duration_seconds` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `max_duration_seconds` int(10) UNSIGNED NOT NULL DEFAULT 1200 COMMENT 'Default 20 min limit',
+  `quality_score` decimal(3,2) DEFAULT NULL COMMENT 'Call quality 0-5',
+  `initiated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `answered_at` timestamp NULL DEFAULT NULL,
+  `ended_at` timestamp NULL DEFAULT NULL,
+  `end_reason` enum('normal','timeout','network_error','user_hangup','system') DEFAULT NULL,
+  `is_recorded` tinyint(1) NOT NULL DEFAULT 0,
+  `recording_url` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `consultation_calls`
+--
+
+INSERT INTO `consultation_calls` (`call_id`, `appointment_id`, `caller_id`, `callee_id`, `call_type`, `call_status`, `agora_channel`, `agora_app_id`, `caller_uid`, `callee_uid`, `duration_seconds`, `max_duration_seconds`, `quality_score`, `initiated_at`, `answered_at`, `ended_at`, `end_reason`, `is_recorded`, `recording_url`, `created_at`, `updated_at`) VALUES
+(3, 5, 29, 71, 'video', 'ended', 'consultation_cff9a571-5f95-489b-97cf-38240547aad4', NULL, NULL, NULL, 0, 1200, NULL, '2026-01-07 18:47:56', NULL, '2026-01-07 19:25:04', NULL, 0, NULL, '2026-01-07 18:47:56', '2026-01-07 18:47:56'),
+(4, 2, 71, 29, 'video', 'ended', 'consultation_3959257b-fa7b-4837-830f-00ae18554404', NULL, NULL, NULL, 0, 1200, NULL, '2026-01-07 18:56:55', NULL, '2026-01-07 19:25:04', NULL, 0, NULL, '2026-01-07 18:56:55', '2026-01-07 18:56:55'),
+(5, 6, 71, 29, 'video', 'ended', 'consultation_8482c2dc-1ec5-4eeb-89b5-9a44b1bf00fc', NULL, NULL, NULL, 0, 1200, NULL, '2026-01-07 19:05:49', NULL, '2026-01-07 19:25:04', NULL, 0, NULL, '2026-01-07 19:05:49', '2026-01-07 19:05:49'),
+(6, 6, 71, 29, 'video', 'ended', 'consultation_8482c2dc-1ec5-4eeb-89b5-9a44b1bf00fc', NULL, NULL, NULL, 4, 1200, NULL, '2026-01-07 19:30:44', '2026-01-07 20:18:20', '2026-01-07 20:18:23', NULL, 0, NULL, '2026-01-07 19:30:44', '2026-01-07 20:18:23'),
+(7, 6, 71, 29, 'video', 'ended', 'consultation_8482c2dc-1ec5-4eeb-89b5-9a44b1bf00fc', NULL, NULL, NULL, 3, 1200, NULL, '2026-01-07 20:21:00', '2026-01-07 20:21:04', '2026-01-07 20:21:07', NULL, 0, NULL, '2026-01-07 20:21:00', '2026-01-07 20:21:07'),
+(8, 6, 29, 71, 'video', 'ringing', 'consultation_8482c2dc-1ec5-4eeb-89b5-9a44b1bf00fc', NULL, NULL, NULL, 0, 1200, NULL, '2026-01-07 20:27:12', NULL, NULL, NULL, 0, NULL, '2026-01-07 20:27:12', '2026-01-07 20:27:12'),
+(9, 7, 71, 29, 'video', 'ringing', 'consultation_0bb98bba-0274-4422-bda2-4ce872493e3e', NULL, NULL, NULL, 0, 1200, NULL, '2026-01-07 21:37:37', NULL, NULL, NULL, 0, NULL, '2026-01-07 21:37:37', '2026-01-07 21:37:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `consultation_feedback`
+--
+
+CREATE TABLE `consultation_feedback` (
+  `feedback_id` int(10) UNSIGNED NOT NULL,
+  `appointment_id` int(10) UNSIGNED NOT NULL,
+  `farmer_id` int(11) NOT NULL,
+  `expert_id` int(11) NOT NULL,
+  `overall_rating` tinyint(3) UNSIGNED NOT NULL COMMENT '1-5 stars',
+  `communication_rating` tinyint(3) UNSIGNED DEFAULT NULL COMMENT '1-5 stars',
+  `knowledge_rating` tinyint(3) UNSIGNED DEFAULT NULL COMMENT '1-5 stars',
+  `helpfulness_rating` tinyint(3) UNSIGNED DEFAULT NULL COMMENT '1-5 stars',
+  `review_text` text DEFAULT NULL,
+  `review_text_bn` text DEFAULT NULL COMMENT 'Bangla review',
+  `is_approved` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Admin moderation',
+  `is_public` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Show on expert profile',
+  `admin_notes` varchar(255) DEFAULT NULL,
+  `expert_response` text DEFAULT NULL,
+  `response_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `consultation_messages`
+--
+
+CREATE TABLE `consultation_messages` (
+  `message_id` bigint(20) UNSIGNED NOT NULL,
+  `appointment_id` int(10) UNSIGNED DEFAULT NULL COMMENT 'FK to appointment (optional)',
+  `conversation_id` varchar(50) NOT NULL COMMENT 'Unique conversation ID',
+  `sender_id` int(11) NOT NULL,
+  `receiver_id` int(11) NOT NULL,
+  `message_type` enum('text','image','audio','file','system') NOT NULL DEFAULT 'text',
+  `content` text NOT NULL,
+  `attachment_url` varchar(500) DEFAULT NULL,
+  `attachment_type` varchar(50) DEFAULT NULL COMMENT 'MIME type',
+  `attachment_name` varchar(255) DEFAULT NULL,
+  `attachment_size` int(10) UNSIGNED DEFAULT NULL COMMENT 'File size in bytes',
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `deleted_by` int(11) DEFAULT NULL,
+  `reply_to_message_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT 'For reply feature',
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Extra data (e.g., image dimensions)' CHECK (json_valid(`metadata`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `consultation_prescriptions`
+--
+
+CREATE TABLE `consultation_prescriptions` (
+  `prescription_id` int(10) UNSIGNED NOT NULL,
+  `appointment_id` int(10) UNSIGNED NOT NULL,
+  `expert_id` int(11) NOT NULL,
+  `farmer_id` int(11) NOT NULL,
+  `diagnosis` text NOT NULL COMMENT 'Problem diagnosis',
+  `diagnosis_bn` text DEFAULT NULL COMMENT 'Bangla diagnosis',
+  `prescription` text NOT NULL COMMENT 'Recommended treatment/action',
+  `prescription_bn` text DEFAULT NULL COMMENT 'Bangla prescription',
+  `recommended_products` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '[{"name": "...", "dosage": "...", "usage": "..."}]' CHECK (json_valid(`recommended_products`)),
+  `recommended_actions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '["action1", "action2"]' CHECK (json_valid(`recommended_actions`)),
+  `follow_up_needed` tinyint(1) NOT NULL DEFAULT 0,
+  `follow_up_date` date DEFAULT NULL,
+  `follow_up_notes` text DEFAULT NULL,
+  `severity` enum('mild','moderate','severe','critical') NOT NULL DEFAULT 'moderate',
+  `attachments` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Array of attachment URLs' CHECK (json_valid(`attachments`)),
+  `is_sent_to_farmer` tinyint(1) NOT NULL DEFAULT 1,
+  `is_read_by_farmer` tinyint(1) NOT NULL DEFAULT 0,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -155,12 +295,31 @@ CREATE TABLE `consultation_responses` (
   `response_id` int(11) NOT NULL,
   `consultation_id` int(11) NOT NULL,
   `expert_id` int(11) NOT NULL,
-  `response_text` text NOT NULL,
-  `attachments` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`attachments`)),
+  `response_text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachments` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `is_final_response` tinyint(1) DEFAULT 0,
-  `diagnosis` text DEFAULT NULL,
-  `treatment` text DEFAULT NULL,
+  `diagnosis` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `treatment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `conversation_participants`
+--
+
+CREATE TABLE `conversation_participants` (
+  `participant_id` bigint(20) UNSIGNED NOT NULL,
+  `conversation_id` varchar(50) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `role` enum('farmer','expert') NOT NULL,
+  `joined_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `last_read_at` timestamp NULL DEFAULT NULL,
+  `last_message_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `is_muted` tinyint(1) NOT NULL DEFAULT 0,
+  `is_blocked` tinyint(1) NOT NULL DEFAULT 0,
+  `is_archived` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -172,30 +331,30 @@ CREATE TABLE `consultation_responses` (
 CREATE TABLE `crop_recommendations` (
   `recommendation_id` int(11) NOT NULL,
   `farmer_id` int(11) NOT NULL,
-  `location` varchar(100) DEFAULT NULL,
-  `division` varchar(100) DEFAULT NULL,
-  `district` varchar(100) DEFAULT NULL,
-  `upazila` varchar(100) DEFAULT NULL,
-  `soil_type` varchar(50) DEFAULT NULL,
-  `season` varchar(30) DEFAULT NULL,
-  `crop_type` varchar(50) DEFAULT NULL,
+  `location` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `division` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `district` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `upazila` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `soil_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `season` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `crop_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `land_size` decimal(8,2) DEFAULT NULL,
-  `land_unit` enum('acre','bigha','katha') DEFAULT 'bigha',
+  `land_unit` enum('acre','bigha','katha') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'bigha',
   `budget` decimal(10,2) DEFAULT NULL,
-  `recommended_crops` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`recommended_crops`)),
-  `climate_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`climate_data`)),
-  `weather_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`weather_data`)),
-  `soil_analysis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`soil_analysis`)),
-  `crop_images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`crop_images`)),
-  `market_analysis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`market_analysis`)),
-  `profitability_analysis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`profitability_analysis`)),
-  `year_plan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`year_plan`)),
+  `recommended_crops` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `climate_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `weather_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `soil_analysis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `crop_images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `market_analysis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `profitability_analysis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `year_plan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `expert_id` int(11) DEFAULT NULL,
-  `ai_model` varchar(50) NOT NULL DEFAULT 'gpt-4o-mini',
-  `ai_prompt` text DEFAULT NULL,
-  `ai_response` longtext DEFAULT NULL,
+  `ai_model` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'gpt-4o-mini',
+  `ai_prompt` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ai_response` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -256,20 +415,20 @@ INSERT INTO `data_operators` (`data_operator_id`, `user_id`, `created_at`) VALUE
 CREATE TABLE `diagnoses` (
   `diagnosis_id` int(11) NOT NULL,
   `farmer_id` int(11) NOT NULL,
-  `crop_type` varchar(100) DEFAULT NULL,
-  `symptoms_description` text DEFAULT NULL,
-  `uploaded_images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`uploaded_images`)),
+  `crop_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `symptoms_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `uploaded_images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `farm_area` decimal(10,2) DEFAULT NULL,
-  `area_unit` enum('acre','bigha','katha') DEFAULT 'bigha',
-  `ai_analysis_result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`ai_analysis_result`)),
+  `area_unit` enum('acre','bigha','katha') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'bigha',
+  `ai_analysis_result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `expert_verification_id` int(11) DEFAULT NULL,
   `is_verified_by_expert` tinyint(1) DEFAULT 0,
-  `urgency` enum('low','medium','high') DEFAULT 'medium',
-  `status` enum('pending','diagnosed','completed') DEFAULT 'pending',
-  `location` varchar(255) DEFAULT NULL,
+  `urgency` enum('low','medium','high') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
+  `status` enum('pending','diagnosed','completed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -280,17 +439,48 @@ CREATE TABLE `diagnoses` (
 CREATE TABLE `disease_treatments` (
   `treatment_id` int(11) NOT NULL,
   `diagnosis_id` int(11) NOT NULL,
-  `disease_name` varchar(255) DEFAULT NULL,
-  `disease_name_bn` varchar(255) DEFAULT NULL,
+  `disease_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `disease_name_bn` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `probability_percentage` decimal(5,2) DEFAULT NULL,
-  `treatment_description` text DEFAULT NULL,
+  `treatment_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `estimated_cost` decimal(10,2) DEFAULT NULL,
-  `treatment_guidelines` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`treatment_guidelines`)),
-  `prevention_guidelines` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`prevention_guidelines`)),
-  `video_links` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`video_links`)),
-  `disease_type` varchar(100) DEFAULT NULL,
+  `treatment_guidelines` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `prevention_guidelines` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `video_links` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `disease_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `expert_availability`
+--
+
+CREATE TABLE `expert_availability` (
+  `availability_id` int(10) UNSIGNED NOT NULL,
+  `expert_id` int(11) NOT NULL COMMENT 'FK to users table (expert)',
+  `day_of_week` enum('sunday','monday','tuesday','wednesday','thursday','friday','saturday') NOT NULL,
+  `start_time` time NOT NULL COMMENT 'Slot start time (e.g., 09:00:00)',
+  `end_time` time NOT NULL COMMENT 'Slot end time (e.g., 09:30:00)',
+  `slot_duration_minutes` smallint(5) UNSIGNED NOT NULL DEFAULT 30 COMMENT 'Duration in minutes',
+  `max_appointments` tinyint(3) UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Max bookings per slot',
+  `is_available` tinyint(1) NOT NULL DEFAULT 1 COMMENT '1=Available, 0=Blocked',
+  `consultation_types` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '["audio", "video", "chat"]' CHECK (json_valid(`consultation_types`)),
+  `notes` varchar(255) DEFAULT NULL COMMENT 'Special notes for this slot',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `expert_availability`
+--
+
+INSERT INTO `expert_availability` (`availability_id`, `expert_id`, `day_of_week`, `start_time`, `end_time`, `slot_duration_minutes`, `max_appointments`, `is_available`, `consultation_types`, `notes`, `created_at`, `updated_at`) VALUES
+(9, 71, 'sunday', '17:00:00', '21:00:00', 30, 1, 1, NULL, NULL, '2026-01-07 21:36:21', '2026-01-07 21:36:21'),
+(10, 71, 'monday', '09:00:00', '17:00:00', 30, 1, 1, NULL, NULL, '2026-01-07 21:36:21', '2026-01-07 21:36:21'),
+(11, 71, 'wednesday', '02:00:00', '17:00:00', 15, 1, 1, NULL, NULL, '2026-01-07 21:36:21', '2026-01-07 21:36:21'),
+(12, 71, 'wednesday', '17:00:00', '23:00:00', 30, 1, 1, NULL, NULL, '2026-01-07 21:36:21', '2026-01-07 21:36:21');
 
 -- --------------------------------------------------------
 
@@ -307,10 +497,20 @@ CREATE TABLE `expert_qualifications` (
   `institution` varchar(100) DEFAULT NULL,
   `consultation_fee` decimal(6,2) DEFAULT NULL,
   `rating` decimal(2,1) DEFAULT 0.0,
+  `average_rating` decimal(3,2) NOT NULL DEFAULT 0.00,
+  `total_reviews` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  `bio` text DEFAULT NULL COMMENT 'Expert bio/introduction',
+  `bio_bn` text DEFAULT NULL COMMENT 'Bangla bio',
+  `languages` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '["bangla", "english"]' CHECK (json_valid(`languages`)),
   `total_consultations` smallint(5) UNSIGNED DEFAULT 0,
+  `total_audio_calls` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  `total_video_calls` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  `total_chat_sessions` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
   `is_government_approved` tinyint(1) DEFAULT 0,
   `license_number` varchar(50) DEFAULT NULL,
   `certification_document` varchar(255) DEFAULT NULL,
+  `is_available_for_consultation` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Is expert accepting new consultations',
+  `response_time_hours` tinyint(3) UNSIGNED NOT NULL DEFAULT 24 COMMENT 'Typical response time in hours',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -319,9 +519,24 @@ CREATE TABLE `expert_qualifications` (
 -- Dumping data for table `expert_qualifications`
 --
 
-INSERT INTO `expert_qualifications` (`expert_id`, `user_id`, `qualification`, `specialization`, `experience_years`, `institution`, `consultation_fee`, `rating`, `total_consultations`, `is_government_approved`, `license_number`, `certification_document`, `created_at`, `updated_at`) VALUES
-(13, 60, 'Bsc in Agriculture', 'Expert in Plant Patheology', 6, 'Agri Uni', 900.00, 0.0, 0, 0, '34543', 'expert/certifications/zHBlZfraKOwU2Lb3lvOCCJpu2venyttqm2oXi5PD.pdf', '2025-12-16 11:09:59', '2025-12-16 11:09:59'),
-(14, 62, 'স্নাতক', 'ফসল নির্বাচন', 2, 'বাংলাদেশ কিষি', 500.00, 0.0, 0, 0, '1234579', 'expert/certifications/X67viASj0QiXLfmkftWgXjmcRaVYfIdOejBEzajT.png', '2025-12-17 04:50:53', '2025-12-17 04:50:53');
+INSERT INTO `expert_qualifications` (`expert_id`, `user_id`, `qualification`, `specialization`, `experience_years`, `institution`, `consultation_fee`, `rating`, `average_rating`, `total_reviews`, `bio`, `bio_bn`, `languages`, `total_consultations`, `total_audio_calls`, `total_video_calls`, `total_chat_sessions`, `is_government_approved`, `license_number`, `certification_document`, `is_available_for_consultation`, `response_time_hours`, `created_at`, `updated_at`) VALUES
+(13, 60, 'Bsc in Agriculture', 'Expert in Plant Patheology', 6, 'Agri Uni', 900.00, 0.0, 0.00, 0, NULL, NULL, NULL, 0, 0, 0, 0, 0, '34543', 'expert/certifications/zHBlZfraKOwU2Lb3lvOCCJpu2venyttqm2oXi5PD.pdf', 1, 24, '2025-12-16 11:09:59', '2025-12-16 11:09:59'),
+(14, 62, 'স্নাতক', 'ফসল নির্বাচন', 2, 'বাংলাদেশ কিষি', 500.00, 0.0, 0.00, 0, NULL, NULL, NULL, 0, 0, 0, 0, 0, '1234579', 'expert/certifications/X67viASj0QiXLfmkftWgXjmcRaVYfIdOejBEzajT.png', 1, 24, '2025-12-17 04:50:53', '2025-12-17 04:50:53'),
+(17, 71, 'পি এইচ ডি ইন কৃষি', 'রোগ ও পোকামাকড়', 4, 'নোয়াখালী কৃষি বিশ্ববিদ্যালয়', 1000.00, 0.0, 0.00, 0, NULL, NULL, NULL, 0, 0, 0, 0, 0, '34567654', 'expert/certifications/b6FOvtRBWGxwvFPq4QcjrHwD8OFijqQlllcASlIb.pdf', 1, 24, '2026-01-06 19:52:17', '2026-01-06 19:52:17');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `expert_unavailable_dates`
+--
+
+CREATE TABLE `expert_unavailable_dates` (
+  `unavailable_id` int(10) UNSIGNED NOT NULL,
+  `expert_id` int(11) NOT NULL,
+  `unavailable_date` date NOT NULL,
+  `reason` varchar(255) DEFAULT NULL COMMENT 'Optional reason',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -333,16 +548,16 @@ CREATE TABLE `farmer_details` (
   `farmer_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `farm_size` decimal(8,2) DEFAULT NULL,
-  `farm_size_unit` enum('bigha','katha','acre') DEFAULT 'bigha',
-  `farm_type` varchar(50) DEFAULT NULL,
+  `farm_size_unit` enum('bigha','katha','acre') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'bigha',
+  `farm_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `experience_years` tinyint(3) UNSIGNED DEFAULT NULL,
-  `land_ownership` varchar(100) DEFAULT NULL,
+  `land_ownership` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `registration_date` date DEFAULT NULL,
-  `krishi_card_number` varchar(20) DEFAULT NULL,
-  `additional_info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`additional_info`)),
+  `krishi_card_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `additional_info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `farmer_details`
@@ -352,7 +567,7 @@ INSERT INTO `farmer_details` (`farmer_id`, `user_id`, `farm_size`, `farm_size_un
 (8, 15, 5.50, 'bigha', 'Mixed', 5, NULL, '2025-12-04', 'KC123456789', '{\"machinery\":[],\"crops\":[],\"financial_summary\":[]}', '2025-12-04 14:18:43', '2025-12-04 14:18:43'),
 (9, 20, 1.50, 'bigha', 'Crop', 5, NULL, '2025-12-04', '3641451290247', '[]', '2025-12-04 14:37:16', '2025-12-04 14:37:16'),
 (10, 28, 8.00, 'bigha', 'ধান', 0, NULL, '2025-12-04', '122222222222', '{\"machinery\":[],\"crops\":[],\"financial_summary\":[],\"bio\":\"\",\"occupation\":\"\\u0995\\u09c3\\u09b7\\u0995\",\"currentCrops\":[{\"name\":\"\\u0986\\u09ae\\u09a8 \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09a1\\u09bf\\u09b8\\u09c7\\u09ae\\u09cd\\u09ac\\u09b0 \\u09e8\\u09e6\\u09e8\\u09ea\"},{\"name\":\"\\u09b8\\u09b0\\u09bf\\u09b7\\u09be\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09ab\\u09c7\\u09ac\\u09cd\\u09b0\\u09c1\\u09af\\u09bc\\u09be\\u09b0\\u09bf \\u09e8\\u09e6\\u09e8\\u09eb\"},{\"name\":\"\\u09b6\\u09be\\u0995\\u09b8\\u09ac\\u099c\\u09bf\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\"}],\"pastCrops\":[{\"name\":\"\\u09ac\\u09cb\\u09b0\\u09cb \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09e7\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ef\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u0986\\u09b2\\u09c1\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9-\\u09e8\\u09ea\",\"area\":\"\\u09e8 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ea\\u09e6\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ee\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u09aa\\u09c7\\u0981\\u09af\\u09bc\\u09be\\u099c\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09e9\\u09eb,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e8\\u09eb,\\u09e6\\u09e6\\u09e6\"}],\"totalInvestment\":\"\\u09e8,\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalIncome\":\"\\u09ea,\\u09e8\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalProfit\":\"\\u09e7,\\u09ed\\u09e6,\\u09e6\\u09e6\\u09e6\",\"machineryOwned\":[\"\\u099f\\u09cd\\u09b0\\u09be\\u0995\\u09cd\\u099f\\u09b0\",\"\\u09aa\\u09be\\u0993\\u09af\\u09bc\\u09be\\u09b0 \\u099f\\u09bf\\u09b2\\u09be\\u09b0\",\"\\u09b8\\u09c7\\u099a \\u09aa\\u09be\\u09ae\\u09cd\\u09aa\",\"\\u09a5\\u09cd\\u09b0\\u09c7\\u09b6\\u09bf\\u0982 \\u09ae\\u09c7\\u09b6\\u09bf\\u09a8\"],\"irrigationMethod\":\"\\u0997\\u09ad\\u09c0\\u09b0 \\u09a8\\u09b2\\u0995\\u09c2\\u09aa\",\"fertilizers\":[\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"\\u099f\\u09bf\\u098f\\u09b8\\u09aa\\u09bf\",\"\\u098f\\u09ae\\u0993\\u09aa\\u09bf\",\"\\u099c\\u09bf\\u09aa\\u09b8\\u09be\\u09ae\",\"\\u099c\\u09c8\\u09ac \\u09b8\\u09be\\u09b0\"],\"seedSource\":\"\\u0995\\u09c3\\u09b7\\u09bf \\u0985\\u09ab\\u09bf\\u09b8 \\u0993 \\u09ac\\u09bf\\u098f\\u09a1\\u09bf\\u09b8\\u09bf\"}', '2025-12-04 15:04:43', '2025-12-05 01:19:32'),
-(11, 29, 20.00, 'bigha', 'মিশ্র চাষ', 5, 'নিজস্ব', '2025-12-05', '21212121213', '{\"machinery\":[],\"crops\":[],\"financial_summary\":[],\"bio\":\"\\u0986\\u09ae\\u09bf \\u09ae\\u09be\\u09b0\\u09c1\\u09ab \\u098f\\u0995\\u099c\\u09a8 \\u09b8\\u09ab\\u099f\\u0993\\u09df\\u09cd\\u09af\\u09be\\u09b0 \\u0987\\u099e\\u09cd\\u099c\\u09bf\\u09a8\\u09bf\\u09df\\u09be\\u09b0\\u0964 \\u098f\\u0996\\u09a8 \\u099a\\u09be\\u09b7 \\u09ac\\u09be\\u09b8 \\u0995\\u09b0\\u09c7 \\u099c\\u09c0\\u09ac\\u09a8 \\u099a\\u09be\\u09b2\\u09be\\u0987\\u0964  \",\"occupation\":\"\\u0995\\u09c3\\u09b7\\u0995\",\"currentCrops\":[{\"name\":\"\\u0986\\u09ae\\u09a8 \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09a1\\u09bf\\u09b8\\u09c7\\u09ae\\u09cd\\u09ac\\u09b0 \\u09e8\\u09e6\\u09e8\\u09ea\"},{\"name\":\"\\u09b8\\u09b0\\u09bf\\u09b7\\u09be\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09ab\\u09c7\\u09ac\\u09cd\\u09b0\\u09c1\\u09af\\u09bc\\u09be\\u09b0\\u09bf \\u09e8\\u09e6\\u09e8\\u09eb\"},{\"name\":\"\\u09b6\\u09be\\u0995\\u09b8\\u09ac\\u099c\\u09bf\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\"}],\"pastCrops\":[{\"name\":\"\\u09ac\\u09cb\\u09b0\\u09cb \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09e7\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ef\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u0986\\u09b2\\u09c1\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9-\\u09e8\\u09ea\",\"area\":\"\\u09e8 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ea\\u09e6\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ee\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u09aa\\u09c7\\u0981\\u09af\\u09bc\\u09be\\u099c\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09e9\\u09eb,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e8\\u09eb,\\u09e6\\u09e6\\u09e6\"}],\"totalInvestment\":\"\\u09e8,\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalIncome\":\"\\u09ea,\\u09e8\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalProfit\":\"\\u09e7,\\u09ed\\u09e6,\\u09e6\\u09e6\\u09e6\",\"machineryOwned\":[\"\\u099f\\u09cd\\u09b0\\u09be\\u0995\\u09cd\\u099f\\u09b0\",\"\\u09aa\\u09be\\u0993\\u09af\\u09bc\\u09be\\u09b0 \\u099f\\u09bf\\u09b2\\u09be\\u09b0\",\"\\u09b8\\u09c7\\u099a \\u09aa\\u09be\\u09ae\\u09cd\\u09aa\",\"\\u09a5\\u09cd\\u09b0\\u09c7\\u09b6\\u09bf\\u0982 \\u09ae\\u09c7\\u09b6\\u09bf\\u09a8\"],\"irrigationMethod\":\"\\u0997\\u09ad\\u09c0\\u09b0 \\u09a8\\u09b2\\u0995\\u09c2\\u09aa\",\"fertilizers\":[\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"\\u099f\\u09bf\\u098f\\u09b8\\u09aa\\u09bf\",\"\\u098f\\u09ae\\u0993\\u09aa\\u09bf\",\"\\u099c\\u09bf\\u09aa\\u09b8\\u09be\\u09ae\",\"\\u099c\\u09c8\\u09ac \\u09b8\\u09be\\u09b0\"],\"seedSource\":\"\\u0995\\u09c3\\u09b7\\u09bf \\u0985\\u09ab\\u09bf\\u09b8 \\u0993 \\u09ac\\u09bf\\u098f\\u09a1\\u09bf\\u09b8\\u09bf\"}', '2025-12-05 12:08:27', '2025-12-17 15:44:27'),
+(11, 29, 200.00, 'bigha', 'মিশ্র চাষ', 3, 'নিজস্ব', '2025-12-05', '21212121213', '{\"machinery\":[],\"crops\":[],\"financial_summary\":[],\"bio\":\"\\u0986\\u09ae\\u09bf \\u09ae\\u09be\\u09b0\\u09c1\\u09ab \\u098f\\u0995\\u099c\\u09a8 \\u09b8\\u09ab\\u099f\\u0993\\u09df\\u09cd\\u09af\\u09be\\u09b0 \\u0987\\u099e\\u09cd\\u099c\\u09bf\\u09a8\\u09bf\\u09df\\u09be\\u09b0\\u0964 \\u098f\\u0996\\u09a8 \\u099a\\u09be\\u09b7 \\u09ac\\u09be\\u09b8 \\u0995\\u09b0\\u09c7 \\u099c\\u09c0\\u09ac\\u09a8 \\u099a\\u09be\\u09b2\\u09be\\u0987\\u0964  \",\"occupation\":\"\\u0995\\u09c3\\u09b7\\u0995\",\"currentCrops\":[{\"name\":\"\\u0986\\u09ae\\u09a8 \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09a1\\u09bf\\u09b8\\u09c7\\u09ae\\u09cd\\u09ac\\u09b0 \\u09e8\\u09e6\\u09e8\\u09ea\"},{\"name\":\"\\u09b8\\u09b0\\u09bf\\u09b7\\u09be\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09ab\\u09c7\\u09ac\\u09cd\\u09b0\\u09c1\\u09af\\u09bc\\u09be\\u09b0\\u09bf \\u09e8\\u09e6\\u09e8\\u09eb\"},{\"name\":\"\\u09b6\\u09be\\u0995\\u09b8\\u09ac\\u099c\\u09bf\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\"}],\"pastCrops\":[{\"name\":\"\\u09ac\\u09cb\\u09b0\\u09cb \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09e7\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ef\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u0986\\u09b2\\u09c1\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9-\\u09e8\\u09ea\",\"area\":\"\\u09e8 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ea\\u09e6\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ee\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u09aa\\u09c7\\u0981\\u09af\\u09bc\\u09be\\u099c\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09e9\\u09eb,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e8\\u09eb,\\u09e6\\u09e6\\u09e6\"}],\"totalInvestment\":\"\\u09e8,\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalIncome\":\"\\u09ea,\\u09e8\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalProfit\":\"\\u09e7,\\u09ed\\u09e6,\\u09e6\\u09e6\\u09e6\",\"machineryOwned\":[\"\\u099f\\u09cd\\u09b0\\u09be\\u0995\\u09cd\\u099f\\u09b0\",\"\\u09aa\\u09be\\u0993\\u09af\\u09bc\\u09be\\u09b0 \\u099f\\u09bf\\u09b2\\u09be\\u09b0\",\"\\u09b8\\u09c7\\u099a \\u09aa\\u09be\\u09ae\\u09cd\\u09aa\",\"\\u09a5\\u09cd\\u09b0\\u09c7\\u09b6\\u09bf\\u0982 \\u09ae\\u09c7\\u09b6\\u09bf\\u09a8\"],\"irrigationMethod\":\"\\u0997\\u09ad\\u09c0\\u09b0 \\u09a8\\u09b2\\u0995\\u09c2\\u09aa\",\"fertilizers\":[\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"\\u099f\\u09bf\\u098f\\u09b8\\u09aa\\u09bf\",\"\\u098f\\u09ae\\u0993\\u09aa\\u09bf\",\"\\u099c\\u09bf\\u09aa\\u09b8\\u09be\\u09ae\",\"\\u099c\\u09c8\\u09ac \\u09b8\\u09be\\u09b0\"],\"seedSource\":\"\\u0995\\u09c3\\u09b7\\u09bf \\u0985\\u09ab\\u09bf\\u09b8 \\u0993 \\u09ac\\u09bf\\u098f\\u09a1\\u09bf\\u09b8\\u09bf\"}', '2025-12-05 12:08:27', '2026-01-06 01:13:26'),
 (12, 30, 10.00, 'acre', 'মৎস্য চাষ', 14, NULL, '2025-12-05', NULL, '{\"machinery\":[],\"crops\":[],\"financial_summary\":[]}', '2025-12-05 12:29:01', '2025-12-05 12:29:01'),
 (13, 31, 70.00, 'bigha', 'অরাআআআ', 10, NULL, '2025-12-07', NULL, '{\"machinery\":[],\"crops\":[],\"financial_summary\":[],\"bio\":\"\\u0986\\u09ae\\u09bf \\u09ac\\u09b2\\u09c7\\u099b\\u09bf \\u09af\\u09c7, \\\"\\u09a4\\u09cb\\u09ae\\u09b0\\u09be \\u099a\\u09c1\\u09b0\\u09bf \\u0993 \\u09a8\\u0995\\u09b2 \\u09a5\\u09c7\\u0995\\u09c7 \\u09ac\\u09bf\\u09b0\\u09a4 \\u09a5\\u09be\\u0995\\u09cb\\u0964\\\" \",\"occupation\":\"\\u0995\\u09c3\\u09b7\\u0995\",\"currentCrops\":[{\"name\":\"\\u0986\\u09ae\\u09a8 \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09a1\\u09bf\\u09b8\\u09c7\\u09ae\\u09cd\\u09ac\\u09b0 \\u09e8\\u09e6\\u09e8\\u09ea\"},{\"name\":\"\\u09b8\\u09b0\\u09bf\\u09b7\\u09be\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09ab\\u09c7\\u09ac\\u09cd\\u09b0\\u09c1\\u09af\\u09bc\\u09be\\u09b0\\u09bf \\u09e8\\u09e6\\u09e8\\u09eb\"},{\"name\":\"\\u09b6\\u09be\\u0995\\u09b8\\u09ac\\u099c\\u09bf\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\"}],\"pastCrops\":[{\"name\":\"\\u09ac\\u09cb\\u09b0\\u09cb \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09e7\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ef\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u0986\\u09b2\\u09c1\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9-\\u09e8\\u09ea\",\"area\":\"\\u09e8 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ea\\u09e6\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ee\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u09aa\\u09c7\\u0981\\u09af\\u09bc\\u09be\\u099c\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09e9\\u09eb,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e8\\u09eb,\\u09e6\\u09e6\\u09e6\"}],\"totalInvestment\":\"\\u09e8,\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalIncome\":\"\\u09ea,\\u09e8\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalProfit\":\"\\u09e7,\\u09ed\\u09e6,\\u09e6\\u09e6\\u09e6\",\"machineryOwned\":[\"\\u099f\\u09cd\\u09b0\\u09be\\u0995\\u09cd\\u099f\\u09b0\",\"\\u09aa\\u09be\\u0993\\u09af\\u09bc\\u09be\\u09b0 \\u099f\\u09bf\\u09b2\\u09be\\u09b0\",\"\\u09b8\\u09c7\\u099a \\u09aa\\u09be\\u09ae\\u09cd\\u09aa\",\"\\u09a5\\u09cd\\u09b0\\u09c7\\u09b6\\u09bf\\u0982 \\u09ae\\u09c7\\u09b6\\u09bf\\u09a8\"],\"irrigationMethod\":\"\\u0997\\u09ad\\u09c0\\u09b0 \\u09a8\\u09b2\\u0995\\u09c2\\u09aa\",\"fertilizers\":[\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"\\u099f\\u09bf\\u098f\\u09b8\\u09aa\\u09bf\",\"\\u098f\\u09ae\\u0993\\u09aa\\u09bf\",\"\\u099c\\u09bf\\u09aa\\u09b8\\u09be\\u09ae\",\"\\u099c\\u09c8\\u09ac \\u09b8\\u09be\\u09b0\"],\"seedSource\":\"\\u0995\\u09c3\\u09b7\\u09bf \\u0985\\u09ab\\u09bf\\u09b8 \\u0993 \\u09ac\\u09bf\\u098f\\u09a1\\u09bf\\u09b8\\u09bf\"}', '2025-12-07 02:52:02', '2025-12-07 02:53:33'),
 (14, 32, 8.00, 'acre', 'মৎস্য চাষ', 5, NULL, '2025-12-07', NULL, '{\"machinery\":[],\"crops\":[],\"financial_summary\":[],\"bio\":\"\",\"occupation\":\"\\u0995\\u09c3\\u09b7\\u0995\",\"currentCrops\":[{\"name\":\"\\u0986\\u09ae\\u09a8 \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09a1\\u09bf\\u09b8\\u09c7\\u09ae\\u09cd\\u09ac\\u09b0 \\u09e8\\u09e6\\u09e8\\u09ea\"},{\"name\":\"\\u09b8\\u09b0\\u09bf\\u09b7\\u09be\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u09ab\\u09c7\\u09ac\\u09cd\\u09b0\\u09c1\\u09af\\u09bc\\u09be\\u09b0\\u09bf \\u09e8\\u09e6\\u09e8\\u09eb\"},{\"name\":\"\\u09b6\\u09be\\u0995\\u09b8\\u09ac\\u099c\\u09bf\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea-\\u09e8\\u09eb\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"status\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\",\"expectedHarvest\":\"\\u099a\\u09b2\\u09ae\\u09be\\u09a8\"}],\"pastCrops\":[{\"name\":\"\\u09ac\\u09cb\\u09b0\\u09cb \\u09a7\\u09be\\u09a8\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09ea\",\"area\":\"\\u09e9 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09e7\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ef\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u0986\\u09b2\\u09c1\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9-\\u09e8\\u09ea\",\"area\":\"\\u09e8 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ea\\u09e6\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ee\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e9\\u09e6,\\u09e6\\u09e6\\u09e6\"},{\"name\":\"\\u09aa\\u09c7\\u0981\\u09af\\u09bc\\u09be\\u099c\",\"season\":\"\\u09e8\\u09e6\\u09e8\\u09e9\",\"area\":\"\\u09e7 \\u098f\\u0995\\u09b0\",\"production\":\"\\u09ee\\u09e6 \\u09ae\\u09a3\",\"income\":\"\\u09ec\\u09e6,\\u09e6\\u09e6\\u09e6\",\"cost\":\"\\u09e9\\u09eb,\\u09e6\\u09e6\\u09e6\",\"profit\":\"\\u09e8\\u09eb,\\u09e6\\u09e6\\u09e6\"}],\"totalInvestment\":\"\\u09e8,\\u09eb\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalIncome\":\"\\u09ea,\\u09e8\\u09e6,\\u09e6\\u09e6\\u09e6\",\"totalProfit\":\"\\u09e7,\\u09ed\\u09e6,\\u09e6\\u09e6\\u09e6\",\"machineryOwned\":[\"\\u099f\\u09cd\\u09b0\\u09be\\u0995\\u09cd\\u099f\\u09b0\",\"\\u09aa\\u09be\\u0993\\u09af\\u09bc\\u09be\\u09b0 \\u099f\\u09bf\\u09b2\\u09be\\u09b0\",\"\\u09b8\\u09c7\\u099a \\u09aa\\u09be\\u09ae\\u09cd\\u09aa\",\"\\u09a5\\u09cd\\u09b0\\u09c7\\u09b6\\u09bf\\u0982 \\u09ae\\u09c7\\u09b6\\u09bf\\u09a8\"],\"irrigationMethod\":\"\\u0997\\u09ad\\u09c0\\u09b0 \\u09a8\\u09b2\\u0995\\u09c2\\u09aa\",\"fertilizers\":[\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"\\u099f\\u09bf\\u098f\\u09b8\\u09aa\\u09bf\",\"\\u098f\\u09ae\\u0993\\u09aa\\u09bf\",\"\\u099c\\u09bf\\u09aa\\u09b8\\u09be\\u09ae\",\"\\u099c\\u09c8\\u09ac \\u09b8\\u09be\\u09b0\"],\"seedSource\":\"\\u0995\\u09c3\\u09b7\\u09bf \\u0985\\u09ab\\u09bf\\u09b8 \\u0993 \\u09ac\\u09bf\\u098f\\u09a1\\u09bf\\u09b8\\u09bf\"}', '2025-12-07 03:35:28', '2025-12-07 03:45:52'),
@@ -371,47 +586,242 @@ CREATE TABLE `farmer_selected_crops` (
   `selection_id` bigint(20) UNSIGNED NOT NULL,
   `farmer_id` int(11) NOT NULL,
   `recommendation_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `crop_name` varchar(100) NOT NULL,
-  `crop_name_bn` varchar(100) NOT NULL,
-  `crop_type` varchar(50) DEFAULT NULL,
+  `crop_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `crop_name_bn` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `crop_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `duration_days` int(11) DEFAULT NULL,
-  `yield_per_bigha` varchar(100) DEFAULT NULL,
-  `market_price` varchar(100) DEFAULT NULL,
-  `water_requirement` enum('low','medium','high') DEFAULT NULL,
-  `difficulty` enum('easy','medium','hard') DEFAULT NULL,
-  `description_bn` text DEFAULT NULL,
-  `season` varchar(30) DEFAULT NULL,
-  `image_url` varchar(500) DEFAULT NULL,
+  `yield_per_bigha` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `market_price` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `water_requirement` enum('low','medium','high') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `difficulty` enum('easy','medium','hard') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description_bn` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `season` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `start_date` date DEFAULT NULL,
   `expected_harvest_date` date DEFAULT NULL,
   `actual_harvest_date` date DEFAULT NULL,
   `land_size` decimal(8,2) DEFAULT NULL,
-  `land_unit` enum('acre','bigha','katha') NOT NULL DEFAULT 'bigha',
+  `land_unit` enum('acre','bigha','katha') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bigha',
   `estimated_cost` decimal(12,2) DEFAULT NULL,
   `estimated_profit` decimal(12,2) DEFAULT NULL,
-  `status` enum('planned','active','completed','cancelled') NOT NULL DEFAULT 'planned',
+  `status` enum('planned','active','completed','cancelled') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'planned',
   `progress_percentage` decimal(5,2) NOT NULL DEFAULT 0.00,
   `next_action_date` date DEFAULT NULL,
-  `next_action_description` text DEFAULT NULL,
-  `cultivation_plan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`cultivation_plan`)),
-  `cost_breakdown` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`cost_breakdown`)),
-  `fertilizer_schedule` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`fertilizer_schedule`)),
+  `next_action_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cultivation_plan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `cost_breakdown` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `fertilizer_schedule` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `notifications_enabled` tinyint(1) NOT NULL DEFAULT 1,
   `last_notification_at` timestamp NULL DEFAULT NULL,
   `next_notification_date` date DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `farmer_selected_crops`
 --
 
 INSERT INTO `farmer_selected_crops` (`selection_id`, `farmer_id`, `recommendation_id`, `crop_name`, `crop_name_bn`, `crop_type`, `duration_days`, `yield_per_bigha`, `market_price`, `water_requirement`, `difficulty`, `description_bn`, `season`, `image_url`, `start_date`, `expected_harvest_date`, `actual_harvest_date`, `land_size`, `land_unit`, `estimated_cost`, `estimated_profit`, `status`, `progress_percentage`, `next_action_date`, `next_action_description`, `cultivation_plan`, `cost_breakdown`, `fertilizer_schedule`, `notifications_enabled`, `last_notification_at`, `next_notification_date`, `created_at`, `updated_at`) VALUES
-(3, 29, NULL, 'Boro Rice', 'বোরো ধান', 'rice', 150, '25 মণ', '৳1200/মণ', 'high', 'medium', 'বোরো ধান বাংলাদেশের অন্যতম প্রধান ফসল, যা প্রধানত রবি মৌসুমে চাষ করা হয়।', 'rice', 'https://images.unsplash.com/photo-1599385108614-86b8fce547ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwaGFydmVzdHxlbnwwfDB8fHwxNzY1NTU2NDQyfDA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-12', '2026-05-11', NULL, NULL, 'bigha', 15000.00, 225000.00, 'active', 12.00, '2026-04-11', 'ফসল সংগ্রহ', '[{\"phase\":\"\\u09ac\\u09c0\\u099c\\u09a4\\u09b2\\u09be \\u09aa\\u09cd\\u09b0\\u09b8\\u09cd\\u09a4\\u09c1\\u09a4\\u09bf\",\"days\":\"Day 1-15\",\"tasks\":[\"\\u09ac\\u09c0\\u099c\\u09a4\\u09b2\\u09be \\u09a4\\u09c8\\u09b0\\u09bf\",\"\\u099c\\u09b2 \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\"]},{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"days\":\"Day 16-30\",\"tasks\":[\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"\\u099c\\u09b2 \\u09b8\\u09b0\\u09ac\\u09b0\\u09be\\u09b9\"]},{\"phase\":\"\\u09ab\\u09b8\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\",\"days\":\"Day 120-150\",\"tasks\":[\"\\u09ab\\u09b8\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\",\"\\u09aa\\u09b0\\u09bf\\u09b7\\u09cd\\u0995\\u09be\\u09b0 \\u0995\\u09b0\\u09be\"]}]', '{\"seed\":2000,\"fertilizer\":6000,\"pesticide\":3000,\"irrigation\":4000,\"labor\":3000,\"other\":1000}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\\u09c7\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"amount\":\"30 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"\\u09a1\\u09bf\\u098f\\u09aa\\u09bf\",\"amount\":\"20 \\u0995\\u09c7\\u099c\\u09bf\"}]},{\"timing\":\"\\u09ab\\u09b8\\u09b2 \\u09ac\\u09c3\\u09a6\\u09cd\\u09a7\\u09bf\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"\\u09aa\\u099f\\u09be\\u09b6\",\"amount\":\"15 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, '2025-12-12 10:49:43', '2026-04-11', '2025-12-12 10:21:45', '2025-12-30 10:54:03'),
+(3, 29, NULL, 'Boro Rice', 'বোরো ধান', 'rice', 150, '25 মণ', '৳1200/মণ', 'high', 'medium', 'বোরো ধান বাংলাদেশের অন্যতম প্রধান ফসল, যা প্রধানত রবি মৌসুমে চাষ করা হয়।', 'rice', 'https://images.unsplash.com/photo-1599385108614-86b8fce547ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwaGFydmVzdHxlbnwwfDB8fHwxNzY1NTU2NDQyfDA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-12', '2026-05-11', NULL, NULL, 'bigha', 15000.00, 225000.00, 'active', 16.67, '2026-04-11', 'ফসল সংগ্রহ', '[{\"phase\":\"\\u09ac\\u09c0\\u099c\\u09a4\\u09b2\\u09be \\u09aa\\u09cd\\u09b0\\u09b8\\u09cd\\u09a4\\u09c1\\u09a4\\u09bf\",\"days\":\"Day 1-15\",\"tasks\":[\"\\u09ac\\u09c0\\u099c\\u09a4\\u09b2\\u09be \\u09a4\\u09c8\\u09b0\\u09bf\",\"\\u099c\\u09b2 \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\"]},{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"days\":\"Day 16-30\",\"tasks\":[\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"\\u099c\\u09b2 \\u09b8\\u09b0\\u09ac\\u09b0\\u09be\\u09b9\"]},{\"phase\":\"\\u09ab\\u09b8\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\",\"days\":\"Day 120-150\",\"tasks\":[\"\\u09ab\\u09b8\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\",\"\\u09aa\\u09b0\\u09bf\\u09b7\\u09cd\\u0995\\u09be\\u09b0 \\u0995\\u09b0\\u09be\"]}]', '{\"seed\":2000,\"fertilizer\":6000,\"pesticide\":3000,\"irrigation\":4000,\"labor\":3000,\"other\":1000}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\\u09c7\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"amount\":\"30 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"\\u09a1\\u09bf\\u098f\\u09aa\\u09bf\",\"amount\":\"20 \\u0995\\u09c7\\u099c\\u09bf\"}]},{\"timing\":\"\\u09ab\\u09b8\\u09b2 \\u09ac\\u09c3\\u09a6\\u09cd\\u09a7\\u09bf\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"\\u09aa\\u099f\\u09be\\u09b6\",\"amount\":\"15 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, '2025-12-12 10:49:43', '2026-04-11', '2025-12-12 10:21:45', '2026-01-06 01:03:59'),
 (4, 29, NULL, 'আলু', 'আলু', 'tubers', 120, '30 মণ', '৳1500/মণ', 'medium', 'medium', 'আলু একটি গুরুত্বপূর্ণ সবজি যা রবি মৌসুমে চাষ করা হয়।', 'tubers', 'https://images.unsplash.com/photo-1609161307645-3ad8d7cafb55?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxwb3RhdG8lMjBoYXJ2ZXN0fGVufDB8MHx8fDE3NjU1NDkzMTV8MA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-12', '2026-04-11', NULL, NULL, 'bigha', 20000.00, 300000.00, 'active', 2.50, '2026-03-22', 'ফসল সংগ্রহ', '[{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"days\":\"Day 1-20\",\"tasks\":[\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"\\u099c\\u09b2 \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\"]},{\"phase\":\"\\u09ab\\u09b8\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\",\"days\":\"Day 100-120\",\"tasks\":[\"\\u09ab\\u09b8\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\",\"\\u09aa\\u09b0\\u09bf\\u09b7\\u09cd\\u0995\\u09be\\u09b0 \\u0995\\u09b0\\u09be\"]}]', '{\"seed\":5000,\"fertilizer\":8000,\"pesticide\":4000,\"irrigation\":3000,\"labor\":3000,\"other\":1000}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\\u09c7\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"\\u0987\\u0989\\u09b0\\u09bf\\u09af\\u09bc\\u09be\",\"amount\":\"30 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"\\u09a1\\u09bf\\u098f\\u09aa\\u09bf\",\"amount\":\"20 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, '2025-12-12 10:49:43', '2026-03-22', '2025-12-12 10:21:45', '2025-12-30 10:54:03'),
-(5, 29, NULL, 'Carrot', 'গাজর', 'vegetables', 120, '70 মণ', '৳25/কেজি', 'medium', 'medium', 'গাজর একটি পুষ্টিকর সবজি যা শীতকালীন মৌসুমে ভালো জন্মায়।', 'vegetables', 'https://images.unsplash.com/photo-1662322677610-05f479c11c4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxDYXJyb3QlMjBmYXJtaW5nJTIwY3JvcHxlbnwwfDB8fHwxNzY1ODE3NTg1fDA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-15', '2026-04-14', NULL, NULL, 'bigha', 6000.00, 90000.00, 'active', 12.50, '2026-01-15', 'ফসল তোলা', '[{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09ac\\u09aa\\u09a8\",\"days\":\"Day 1-30\",\"tasks\":[\"\\u09ac\\u09c0\\u099c \\u09ac\\u09aa\\u09a8\",\"\\u099c\\u09b2 \\u09a6\\u09c7\\u0993\\u09df\\u09be\"]},{\"phase\":\"\\u09ab\\u09b8\\u09b2 \\u09a4\\u09cb\\u09b2\\u09be\",\"days\":\"Day 31-120\",\"tasks\":[\"\\u09ab\\u09b8\\u09b2 \\u09a4\\u09cb\\u09b2\\u09be\"]}]', '{\"seed\":1200,\"fertilizer\":1500,\"pesticide\":300,\"irrigation\":800,\"labor\":2000,\"other\":1200}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09ac\\u09aa\\u09a8\\u09c7\\u09b0 \\u09e9\\u09e6 \\u09a6\\u09bf\\u09a8 \\u09aa\\u09b0\",\"fertilizers\":[{\"name\":\"NPK\",\"amount\":\"15 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"Urea\",\"amount\":\"10 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, NULL, '2026-01-15', '2025-12-15 10:53:48', '2025-12-30 10:54:03'),
-(6, 29, NULL, 'Banana', 'কলা', 'fruits', 365, '20 মণ', '৳60/কেজি', 'high', 'easy', 'কলা বাংলাদেশের একটি গুরুত্বপূর্ণ ফল যা সারা বছর উৎপাদিত হয়।', 'fruits', 'https://images.unsplash.com/photo-1653481006616-aab561a77a3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxiYW5hbmElMjBwbGFudGF0aW9ufGVufDB8MHx8fDE3NjcwOTM1ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-30', '2026-12-30', NULL, NULL, 'bigha', 25000.00, 65000.00, 'active', 0.00, '2025-12-31', 'বীজ রোপণ', '[{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"days\":\"Day 1-30\",\"tasks\":[\"\\u09ae\\u09be\\u099f\\u09bf \\u09aa\\u09cd\\u09b0\\u09b8\\u09cd\\u09a4\\u09c1\\u09a4\\u09bf\",\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\"]},{\"phase\":\"\\u09ab\\u09b2 \\u0989\\u09ce\\u09aa\\u09be\\u09a6\\u09a8\",\"days\":\"Day 31-365\",\"tasks\":[\"\\u09b8\\u09be\\u09b0 \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\",\"\\u09aa\\u09be\\u09a8\\u09bf \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\",\"\\u09ab\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\"]}]', '{\"seed\":1500,\"fertilizer\":8000,\"pesticide\":3000,\"irrigation\":10000,\"labor\":8000,\"other\":1500}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\\u09c7\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"Urea\",\"amount\":\"50 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"TSP\",\"amount\":\"30 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"Potash\",\"amount\":\"20 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, NULL, NULL, '2025-12-30 11:20:38', '2025-12-30 11:21:16');
+(5, 29, NULL, 'Carrot', 'গাজর', 'vegetables', 120, '70 মণ', '৳25/কেজি', 'medium', 'medium', 'গাজর একটি পুষ্টিকর সবজি যা শীতকালীন মৌসুমে ভালো জন্মায়।', 'vegetables', 'https://images.unsplash.com/photo-1662322677610-05f479c11c4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxDYXJyb3QlMjBmYXJtaW5nJTIwY3JvcHxlbnwwfDB8fHwxNzY1ODE3NTg1fDA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-15', '2026-04-14', NULL, NULL, 'bigha', 6000.00, 90000.00, 'active', 18.33, '2026-01-15', 'ফসল তোলা', '[{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09ac\\u09aa\\u09a8\",\"days\":\"Day 1-30\",\"tasks\":[\"\\u09ac\\u09c0\\u099c \\u09ac\\u09aa\\u09a8\",\"\\u099c\\u09b2 \\u09a6\\u09c7\\u0993\\u09df\\u09be\"]},{\"phase\":\"\\u09ab\\u09b8\\u09b2 \\u09a4\\u09cb\\u09b2\\u09be\",\"days\":\"Day 31-120\",\"tasks\":[\"\\u09ab\\u09b8\\u09b2 \\u09a4\\u09cb\\u09b2\\u09be\"]}]', '{\"seed\":1200,\"fertilizer\":1500,\"pesticide\":300,\"irrigation\":800,\"labor\":2000,\"other\":1200}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09ac\\u09aa\\u09a8\\u09c7\\u09b0 \\u09e9\\u09e6 \\u09a6\\u09bf\\u09a8 \\u09aa\\u09b0\",\"fertilizers\":[{\"name\":\"NPK\",\"amount\":\"15 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"Urea\",\"amount\":\"10 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, NULL, '2026-01-15', '2025-12-15 10:53:48', '2026-01-06 23:22:07'),
+(6, 29, NULL, 'Banana', 'কলা', 'fruits', 365, '20 মণ', '৳60/কেজি', 'high', 'easy', 'কলা বাংলাদেশের একটি গুরুত্বপূর্ণ ফল যা সারা বছর উৎপাদিত হয়।', 'fruits', 'https://images.unsplash.com/photo-1653481006616-aab561a77a3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDI4Mjd8MHwxfHNlYXJjaHwxfHxiYW5hbmElMjBwbGFudGF0aW9ufGVufDB8MHx8fDE3NjcwOTM1ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080', '2025-12-30', '2026-12-30', NULL, NULL, 'bigha', 25000.00, 65000.00, 'active', 1.37, '2026-01-30', 'ফল উৎপাদন', '[{\"phase\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\",\"days\":\"Day 1-30\",\"tasks\":[\"\\u09ae\\u09be\\u099f\\u09bf \\u09aa\\u09cd\\u09b0\\u09b8\\u09cd\\u09a4\\u09c1\\u09a4\\u09bf\",\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\"]},{\"phase\":\"\\u09ab\\u09b2 \\u0989\\u09ce\\u09aa\\u09be\\u09a6\\u09a8\",\"days\":\"Day 31-365\",\"tasks\":[\"\\u09b8\\u09be\\u09b0 \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\",\"\\u09aa\\u09be\\u09a8\\u09bf \\u09a6\\u09c7\\u0993\\u09af\\u09bc\\u09be\",\"\\u09ab\\u09b2 \\u09b8\\u0982\\u0997\\u09cd\\u09b0\\u09b9\"]}]', '{\"seed\":1500,\"fertilizer\":8000,\"pesticide\":3000,\"irrigation\":10000,\"labor\":8000,\"other\":1500}', '[{\"timing\":\"\\u09ac\\u09c0\\u099c \\u09b0\\u09cb\\u09aa\\u09a3\\u09c7\\u09b0 \\u09b8\\u09ae\\u09af\\u09bc\",\"fertilizers\":[{\"name\":\"Urea\",\"amount\":\"50 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"TSP\",\"amount\":\"30 \\u0995\\u09c7\\u099c\\u09bf\"},{\"name\":\"Potash\",\"amount\":\"20 \\u0995\\u09c7\\u099c\\u09bf\"}]}]', 1, NULL, NULL, '2025-12-30 11:20:38', '2026-01-04 03:14:57');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `field_data_collection`
+--
+
+CREATE TABLE `field_data_collection` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `data_operator_id` bigint(20) UNSIGNED NOT NULL,
+  `farmer_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `manual_farmer_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `farmer_name` varchar(255) NOT NULL,
+  `farmer_address` text DEFAULT NULL,
+  `farmer_phone` varchar(255) DEFAULT NULL,
+  `land_size` decimal(10,2) DEFAULT NULL COMMENT 'জমির মাপ (in decimal/bigha)',
+  `land_size_unit` varchar(255) NOT NULL DEFAULT 'decimal' COMMENT 'decimal, bigha, katha',
+  `livestock_info` varchar(255) DEFAULT NULL COMMENT 'পশুপাল তথ্য',
+  `land_service_date` date DEFAULT NULL COMMENT 'ভূমি সেবার তারিখ',
+  `irrigation_status` varchar(255) DEFAULT NULL COMMENT 'সেচের স্থিতি - Available/Not Available',
+  `season` varchar(255) DEFAULT NULL COMMENT 'মৌসম - Rabi/Kharif/Zaid',
+  `crop_type` varchar(255) DEFAULT NULL COMMENT 'ফসল প্রকার',
+  `organic_fertilizer_application` text DEFAULT NULL COMMENT 'জৈব সার প্রয়োগ',
+  `fertilizer_application` text DEFAULT NULL COMMENT 'রাসায়নিক সার প্রয়োগ',
+  `tree_fertilizer_info` text DEFAULT NULL COMMENT 'গাছের সার বিধান',
+  `market_price` decimal(10,2) DEFAULT NULL COMMENT 'বাজার দাম',
+  `ph_value` decimal(4,2) DEFAULT NULL COMMENT 'মাটির PH মান',
+  `expenses` decimal(10,2) DEFAULT NULL COMMENT 'খরচ',
+  `production_amount` decimal(10,2) DEFAULT NULL COMMENT 'উৎপাদিত পরিমাণ (kg/maund)',
+  `production_unit` varchar(255) NOT NULL DEFAULT 'kg' COMMENT 'kg, maund, ton',
+  `crop_calculation` varchar(255) DEFAULT NULL COMMENT 'ফসলের হিসাব',
+  `available_resources` text DEFAULT NULL COMMENT 'প্রাপ্ত সম্পদ তথ্য',
+  `seminar_name` varchar(255) DEFAULT NULL COMMENT 'সেমিনার/প্রশিক্ষণের নাম',
+  `identity_number` varchar(255) DEFAULT NULL COMMENT 'পরিচয় নম্বর',
+  `collection_year` year(4) DEFAULT NULL COMMENT 'তথ্য সংগ্রহের বছর',
+  `notes` text DEFAULT NULL COMMENT 'অতিরিক্ত মন্তব্য',
+  `division` varchar(255) DEFAULT NULL,
+  `district` varchar(255) DEFAULT NULL,
+  `upazila` varchar(255) DEFAULT NULL,
+  `union` varchar(255) DEFAULT NULL,
+  `village` varchar(255) DEFAULT NULL,
+  `postal_code` varchar(255) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `verification_status` enum('pending','verified','rejected') NOT NULL DEFAULT 'pending',
+  `verification_notes` text DEFAULT NULL,
+  `verified_at` timestamp NULL DEFAULT NULL,
+  `verified_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `field_data_collection`
+--
+
+INSERT INTO `field_data_collection` (`id`, `data_operator_id`, `farmer_id`, `manual_farmer_id`, `farmer_name`, `farmer_address`, `farmer_phone`, `land_size`, `land_size_unit`, `livestock_info`, `land_service_date`, `irrigation_status`, `season`, `crop_type`, `organic_fertilizer_application`, `fertilizer_application`, `tree_fertilizer_info`, `market_price`, `ph_value`, `expenses`, `production_amount`, `production_unit`, `crop_calculation`, `available_resources`, `seminar_name`, `identity_number`, `collection_year`, `notes`, `division`, `district`, `upazila`, `union`, `village`, `postal_code`, `latitude`, `longitude`, `verification_status`, `verification_notes`, `verified_at`, `verified_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(1, 1, 1, 1, 'আলমগীর হোসেন', 'চরপাড়া, ইউনিয়ন 1, পটিয়া, চট্টগ্রাম', '01765603653', 2.46, 'বিঘা', 'গরু 1 টি, ছাগল 5 টি', '2025-12-17', 'খাল', 'খরিফ-২', 'রসুন', '', 'এমওপি 11 কেজি, জৈব সার 14 কেজি', 'আম গাছ 9 টি, কাঁঠাল গাছ 3 টি', 2736.00, 5.93, 30937.00, 3365.00, 'টন', 'মোট উৎপাদন: 3365 টন, খরচ: 30937 টাকা, বিক্রয়: 9206640 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0001', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'চট্টগ্রাম', 'পটিয়া', 'ইউনিয়ন 1', 'চরপাড়া', '2726', 25.33000000, 88.90000000, 'pending', NULL, NULL, NULL, '2025-12-17 09:57:29', '2026-01-11 07:56:01', NULL),
+(2, 1, 1, 2, 'মোস্তাফিজুর রহমান', 'ঘাটপাড়া, ইউনিয়ন 2, বাঘারপাড়া, যশোর', '01879738714', 1.55, 'একর', NULL, '2025-12-01', 'বৃষ্টির পানি', 'খরিফ-২', 'আলু', 'সবুজ সার 15 কেজি', 'ইউরিয়া 38 কেজি', NULL, 4867.00, 7.46, 48489.00, 2091.00, 'কেজি', 'মোট উৎপাদন: 2091 কেজি, খরচ: 48489 টাকা, বিক্রয়: 10176897 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0002', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'যশোর', 'বাঘারপাড়া', 'ইউনিয়ন 2', 'ঘাটপাড়া', '9035', 23.26000000, 88.23000000, 'pending', NULL, NULL, NULL, '2025-12-01 08:44:55', '2026-01-11 07:56:01', NULL),
+(3, 1, 1, 3, 'মোহাম্মদ আলী', 'আমবাগান, ইউনিয়ন 3, দশমিনা, পটুয়াখালী', '01587237574', 1.94, 'কাঠা', NULL, '2025-12-24', 'নলকূপ', 'খরিফ-২', 'গম', '', 'এমওপি 22 কেজি, টিএসপি 34 কেজি', NULL, 1300.00, 7.27, 34768.00, 1342.00, 'কেজি', 'মোট উৎপাদন: 1342 কেজি, খরচ: 34768 টাকা, বিক্রয়: 1744600 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0003', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'পটুয়াখালী', 'দশমিনা', 'ইউনিয়ন 3', 'আমবাগান', '5086', 22.52000000, 90.64000000, 'verified', NULL, '2025-12-24 13:00:00', 1, '2025-12-24 03:58:42', '2026-01-11 07:56:01', NULL),
+(4, 1, 1, 4, 'সালমা আক্তার', 'জামবাগান, ইউনিয়ন 4, গুরুদাসপুর, নাটোর', '01589501282', 3.77, 'কাঠা', 'গরু 3 টি, ছাগল 8 টি', '2026-01-08', 'নলকূপ', 'রবি', 'আম', 'কেঁচো কম্পোস্ট 11 কেজি', 'এমওপি 32 কেজি, টিএসপি 36 কেজি', NULL, 3403.00, 7.07, 11731.00, 1827.00, 'মণ', 'মোট উৎপাদন: 1827 মণ, খরচ: 11731 টাকা, বিক্রয়: 6217281 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0004', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'গুরুদাসপুর', 'ইউনিয়ন 4', 'জামবাগান', '5726', 23.53000000, 88.89000000, 'pending', NULL, NULL, NULL, '2026-01-08 10:44:20', '2026-01-11 07:56:01', NULL),
+(5, 1, 1, 5, 'লায়লা আক্তার', 'তেঁতুলতলা, ইউনিয়ন 5, বাবুগঞ্জ, বরিশাল', '01779945168', 4.32, 'বিঘা', NULL, '2025-11-30', 'বৃষ্টির পানি', 'খরিফ', 'বেগুন', 'কেঁচো কম্পোস্ট 26 কেজি', 'টিএসপি 47 কেজি', NULL, 3347.00, 5.70, 7303.00, 4832.00, 'মণ', 'মোট উৎপাদন: 4832 মণ, খরচ: 7303 টাকা, বিক্রয়: 16172704 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0005', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'বরিশাল', 'বাবুগঞ্জ', 'ইউনিয়ন 5', 'তেঁতুলতলা', '3582', 24.81000000, 90.95000000, 'verified', NULL, '2025-11-30 16:00:00', 1, '2025-11-30 06:53:35', '2026-01-11 07:56:01', NULL),
+(6, 1, 1, 6, 'শামীম আহমেদ', 'পাথরঘাটা, ইউনিয়ন 6, দোহার, ঢাকা', '01729098928', 4.50, 'কাঠা', 'গরু 2 টি, ছাগল 1 টি', '2025-11-23', 'নলকূপ', 'খরিফ', 'কাঁঠাল', 'কেঁচো কম্পোস্ট 6 কেজি', 'এমওপি 40 কেজি', 'আম গাছ 6 টি, কাঁঠাল গাছ 11 টি', 4303.00, 6.07, 24878.00, 3803.00, 'মণ', 'মোট উৎপাদন: 3803 মণ, খরচ: 24878 টাকা, বিক্রয়: 16364309 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0006', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'ঢাকা', 'ঢাকা', 'দোহার', 'ইউনিয়ন 6', 'পাথরঘাটা', '4474', 24.04000000, 88.23000000, 'rejected', 'তথ্য যাচাই করে পুনরায় জমা দিন', NULL, NULL, '2025-11-23 05:22:11', '2026-01-11 07:56:01', NULL),
+(7, 1, 1, 7, 'মোখলেসুর রহমান', 'ঘাটপাড়া, ইউনিয়ন 7, কালিয়াকৈর, গাজীপুর', '01988490749', 3.51, 'কাঠা', 'গরু 5 টি, ছাগল 6 টি', '2025-11-27', 'বৃষ্টির পানি', 'রবি', 'ভুট্টা', 'কম্পোস্ট 24 কেজি', 'জিপসাম 8 কেজি, জৈব সার 30 কেজি, টিএসপি 34 কেজি', NULL, 3048.00, 5.74, 33528.00, 1574.00, 'মণ', 'মোট উৎপাদন: 1574 মণ, খরচ: 33528 টাকা, বিক্রয়: 4797552 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0007', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'ঢাকা', 'গাজীপুর', 'কালিয়াকৈর', 'ইউনিয়ন 7', 'ঘাটপাড়া', '7877', 22.39000000, 89.65000000, 'pending', NULL, NULL, NULL, '2025-11-27 03:48:33', '2026-01-11 07:56:01', NULL),
+(8, 1, 1, 8, 'পারভিন সুলতানা', 'শ্যামপুর, ইউনিয়ন 8, দিঘলিয়া, খুলনা', '01778603137', 4.55, 'বিঘা', NULL, '2025-12-04', 'পুকুর', 'রবি', 'বেগুন', 'গোবর সার 17 কেজি', 'জৈব সার 16 কেজি, ইউরিয়া 25 কেজি, এমওপি 41 কেজি', NULL, 3031.00, 7.16, 49972.00, 1266.00, 'কেজি', 'মোট উৎপাদন: 1266 কেজি, খরচ: 49972 টাকা, বিক্রয়: 3837246 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0008', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'খুলনা', 'দিঘলিয়া', 'ইউনিয়ন 8', 'শ্যামপুর', '2563', 23.90000000, 90.65000000, 'verified', NULL, '2025-12-04 03:00:00', 1, '2025-12-04 08:28:29', '2026-01-11 07:56:01', NULL),
+(9, 1, 1, 9, 'শিরিনা বেগম', 'চাঁদপুর, ইউনিয়ন 9, রামু, কক্সবাজার', '01498853128', 3.47, 'একর', NULL, '2025-11-12', 'নলকূপ', 'রবি', 'লিচু', 'কেঁচো কম্পোস্ট 15 কেজি', 'ইউরিয়া 43 কেজি, জৈব সার 21 কেজি', 'আম গাছ 9 টি, কাঁঠাল গাছ 13 টি', 1126.00, 6.32, 32387.00, 4426.00, 'মণ', 'মোট উৎপাদন: 4426 মণ, খরচ: 32387 টাকা, বিক্রয়: 4983676 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0009', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'কক্সবাজার', 'রামু', 'ইউনিয়ন 9', 'চাঁদপুর', '4202', 25.91000000, 91.91000000, 'verified', NULL, '2025-11-13 18:00:00', 1, '2025-11-12 07:45:24', '2026-01-11 07:56:01', NULL),
+(10, 1, 1, 10, 'আলমগীর হোসেন', 'বাঁশবাড়ীয়া, ইউনিয়ন 10, আনোয়ারা, চট্টগ্রাম', '01491484334', 3.21, 'একর', NULL, '2025-11-22', 'পুকুর', 'খরিফ-২', 'টমেটো', '', 'টিএসপি 36 কেজি', NULL, 4839.00, 6.39, 28748.00, 3684.00, 'মণ', 'মোট উৎপাদন: 3684 মণ, খরচ: 28748 টাকা, বিক্রয়: 17826876 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0010', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'চট্টগ্রাম', 'আনোয়ারা', 'ইউনিয়ন 10', 'বাঁশবাড়ীয়া', '4423', 25.23000000, 90.87000000, 'pending', NULL, NULL, NULL, '2025-11-22 06:15:51', '2026-01-11 07:56:01', NULL),
+(11, 1, 1, 11, 'মিজানুর রহমান', 'কাঠালবাড়ী, ইউনিয়ন 1, মোহনপুর, রাজশাহী', '01569560412', 4.45, 'একর', 'গরু 5 টি, ছাগল 6 টি', '2025-11-14', 'খাল', 'রবি', 'কাঁঠাল', '', 'জিপসাম 17 কেজি', NULL, 1020.00, 6.16, 19746.00, 3448.00, 'কেজি', 'মোট উৎপাদন: 3448 কেজি, খরচ: 19746 টাকা, বিক্রয়: 3516960 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0011', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'মোহনপুর', 'ইউনিয়ন 1', 'কাঠালবাড়ী', '8972', 24.06000000, 89.13000000, 'verified', NULL, '2025-11-15 01:00:00', 1, '2025-11-14 09:49:41', '2026-01-11 07:56:01', NULL),
+(12, 1, 1, 12, 'সালেহা বেগম', 'জামবাগান, ইউনিয়ন 2, বাউফল, পটুয়াখালী', '01392680438', 4.62, 'একর', 'গরু 1 টি, ছাগল 7 টি', '2025-12-01', 'বৃষ্টির পানি', 'রবি', 'ভুট্টা', '', 'এমওপি 45 কেজি, ইউরিয়া 11 কেজি, জিপসাম 5 কেজি', 'আম গাছ 10 টি, কাঁঠাল গাছ 6 টি', 1180.00, 6.73, 22701.00, 671.00, 'টন', 'মোট উৎপাদন: 671 টন, খরচ: 22701 টাকা, বিক্রয়: 791780 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0012', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'পটুয়াখালী', 'বাউফল', 'ইউনিয়ন 2', 'জামবাগান', '1010', 23.90000000, 88.57000000, 'pending', NULL, NULL, NULL, '2025-12-01 02:58:41', '2026-01-11 07:56:01', NULL),
+(13, 1, 1, 13, 'আনোয়ার হোসেন', 'আমবাগান, ইউনিয়ন 3, চারঘাট, রাজশাহী', '01363028989', 2.97, 'কাঠা', NULL, '2025-12-30', 'বৃষ্টির পানি', 'খরিফ-২', 'কাঁঠাল', '', 'টিএসপি 38 কেজি', 'আম গাছ 20 টি, কাঁঠাল গাছ 5 টি', 4373.00, 7.40, 45727.00, 2147.00, 'কেজি', 'মোট উৎপাদন: 2147 কেজি, খরচ: 45727 টাকা, বিক্রয়: 9388831 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0013', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'চারঘাট', 'ইউনিয়ন 3', 'আমবাগান', '4291', 23.60000000, 89.83000000, 'pending', NULL, NULL, NULL, '2025-12-30 08:51:43', '2026-01-11 07:56:01', NULL),
+(14, 1, 1, 14, 'সাইফুল ইসলাম', 'পাথরঘাটা, ইউনিয়ন 4, আনোয়ারা, চট্টগ্রাম', '01831803701', 3.42, 'বিঘা', 'গরু 5 টি, ছাগল 8 টি', '2025-11-17', 'খাল', 'রবি', 'শসা', 'কম্পোস্ট 7 কেজি', 'ইউরিয়া 24 কেজি, এমওপি 43 কেজি, জিপসাম 45 কেজি', NULL, 3529.00, 5.52, 31914.00, 1871.00, 'টন', 'মোট উৎপাদন: 1871 টন, খরচ: 31914 টাকা, বিক্রয়: 6602759 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0014', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'চট্টগ্রাম', 'আনোয়ারা', 'ইউনিয়ন 4', 'পাথরঘাটা', '1983', 25.51000000, 90.38000000, 'pending', NULL, NULL, NULL, '2025-11-17 05:34:13', '2026-01-11 07:56:01', NULL),
+(15, 1, 1, 15, 'নাসরিন জাহান', 'পাথরঘাটা, ইউনিয়ন 5, তানোর, রাজশাহী', '01848397764', 4.09, 'বিঘা', 'গরু 2 টি, ছাগল 10 টি', '2025-12-25', 'পুকুর', 'খরিফ-২', 'বেগুন', 'কেঁচো কম্পোস্ট 22 কেজি', 'টিএসপি 41 কেজি, এমওপি 24 কেজি', NULL, 2788.00, 7.48, 7582.00, 3555.00, 'মণ', 'মোট উৎপাদন: 3555 মণ, খরচ: 7582 টাকা, বিক্রয়: 9911340 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0015', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'তানোর', 'ইউনিয়ন 5', 'পাথরঘাটা', '2241', 24.13000000, 89.33000000, 'pending', NULL, NULL, NULL, '2025-12-25 05:44:46', '2026-01-11 07:56:01', NULL),
+(16, 1, 1, 16, 'শিরিনা বেগম', 'চরপাড়া, ইউনিয়ন 6, বাবুগঞ্জ, বরিশাল', '01436565735', 4.84, 'একর', 'গরু 3 টি, ছাগল 9 টি', '2025-11-22', 'বৃষ্টির পানি', 'খরিফ', 'কলা', 'সবুজ সার 5 কেজি', 'জৈব সার 16 কেজি, ইউরিয়া 41 কেজি, জৈব সার 12 কেজি', NULL, 1955.00, 5.73, 40077.00, 949.00, 'টন', 'মোট উৎপাদন: 949 টন, খরচ: 40077 টাকা, বিক্রয়: 1855295 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0016', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'বরিশাল', 'বাবুগঞ্জ', 'ইউনিয়ন 6', 'চরপাড়া', '3644', 25.37000000, 89.17000000, 'verified', NULL, '2025-11-22 16:00:00', 1, '2025-11-22 03:22:58', '2026-01-11 07:56:01', NULL),
+(17, 1, 1, 17, 'সাইফুল ইসলাম', 'শ্যামপুর, ইউনিয়ন 7, দিঘলিয়া, খুলনা', '01546503725', 2.16, 'বিঘা', NULL, '2025-12-22', 'পুকুর', 'খরিফ', 'ডাল', 'কেঁচো কম্পোস্ট 18 কেজি', 'জৈব সার 44 কেজি, টিএসপি 28 কেজি', NULL, 1434.00, 6.60, 8815.00, 916.00, 'কেজি', 'মোট উৎপাদন: 916 কেজি, খরচ: 8815 টাকা, বিক্রয়: 1313544 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0017', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'খুলনা', 'দিঘলিয়া', 'ইউনিয়ন 7', 'শ্যামপুর', '4440', 22.76000000, 90.05000000, 'rejected', 'তথ্য যাচাই করে পুনরায় জমা দিন', NULL, NULL, '2025-12-22 03:25:33', '2026-01-11 07:56:01', NULL),
+(18, 1, 1, 18, 'আনোয়ার হোসেন', 'বেলতলা, ইউনিয়ন 8, বড়াইগ্রাম, নাটোর', '01947758064', 0.83, 'বিঘা', NULL, '2025-11-15', 'পুকুর', 'খরিফ', 'গম', '', 'টিএসপি 17 কেজি, ইউরিয়া 19 কেজি', 'আম গাছ 5 টি, কাঁঠাল গাছ 9 টি', 2855.00, 5.77, 30923.00, 1560.00, 'মণ', 'মোট উৎপাদন: 1560 মণ, খরচ: 30923 টাকা, বিক্রয়: 4453800 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0018', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'বড়াইগ্রাম', 'ইউনিয়ন 8', 'বেলতলা', '5790', 25.58000000, 90.76000000, 'rejected', 'তথ্য যাচাই করে পুনরায় জমা দিন', NULL, NULL, '2025-11-15 09:42:51', '2026-01-11 07:56:01', NULL),
+(19, 1, 1, 19, 'আবুল কালাম', 'শ্যামপুর, ইউনিয়ন 9, গুরুদাসপুর, নাটোর', '01817731827', 2.22, 'কাঠা', NULL, '2026-01-04', 'পুকুর', 'রবি', 'ধান', '', 'জৈব সার 34 কেজি, জৈব সার 5 কেজি, টিএসপি 50 কেজি', 'আম গাছ 15 টি, কাঁঠাল গাছ 3 টি', 3012.00, 6.13, 19453.00, 3199.00, 'টন', 'মোট উৎপাদন: 3199 টন, খরচ: 19453 টাকা, বিক্রয়: 9635388 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0019', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'গুরুদাসপুর', 'ইউনিয়ন 9', 'শ্যামপুর', '7576', 23.61000000, 88.36000000, 'verified', NULL, '2026-01-05 07:00:00', 1, '2026-01-04 10:28:53', '2026-01-11 07:56:01', NULL),
+(20, 1, 1, 20, 'জাহিদুল ইসলাম', 'কামারপাড়া, ইউনিয়ন 10, বাবুগঞ্জ, বরিশাল', '01322783092', 3.50, 'বিঘা', NULL, '2025-12-28', 'নলকূপ', 'খরিফ', 'বেগুন', '', 'এমওপি 14 কেজি, জিপসাম 29 কেজি', NULL, 2620.00, 7.40, 47826.00, 2636.00, 'কেজি', 'মোট উৎপাদন: 2636 কেজি, খরচ: 47826 টাকা, বিক্রয়: 6906320 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0020', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'বরিশাল', 'বাবুগঞ্জ', 'ইউনিয়ন 10', 'কামারপাড়া', '9097', 22.64000000, 88.94000000, 'pending', NULL, NULL, NULL, '2025-12-28 04:35:25', '2026-01-11 07:56:01', NULL),
+(21, 1, 1, 21, 'আব্দুল মান্নান', 'ঘাটপাড়া, ইউনিয়ন 1, রায়পুরা, নরসিংদী', '01543967248', 2.64, 'একর', 'গরু 5 টি, ছাগল 2 টি', '2025-11-22', 'বৃষ্টির পানি', 'খরিফ', 'পেঁয়াজ', 'কম্পোস্ট 21 কেজি', 'টিএসপি 48 কেজি, জৈব সার 48 কেজি, জৈব সার 13 কেজি', 'আম গাছ 16 টি, কাঁঠাল গাছ 10 টি', 3597.00, 6.44, 25506.00, 4173.00, 'টন', 'মোট উৎপাদন: 4173 টন, খরচ: 25506 টাকা, বিক্রয়: 15010281 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0021', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'ঢাকা', 'নরসিংদী', 'রায়পুরা', 'ইউনিয়ন 1', 'ঘাটপাড়া', '9539', 22.74000000, 88.76000000, 'pending', NULL, NULL, NULL, '2025-11-22 12:10:30', '2026-01-11 07:56:01', NULL),
+(22, 1, 1, 22, 'রওশন আরা', 'চাঁদপুর, ইউনিয়ন 2, বাঘারপাড়া, যশোর', '01442332679', 2.06, 'একর', 'গরু 2 টি, ছাগল 3 টি', '2025-11-24', 'খাল', 'রবি', 'পেঁপে', '', 'এমওপি 20 কেজি', NULL, 1595.00, 6.35, 14418.00, 1926.00, 'কেজি', 'মোট উৎপাদন: 1926 কেজি, খরচ: 14418 টাকা, বিক্রয়: 3071970 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0022', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'যশোর', 'বাঘারপাড়া', 'ইউনিয়ন 2', 'চাঁদপুর', '8894', 22.02000000, 91.08000000, 'pending', NULL, NULL, NULL, '2025-11-24 05:30:28', '2026-01-11 07:56:01', NULL),
+(23, 1, 1, 23, 'রফিকুল ইসলাম', 'পাথরঘাটা, ইউনিয়ন 3, অভয়নগর, যশোর', '01385360361', 3.07, 'বিঘা', NULL, '2025-11-14', 'বৃষ্টির পানি', 'খরিফ-২', 'শসা', '', 'জৈব সার 19 কেজি', NULL, 3861.00, 6.21, 26518.00, 1707.00, 'মণ', 'মোট উৎপাদন: 1707 মণ, খরচ: 26518 টাকা, বিক্রয়: 6590727 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0023', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'যশোর', 'অভয়নগর', 'ইউনিয়ন 3', 'পাথরঘাটা', '7200', 23.73000000, 89.32000000, 'verified', NULL, '2025-11-14 10:00:00', 1, '2025-11-14 08:23:57', '2026-01-11 07:56:01', NULL),
+(24, 1, 1, 24, 'নাজনিন আক্তার', 'চাঁদপুর, ইউনিয়ন 4, গলাচিপা, পটুয়াখালী', '01354142581', 4.10, 'একর', NULL, '2025-12-12', 'বৃষ্টির পানি', 'খরিফ-২', 'বেগুন', '', 'জিপসাম 48 কেজি, এমওপি 12 কেজি', 'আম গাছ 19 টি, কাঁঠাল গাছ 15 টি', 4671.00, 7.16, 21161.00, 3150.00, 'টন', 'মোট উৎপাদন: 3150 টন, খরচ: 21161 টাকা, বিক্রয়: 14713650 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0024', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'পটুয়াখালী', 'গলাচিপা', 'ইউনিয়ন 4', 'চাঁদপুর', '6843', 25.20000000, 90.64000000, 'rejected', 'তথ্য যাচাই করে পুনরায় জমা দিন', NULL, NULL, '2025-12-12 06:57:22', '2026-01-11 07:56:01', NULL),
+(25, 1, 1, 25, 'রুবিনা আক্তার', 'কামারপাড়া, ইউনিয়ন 5, তানোর, রাজশাহী', '01324651868', 2.33, 'কাঠা', 'গরু 4 টি, ছাগল 2 টি', '2025-11-26', 'পুকুর', 'রবি', 'ভুট্টা', 'সবুজ সার 5 কেজি', 'এমওপি 29 কেজি', 'আম গাছ 11 টি, কাঁঠাল গাছ 6 টি', 2242.00, 7.16, 28995.00, 4790.00, 'টন', 'মোট উৎপাদন: 4790 টন, খরচ: 28995 টাকা, বিক্রয়: 10739180 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0025', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'তানোর', 'ইউনিয়ন 5', 'কামারপাড়া', '5634', 25.73000000, 89.51000000, 'pending', NULL, NULL, NULL, '2025-11-26 03:46:36', '2026-01-11 07:56:01', NULL),
+(26, 1, 1, 26, 'লায়লা আক্তার', 'চাঁদপুর, ইউনিয়ন 6, পটিয়া, চট্টগ্রাম', '01641905943', 1.15, 'বিঘা', NULL, '2025-12-21', 'পুকুর', 'খরিফ-২', 'ধান', '', 'জৈব সার 43 কেজি, ইউরিয়া 32 কেজি', 'আম গাছ 16 টি, কাঁঠাল গাছ 8 টি', 3173.00, 6.06, 18561.00, 2858.00, 'মণ', 'মোট উৎপাদন: 2858 মণ, খরচ: 18561 টাকা, বিক্রয়: 9068434 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0026', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'চট্টগ্রাম', 'পটিয়া', 'ইউনিয়ন 6', 'চাঁদপুর', '6275', 24.66000000, 91.69000000, 'pending', NULL, NULL, NULL, '2025-12-21 05:12:45', '2026-01-11 07:56:01', NULL),
+(27, 1, 1, 27, 'নাজনিন আক্তার', 'কামারপাড়া, ইউনিয়ন 7, গুরুদাসপুর, নাটোর', '01466314717', 4.98, 'কাঠা', NULL, '2025-12-27', 'খাল', 'খরিফ', 'ডাল', '', 'এমওপি 28 কেজি, এমওপি 37 কেজি', NULL, 2782.00, 6.79, 18975.00, 755.00, 'কেজি', 'মোট উৎপাদন: 755 কেজি, খরচ: 18975 টাকা, বিক্রয়: 2100410 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0027', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'গুরুদাসপুর', 'ইউনিয়ন 7', 'কামারপাড়া', '9761', 22.50000000, 89.33000000, 'pending', NULL, NULL, NULL, '2025-12-27 07:46:51', '2026-01-11 07:56:01', NULL),
+(28, 1, 1, 28, 'লায়লা আক্তার', 'নারিকেলবাড়ী, ইউনিয়ন 8, শিবপুর, নরসিংদী', '01764515203', 3.98, 'একর', NULL, '2026-01-02', 'বৃষ্টির পানি', 'খরিফ-২', 'সরিষা', 'কম্পোস্ট 8 কেজি', 'জৈব সার 29 কেজি', 'আম গাছ 10 টি, কাঁঠাল গাছ 8 টি', 2244.00, 5.84, 29501.00, 1699.00, 'মণ', 'মোট উৎপাদন: 1699 মণ, খরচ: 29501 টাকা, বিক্রয়: 3812556 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0028', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'ঢাকা', 'নরসিংদী', 'শিবপুর', 'ইউনিয়ন 8', 'নারিকেলবাড়ী', '1917', 23.35000000, 91.95000000, 'verified', NULL, '2026-01-03 00:00:00', 1, '2026-01-02 05:15:42', '2026-01-11 07:56:01', NULL),
+(29, 1, 1, 29, 'মনিরুল ইসলাম', 'বাদলপুর, ইউনিয়ন 9, চারঘাট, রাজশাহী', '01330311277', 3.31, 'বিঘা', NULL, '2025-11-19', 'পুকুর', 'রবি', 'কাঁঠাল', 'কেঁচো কম্পোস্ট 15 কেজি', 'জৈব সার 38 কেজি, জৈব সার 14 কেজি, এমওপি 43 কেজি', NULL, 1944.00, 7.10, 38821.00, 2775.00, 'টন', 'মোট উৎপাদন: 2775 টন, খরচ: 38821 টাকা, বিক্রয়: 5394600 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0029', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'চারঘাট', 'ইউনিয়ন 9', 'বাদলপুর', '2289', 23.01000000, 89.24000000, 'pending', NULL, NULL, NULL, '2025-11-19 12:36:47', '2026-01-11 07:56:01', NULL),
+(30, 1, 1, 30, 'নাজনিন আক্তার', 'বাঁশবাড়ীয়া, ইউনিয়ন 10, পাইকগাছা, খুলনা', '01845030623', 1.11, 'কাঠা', 'গরু 5 টি, ছাগল 2 টি', '2025-12-05', 'নলকূপ', 'খরিফ', 'আম', '', 'এমওপি 20 কেজি', NULL, 4713.00, 7.09, 47319.00, 4573.00, 'টন', 'মোট উৎপাদন: 4573 টন, খরচ: 47319 টাকা, বিক্রয়: 21552549 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0030', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'খুলনা', 'পাইকগাছা', 'ইউনিয়ন 10', 'বাঁশবাড়ীয়া', '9311', 22.73000000, 88.60000000, 'pending', NULL, NULL, NULL, '2025-12-05 07:20:21', '2026-01-11 07:56:01', NULL),
+(31, 1, 1, 31, 'শামীম আহমেদ', 'হাটবাজার, ইউনিয়ন 1, চকরিয়া, কক্সবাজার', '01813874219', 4.54, 'কাঠা', 'গরু 5 টি, ছাগল 1 টি', '2025-12-12', 'পুকুর', 'খরিফ-২', 'ভুট্টা', 'গোবর সার 8 কেজি', 'জিপসাম 26 কেজি', 'আম গাছ 11 টি, কাঁঠাল গাছ 10 টি', 4542.00, 6.43, 9708.00, 4091.00, 'কেজি', 'মোট উৎপাদন: 4091 কেজি, খরচ: 9708 টাকা, বিক্রয়: 18581322 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0031', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'কক্সবাজার', 'চকরিয়া', 'ইউনিয়ন 1', 'হাটবাজার', '2813', 25.22000000, 90.02000000, 'verified', NULL, '2025-12-13 00:00:00', 1, '2025-12-12 04:44:56', '2026-01-11 07:56:01', NULL),
+(32, 1, 1, 32, 'সাবিনা ইয়াসমিন', 'কামারপাড়া, ইউনিয়ন 2, চারঘাট, রাজশাহী', '01512055452', 2.07, 'একর', NULL, '2026-01-09', 'নলকূপ', 'খরিফ', 'লাউ', '', 'এমওপি 41 কেজি, টিএসপি 32 কেজি', 'আম গাছ 9 টি, কাঁঠাল গাছ 3 টি', 2554.00, 5.89, 48996.00, 1345.00, 'টন', 'মোট উৎপাদন: 1345 টন, খরচ: 48996 টাকা, বিক্রয়: 3435130 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0032', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'চারঘাট', 'ইউনিয়ন 2', 'কামারপাড়া', '3838', 23.50000000, 88.12000000, 'pending', NULL, NULL, NULL, '2026-01-09 02:20:42', '2026-01-11 07:56:01', NULL),
+(33, 1, 1, 33, 'আলমগীর হোসেন', 'চাঁদপুর, ইউনিয়ন 3, বড়াইগ্রাম, নাটোর', '01633293001', 1.97, 'একর', 'গরু 1 টি, ছাগল 5 টি', '2025-11-19', 'খাল', 'রবি', 'তরমুজ', 'গোবর সার 7 কেজি', 'ইউরিয়া 50 কেজি, জৈব সার 42 কেজি', NULL, 3862.00, 5.86, 32629.00, 3572.00, 'কেজি', 'মোট উৎপাদন: 3572 কেজি, খরচ: 32629 টাকা, বিক্রয়: 13795064 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0033', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'বড়াইগ্রাম', 'ইউনিয়ন 3', 'চাঁদপুর', '8443', 25.10000000, 90.94000000, 'pending', NULL, NULL, NULL, '2025-11-19 10:41:55', '2026-01-11 07:56:01', NULL),
+(34, 1, 1, 34, 'রেহানা আক্তার', 'চাঁদপুর, ইউনিয়ন 4, নলডাঙ্গা, নাটোর', '01687075302', 3.63, 'কাঠা', 'গরু 3 টি, ছাগল 2 টি', '2025-11-19', 'পুকুর', 'রবি', 'পেঁপে', 'কেঁচো কম্পোস্ট 9 কেজি', 'এমওপি 26 কেজি, জৈব সার 38 কেজি', 'আম গাছ 7 টি, কাঁঠাল গাছ 8 টি', 4820.00, 7.04, 35304.00, 2493.00, 'টন', 'মোট উৎপাদন: 2493 টন, খরচ: 35304 টাকা, বিক্রয়: 12016260 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0034', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'নলডাঙ্গা', 'ইউনিয়ন 4', 'চাঁদপুর', '4501', 25.88000000, 91.26000000, 'pending', NULL, NULL, NULL, '2025-11-19 07:12:31', '2026-01-11 07:56:01', NULL),
+(35, 1, 1, 35, 'লায়লা আক্তার', 'আমবাগান, ইউনিয়ন 5, চারঘাট, রাজশাহী', '01585127313', 1.30, 'কাঠা', 'গরু 3 টি, ছাগল 2 টি', '2025-12-22', 'নলকূপ', 'রবি', 'লাউ', '', 'টিএসপি 9 কেজি, জৈব সার 9 কেজি', 'আম গাছ 20 টি, কাঁঠাল গাছ 6 টি', 2575.00, 6.67, 30342.00, 2489.00, 'টন', 'মোট উৎপাদন: 2489 টন, খরচ: 30342 টাকা, বিক্রয়: 6409175 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0035', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'চারঘাট', 'ইউনিয়ন 5', 'আমবাগান', '7710', 24.36000000, 91.84000000, 'pending', NULL, NULL, NULL, '2025-12-22 07:25:44', '2026-01-11 07:56:01', NULL),
+(36, 1, 1, 36, 'আব্দুল করিম', 'কাঠালবাড়ী, ইউনিয়ন 6, চকরিয়া, কক্সবাজার', '01382937582', 2.11, 'বিঘা', NULL, '2026-01-05', 'নলকূপ', 'খরিফ', 'শসা', 'গোবর সার 29 কেজি', 'ইউরিয়া 19 কেজি, টিএসপি 8 কেজি', NULL, 4227.00, 5.73, 33767.00, 3054.00, 'মণ', 'মোট উৎপাদন: 3054 মণ, খরচ: 33767 টাকা, বিক্রয়: 12909258 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0036', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'কক্সবাজার', 'চকরিয়া', 'ইউনিয়ন 6', 'কাঠালবাড়ী', '3696', 22.40000000, 89.65000000, 'pending', NULL, NULL, NULL, '2026-01-05 03:32:55', '2026-01-11 07:56:01', NULL),
+(37, 1, 1, 37, 'জাহাঙ্গীর আলম', 'শ্যামপুর, ইউনিয়ন 7, চকরিয়া, কক্সবাজার', '01846424934', 1.36, 'একর', NULL, '2025-12-20', 'পুকুর', 'খরিফ', 'পাট', '', 'ইউরিয়া 5 কেজি', 'আম গাছ 18 টি, কাঁঠাল গাছ 13 টি', 3378.00, 7.43, 45558.00, 4205.00, 'টন', 'মোট উৎপাদন: 4205 টন, খরচ: 45558 টাকা, বিক্রয়: 14204490 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0037', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'কক্সবাজার', 'চকরিয়া', 'ইউনিয়ন 7', 'শ্যামপুর', '9764', 22.84000000, 91.08000000, 'verified', NULL, '2025-12-19 21:00:00', 1, '2025-12-20 09:22:18', '2026-01-11 07:56:01', NULL),
+(38, 1, 1, 38, 'শামসুন নাহার', 'বেলতলা, ইউনিয়ন 8, কয়রা, খুলনা', '01652699316', 1.62, 'একর', 'গরু 3 টি, ছাগল 7 টি', '2025-12-07', 'নলকূপ', 'রবি', 'পাট', 'সবুজ সার 23 কেজি', 'জৈব সার 38 কেজি', NULL, 4102.00, 7.25, 10414.00, 4666.00, 'টন', 'মোট উৎপাদন: 4666 টন, খরচ: 10414 টাকা, বিক্রয়: 19139932 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0038', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'খুলনা', 'কয়রা', 'ইউনিয়ন 8', 'বেলতলা', '2755', 24.70000000, 90.06000000, 'rejected', 'তথ্য যাচাই করে পুনরায় জমা দিন', NULL, NULL, '2025-12-07 11:21:52', '2026-01-11 07:56:01', NULL),
+(39, 1, 1, 39, 'রেহানা আক্তার', 'আমবাগান, ইউনিয়ন 9, কালিয়াকৈর, গাজীপুর', '01729711477', 4.54, 'বিঘা', NULL, '2025-11-27', 'খাল', 'খরিফ-২', 'লিচু', '', 'টিএসপি 25 কেজি, জৈব সার 34 কেজি, জিপসাম 33 কেজি', NULL, 3525.00, 6.75, 39386.00, 901.00, 'মণ', 'মোট উৎপাদন: 901 মণ, খরচ: 39386 টাকা, বিক্রয়: 3176025 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0039', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'ঢাকা', 'গাজীপুর', 'কালিয়াকৈর', 'ইউনিয়ন 9', 'আমবাগান', '9490', 22.69000000, 89.82000000, 'verified', NULL, '2025-11-26 19:00:00', 1, '2025-11-27 02:36:46', '2026-01-11 07:56:01', NULL),
+(40, 1, 1, 40, 'আব্দুল করিম', 'বাঁশবাড়ীয়া, ইউনিয়ন 10, পাইকগাছা, খুলনা', '01329587169', 0.89, 'কাঠা', NULL, '2025-11-30', 'বৃষ্টির পানি', 'খরিফ', 'ডাল', '', 'জৈব সার 46 কেজি, এমওপি 7 কেজি, এমওপি 19 কেজি', NULL, 3829.00, 7.00, 7631.00, 4514.00, 'মণ', 'মোট উৎপাদন: 4514 মণ, খরচ: 7631 টাকা, বিক্রয়: 17284106 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0040', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'খুলনা', 'পাইকগাছা', 'ইউনিয়ন 10', 'বাঁশবাড়ীয়া', '2735', 22.36000000, 91.81000000, 'pending', NULL, NULL, NULL, '2025-11-30 08:27:17', '2026-01-11 07:56:01', NULL),
+(41, 1, 1, 41, 'শাহানা পারভীন', 'কামারপাড়া, ইউনিয়ন 1, আনোয়ারা, চট্টগ্রাম', '01675500363', 3.36, 'একর', 'গরু 2 টি, ছাগল 5 টি', '2025-12-08', 'খাল', 'খরিফ', 'আম', '', 'জৈব সার 41 কেজি, জৈব সার 13 কেজি', NULL, 2059.00, 7.19, 45643.00, 1153.00, 'কেজি', 'মোট উৎপাদন: 1153 কেজি, খরচ: 45643 টাকা, বিক্রয়: 2374027 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0041', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'চট্টগ্রাম', 'আনোয়ারা', 'ইউনিয়ন 1', 'কামারপাড়া', '4113', 24.94000000, 88.23000000, 'rejected', 'তথ্য যাচাই করে পুনরায় জমা দিন', NULL, NULL, '2025-12-08 06:30:15', '2026-01-11 07:56:01', NULL),
+(42, 1, 1, 42, 'আব্দুল মান্নান', 'পুকুরপাড়, ইউনিয়ন 2, চৌগাছা, যশোর', '01392225437', 2.69, 'একর', 'গরু 3 টি, ছাগল 5 টি', '2025-12-30', 'পুকুর', 'খরিফ', 'কাঁঠাল', '', 'জিপসাম 26 কেজি', NULL, 2013.00, 5.69, 44390.00, 2008.00, 'মণ', 'মোট উৎপাদন: 2008 মণ, খরচ: 44390 টাকা, বিক্রয়: 4042104 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0042', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'যশোর', 'চৌগাছা', 'ইউনিয়ন 2', 'পুকুরপাড়', '4578', 24.76000000, 90.50000000, 'verified', NULL, '2025-12-30 01:00:00', 1, '2025-12-30 11:39:21', '2026-01-11 07:56:01', NULL),
+(43, 1, 1, 43, 'আজিজুল হক', 'চাঁদপুর, ইউনিয়ন 3, পবা, রাজশাহী', '01524551811', 2.99, 'একর', 'গরু 4 টি, ছাগল 7 টি', '2026-01-05', 'খাল', 'খরিফ', 'গম', 'সবুজ সার 13 কেজি', 'জিপসাম 5 কেজি, এমওপি 46 কেজি', 'আম গাছ 19 টি, কাঁঠাল গাছ 10 টি', 2480.00, 6.24, 38112.00, 3061.00, 'কেজি', 'মোট উৎপাদন: 3061 কেজি, খরচ: 38112 টাকা, বিক্রয়: 7591280 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0043', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'রাজশাহী', 'পবা', 'ইউনিয়ন 3', 'চাঁদপুর', '2715', 25.68000000, 89.87000000, 'verified', NULL, '2026-01-05 03:00:00', 1, '2026-01-05 04:40:18', '2026-01-11 07:56:01', NULL),
+(44, 1, 1, 44, 'নার্গিস আক্তার', 'মধুপুর, ইউনিয়ন 4, মনোহরদী, নরসিংদী', '01664350011', 4.28, 'একর', NULL, '2026-01-08', 'পুকুর', 'খরিফ', 'সরিষা', '', 'জৈব সার 42 কেজি, জৈব সার 48 কেজি, টিএসপি 46 কেজি', NULL, 1984.00, 5.93, 49513.00, 1375.00, 'কেজি', 'মোট উৎপাদন: 1375 কেজি, খরচ: 49513 টাকা, বিক্রয়: 2728000 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0044', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'ঢাকা', 'নরসিংদী', 'মনোহরদী', 'ইউনিয়ন 4', 'মধুপুর', '7045', 25.31000000, 89.05000000, 'pending', NULL, NULL, NULL, '2026-01-08 07:34:29', '2026-01-11 07:56:01', NULL),
+(45, 1, 1, 45, 'আজিজুল হক', 'তেঁতুলতলা, ইউনিয়ন 5, গুরুদাসপুর, নাটোর', '01534146364', 4.62, 'একর', NULL, '2025-12-13', 'পুকুর', 'খরিফ', 'পাট', 'সবুজ সার 29 কেজি', 'ইউরিয়া 29 কেজি', NULL, 4681.00, 6.54, 48441.00, 3610.00, 'মণ', 'মোট উৎপাদন: 3610 মণ, খরচ: 48441 টাকা, বিক্রয়: 16898410 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0045', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'গুরুদাসপুর', 'ইউনিয়ন 5', 'তেঁতুলতলা', '7804', 23.27000000, 91.73000000, 'verified', NULL, '2025-12-14 14:00:00', 1, '2025-12-13 09:27:48', '2026-01-11 07:56:01', NULL),
+(46, 1, 1, 46, 'রেহানা আক্তার', 'কাঠালবাড়ী, ইউনিয়ন 6, পাইকগাছা, খুলনা', '01791984903', 4.98, 'কাঠা', NULL, '2025-12-05', 'পুকুর', 'রবি', 'আম', '', 'জৈব সার 40 কেজি', 'আম গাছ 12 টি, কাঁঠাল গাছ 4 টি', 1451.00, 7.42, 29306.00, 4106.00, 'টন', 'মোট উৎপাদন: 4106 টন, খরচ: 29306 টাকা, বিক্রয়: 5957806 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2025-0046', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'খুলনা', 'পাইকগাছা', 'ইউনিয়ন 6', 'কাঠালবাড়ী', '3142', 22.71000000, 89.16000000, 'pending', NULL, NULL, NULL, '2025-12-05 12:37:52', '2026-01-11 07:56:01', NULL),
+(47, 1, 1, 47, 'রহিমা বেগম', 'বাঁশবাড়ীয়া, ইউনিয়ন 7, লালপুর, নাটোর', '01346826428', 4.58, 'একর', NULL, '2026-01-03', 'নলকূপ', 'খরিফ-২', 'সরিষা', 'কম্পোস্ট 23 কেজি', 'টিএসপি 7 কেজি, টিএসপি 28 কেজি', 'আম গাছ 15 টি, কাঁঠাল গাছ 6 টি', 2237.00, 6.05, 24240.00, 2377.00, 'টন', 'মোট উৎপাদন: 2377 টন, খরচ: 24240 টাকা, বিক্রয়: 5317349 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0047', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'রাজশাহী', 'নাটোর', 'লালপুর', 'ইউনিয়ন 7', 'বাঁশবাড়ীয়া', '4556', 24.61000000, 88.83000000, 'verified', NULL, '2026-01-04 10:00:00', 1, '2026-01-03 10:54:51', '2026-01-11 07:56:02', NULL),
+(48, 1, 1, 48, 'শিরিনা বেগম', 'জামবাগান, ইউনিয়ন 8, অভয়নগর, যশোর', '01854403961', 1.40, 'বিঘা', NULL, '2025-12-04', 'পুকুর', 'খরিফ-২', 'গম', 'গোবর সার 27 কেজি', 'টিএসপি 42 কেজি', NULL, 3827.00, 5.86, 19487.00, 2525.00, 'টন', 'মোট উৎপাদন: 2525 টন, খরচ: 19487 টাকা, বিক্রয়: 9663175 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2026', 'FDC-2026-0048', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'খুলনা', 'যশোর', 'অভয়নগর', 'ইউনিয়ন 8', 'জামবাগান', '6807', 22.45000000, 90.45000000, 'pending', NULL, NULL, NULL, '2025-12-04 06:27:28', '2026-01-11 07:56:02', NULL),
+(49, 1, 1, 49, 'নাজমুল হক', 'সোনারপুর, ইউনিয়ন 9, উখিয়া, কক্সবাজার', '01944047036', 2.74, 'একর', NULL, '2025-12-27', 'নলকূপ', 'খরিফ', 'ডাল', '', 'ইউরিয়া 28 কেজি, জৈব সার 7 কেজি', 'আম গাছ 17 টি, কাঁঠাল গাছ 5 টি', 2597.00, 6.67, 8353.00, 2713.00, 'কেজি', 'মোট উৎপাদন: 2713 কেজি, খরচ: 8353 টাকা, বিক্রয়: 7045661 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', NULL, 'FDC-2026-0049', '2026', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'চট্টগ্রাম', 'কক্সবাজার', 'উখিয়া', 'ইউনিয়ন 9', 'সোনারপুর', '9201', 25.71000000, 90.29000000, 'pending', NULL, NULL, NULL, '2025-12-27 06:45:33', '2026-01-11 07:56:02', NULL),
+(50, 1, 1, 50, 'ফাতেমা খাতুন', 'চরপাড়া, ইউনিয়ন 10, বাকেরগঞ্জ, বরিশাল', '01342301266', 3.49, 'একর', 'গরু 1 টি, ছাগল 7 টি', '2025-11-22', 'পুকুর', 'রবি', 'ডাল', '', 'ইউরিয়া 21 কেজি, টিএসপি 39 কেজি, ইউরিয়া 36 কেজি', NULL, 1171.00, 5.77, 11639.00, 4838.00, 'মণ', 'মোট উৎপাদন: 4838 মণ, খরচ: 11639 টাকা, বিক্রয়: 5665298 টাকা', 'ট্রাক্টর, পাওয়ার টিলার', 'আধুনিক কৃষি প্রশিক্ষণ 2025', 'FDC-2025-0050', '2025', 'মাঠ পরিদর্শনের সময় সংগৃহীত তথ্য।', 'বরিশাল', 'বরিশাল', 'বাকেরগঞ্জ', 'ইউনিয়ন 10', 'চরপাড়া', '2295', 22.74000000, 91.42000000, 'verified', NULL, '2025-11-23 18:00:00', 1, '2025-11-22 09:52:41', '2026-01-11 07:56:02', NULL),
+(51, 39, 29, NULL, 'Farmer #29', NULL, NULL, NULL, 'decimal', NULL, NULL, 'খাল', 'খরিফ-২', NULL, NULL, NULL, NULL, 34.00, NULL, NULL, 244.00, 'kg', NULL, NULL, NULL, NULL, '2026', NULL, NULL, NULL, NULL, NULL, 'পাঁচপাড়া', 'চন্দ্রগঞ্জ', NULL, NULL, 'pending', NULL, NULL, NULL, '2026-01-11 09:52:09', '2026-01-11 09:52:09', NULL),
+(52, 39, NULL, NULL, 'ইসমাইল বেপারী', 'বশিরাবাজার', '01897193833', NULL, 'decimal', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'kg', NULL, NULL, NULL, NULL, '2026', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, '2026-01-11 11:02:50', '2026-01-11 11:02:50', NULL),
+(53, 39, 29, NULL, 'মোফাসসেল আলম মারুফ', 'গ্রাম: পাঁচপাড়া, ডাকঘর: চন্দ্রগঞ্জ, উপজেলা: লক্ষ্মীপুর সদর, জেলা: লক্ষ্মীপুর, বিভাগ: চট্টগ্রাম', '01997900840', NULL, 'decimal', NULL, NULL, NULL, 'জায়েদ', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 423.00, 'kg', NULL, NULL, NULL, NULL, '2026', NULL, NULL, NULL, NULL, NULL, 'পাঁচপাড়া', 'চন্দ্রগঞ্জ', NULL, NULL, 'pending', NULL, NULL, NULL, '2026-01-11 11:39:54', '2026-01-11 11:39:54', NULL),
+(54, 39, NULL, 52, 'ইসমাইল বেপারী', NULL, '01897193833', NULL, 'decimal', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'kg', NULL, NULL, NULL, NULL, '2026', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, '2026-01-11 11:41:48', '2026-01-11 11:41:48', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `field_data_farmers`
+--
+
+CREATE TABLE `field_data_farmers` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `nid_number` varchar(20) DEFAULT NULL,
+  `phone` varchar(15) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `date_of_birth` date DEFAULT NULL,
+  `father_name` varchar(255) DEFAULT NULL,
+  `mother_name` varchar(255) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `district` varchar(100) DEFAULT NULL,
+  `upazila` varchar(100) DEFAULT NULL,
+  `occupation` varchar(100) NOT NULL DEFAULT 'কৃষক',
+  `land_ownership` varchar(50) DEFAULT NULL,
+  `created_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `field_data_farmers`
+--
+
+INSERT INTO `field_data_farmers` (`id`, `full_name`, `nid_number`, `phone`, `email`, `date_of_birth`, `father_name`, `mother_name`, `address`, `district`, `upazila`, `occupation`, `land_ownership`, `created_by`, `created_at`, `updated_at`) VALUES
+(1, 'নাজমা বেগম', '9496961729', '01689093691', NULL, '1964-01-11', 'শাহানা পারভীন', 'নাজমা বেগম', 'পাথরঘাটা, ইউনিয়ন 1, অভয়নগর, যশোর', 'যশোর', 'অভয়নগর', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:55:59', '2026-01-11 07:55:59'),
+(2, 'জাহাঙ্গীর আলম', '7833724133', '01888018727', NULL, '2001-01-11', 'হাবিবুর রহমান', 'মিজানুর রহমান', 'আমবাগান, ইউনিয়ন 2, ঝিকরগাছা, যশোর', 'যশোর', 'ঝিকরগাছা', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:55:59', '2026-01-11 07:55:59'),
+(3, 'সালমা আক্তার', '7806813340', '01895564762', NULL, '1963-01-11', 'রহিমা বেগম', 'আশরাফুল আলম', 'কামারপাড়া, ইউনিয়ন 3, কলাপাড়া, পটুয়াখালী', 'পটুয়াখালী', 'কলাপাড়া', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:55:59', '2026-01-11 07:55:59'),
+(4, 'মোস্তাফিজুর রহমান', '2435610448', '01771022296', NULL, '1971-01-11', 'আব্দুল করিম', 'সালেহা বেগম', 'তেঁতুলতলা, ইউনিয়ন 4, বাকেরগঞ্জ, বরিশাল', 'বরিশাল', 'বাকেরগঞ্জ', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(5, 'নাসরিন জাহান', '7998290428', '01314664266', NULL, '1987-01-11', 'পারভিন সুলতানা', 'লায়লা আক্তার', 'তেঁতুলতলা, ইউনিয়ন 5, অভয়নগর, যশোর', 'যশোর', 'অভয়নগর', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(6, 'আজিজুল হক', '7982764343', '01954337894', NULL, '1987-01-11', 'নাজনিন আক্তার', 'নাসরিন জাহান', 'ঘাটপাড়া, ইউনিয়ন 6, বড়াইগ্রাম, নাটোর', 'নাটোর', 'বড়াইগ্রাম', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(7, 'মনিরুল ইসলাম', '9945075671', '01310037739', NULL, '1987-01-11', 'হাবিবুর রহমান', 'হাবিবুর রহমান', 'আমবাগান, ইউনিয়ন 7, রায়পুরা, নরসিংদী', 'নরসিংদী', 'রায়পুরা', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(8, 'রফিকুল ইসলাম', '7963346096', '01890873432', NULL, '1992-01-11', 'সালেহা বেগম', 'নাজমুল হক', 'ঘাটপাড়া, ইউনিয়ন 8, পাইকগাছা, খুলনা', 'খুলনা', 'পাইকগাছা', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(9, 'নার্গিস আক্তার', '3045311932', '01854944276', NULL, '1963-01-11', 'জাকিয়া সুলতানা', 'মরিয়ম আক্তার', 'শ্যামপুর, ইউনিয়ন 9, বড়াইগ্রাম, নাটোর', 'নাটোর', 'বড়াইগ্রাম', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(10, 'রোকেয়া খাতুন', '7754580770', '01395927334', NULL, '1962-01-11', 'জাকিয়া সুলতানা', 'ইউনুস আলী', 'জামবাগান, ইউনিয়ন 10, দোহার, ঢাকা', 'ঢাকা', 'দোহার', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(11, 'আব্দুর রহমান', '2124003764', '01860610932', NULL, '1967-01-11', 'শামসুন নাহার', 'ফারজানা পারভীন', 'জামবাগান, ইউনিয়ন 1, উখিয়া, কক্সবাজার', 'কক্সবাজার', 'উখিয়া', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(12, 'মোহাম্মদ শফিকুল', '8608416238', '01962354172', NULL, '1977-01-11', 'ফারজানা পারভীন', 'তাসলিমা আক্তার', 'মধুপুর, ইউনিয়ন 2, টেকনাফ, কক্সবাজার', 'কক্সবাজার', 'টেকনাফ', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(13, 'নাজনিন আক্তার', '7962093800', '01438657875', NULL, '1994-01-11', 'সুলতানা রহমান', 'মনিরুল ইসলাম', 'চাঁদপুর, ইউনিয়ন 3, আগৈলঝাড়া, বরিশাল', 'বরিশাল', 'আগৈলঝাড়া', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(14, 'রওশন আরা', '2229236923', '01797107875', NULL, '1966-01-11', 'আবুল কালাম', 'ফারজানা পারভীন', 'মধুপুর, ইউনিয়ন 4, টেকনাফ, কক্সবাজার', 'কক্সবাজার', 'টেকনাফ', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(15, 'হাবিবুর রহমান', '5069780105', '01934800951', NULL, '1991-01-11', 'মোখলেসুর রহমান', 'শামসুন নাহার', 'হাটবাজার, ইউনিয়ন 5, উখিয়া, কক্সবাজার', 'কক্সবাজার', 'উখিয়া', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(16, 'রওশন আরা', '8237459222', '01837174606', NULL, '1997-01-11', 'ইউনুস আলী', 'ফারজানা পারভীন', 'চাঁদপুর, ইউনিয়ন 6, মনোহরদী, নরসিংদী', 'নরসিংদী', 'মনোহরদী', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(17, 'রুবিনা আক্তার', '5184918348', '01944931155', NULL, '1981-01-11', 'সালেহা বেগম', 'শাহানা পারভীন', 'হাটবাজার, ইউনিয়ন 7, ডুমুরিয়া, খুলনা', 'খুলনা', 'ডুমুরিয়া', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(18, 'তাসলিমা আক্তার', '3805307132', '01567841542', NULL, '1984-01-11', 'কামাল হোসেন', 'জাহিদুল ইসলাম', 'মধুপুর, ইউনিয়ন 8, তানোর, রাজশাহী', 'রাজশাহী', 'তানোর', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(19, 'রহিমা বেগম', '6190072847', '01555317943', NULL, '1968-01-11', 'আলমগীর হোসেন', 'মিজানুর রহমান', 'জামবাগান, ইউনিয়ন 9, শিবপুর, নরসিংদী', 'নরসিংদী', 'শিবপুর', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(20, 'হাবিবুর রহমান', '2100533552', '01691417423', NULL, '1989-01-11', 'পারভিন সুলতানা', 'নুরুল আমিন', 'রামপুর, ইউনিয়ন 10, বোয়ালখালী, চট্টগ্রাম', 'চট্টগ্রাম', 'বোয়ালখালী', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(21, 'মরিয়ম আক্তার', '9361925490', '01924706921', NULL, '1962-01-11', 'ফাতেমা খাতুন', 'রহিমা বেগম', 'ঘাটপাড়া, ইউনিয়ন 1, বোয়ালখালী, চট্টগ্রাম', 'চট্টগ্রাম', 'বোয়ালখালী', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(22, 'জাহিদুল ইসলাম', '5826566143', '01310100150', NULL, '1978-01-11', 'মনিরুল ইসলাম', 'মোহাম্মদ আলী', 'পুকুরপাড়, ইউনিয়ন 2, বাবুগঞ্জ, বরিশাল', 'বরিশাল', 'বাবুগঞ্জ', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(23, 'ফাতেমা খাতুন', '1301573196', '01547108442', NULL, '1998-01-11', 'মরিয়ম আক্তার', 'আলমগীর হোসেন', 'চরপাড়া, ইউনিয়ন 3, তানোর, রাজশাহী', 'রাজশাহী', 'তানোর', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(24, 'নার্গিস আক্তার', '8299123147', '01686851631', NULL, '1987-01-11', 'রুবিনা আক্তার', 'মোখলেসুর রহমান', 'জামবাগান, ইউনিয়ন 4, টেকনাফ, কক্সবাজার', 'কক্সবাজার', 'টেকনাফ', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(25, 'মোহাম্মদ আলী', '5116706254', '01372075299', NULL, '1967-01-11', 'নাজমুল হক', 'সালেহা বেগম', 'মধুপুর, ইউনিয়ন 5, বাবুগঞ্জ, বরিশাল', 'বরিশাল', 'বাবুগঞ্জ', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(26, 'আব্দুল মান্নান', '7761465412', '01478445484', NULL, '1962-01-11', 'হাসিনা খাতুন', 'কামাল হোসেন', 'জামবাগান, ইউনিয়ন 6, শ্রীপুর, গাজীপুর', 'গাজীপুর', 'শ্রীপুর', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(27, 'রুবিনা আক্তার', '3727842300', '01713481349', NULL, '1997-01-11', 'মোহাম্মদ শফিকুল', 'ইউনুস আলী', 'বাদলপুর, ইউনিয়ন 7, টেকনাফ, কক্সবাজার', 'কক্সবাজার', 'টেকনাফ', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(28, 'মনিরুল ইসলাম', '7855720956', '01893548306', NULL, '1996-01-11', 'রুবিনা আক্তার', 'শিরিনা বেগম', 'ঘাটপাড়া, ইউনিয়ন 8, বড়াইগ্রাম, নাটোর', 'নাটোর', 'বড়াইগ্রাম', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(29, 'সালেহা বেগম', '8120012576', '01354498252', NULL, '1961-01-11', 'হাসিনা খাতুন', 'পারভিন সুলতানা', 'আমবাগান, ইউনিয়ন 9, কলাপাড়া, পটুয়াখালী', 'পটুয়াখালী', 'কলাপাড়া', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(30, 'আব্দুল মান্নান', '9491053645', '01799642811', NULL, '1978-01-11', 'মোখলেসুর রহমান', 'নার্গিস আক্তার', 'নারিকেলবাড়ী, ইউনিয়ন 10, দোহার, ঢাকা', 'ঢাকা', 'দোহার', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(31, 'রফিকুল ইসলাম', '6632011227', '01852392159', NULL, '1981-01-11', 'নুরুল আমিন', 'সালমা আক্তার', 'তেঁতুলতলা, ইউনিয়ন 1, মনোহরদী, নরসিংদী', 'নরসিংদী', 'মনোহরদী', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(32, 'মোহাম্মদ শফিকুল', '3768276849', '01532481809', NULL, '1967-01-11', 'সুমাইয়া খাতুন', 'আব্দুল করিম', 'চরপাড়া, ইউনিয়ন 2, ডুমুরিয়া, খুলনা', 'খুলনা', 'ডুমুরিয়া', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(33, 'আনোয়ার হোসেন', '2356277661', '01487291145', NULL, '1992-01-11', 'সাবিনা ইয়াসমিন', 'সালেহা বেগম', 'চরপাড়া, ইউনিয়ন 3, ঝিকরগাছা, যশোর', 'যশোর', 'ঝিকরগাছা', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(34, 'রহিমা বেগম', '1556766987', '01389826502', NULL, '1990-01-11', 'শামসুন নাহার', 'শামসুন নাহার', 'জামবাগান, ইউনিয়ন 4, ডুমুরিয়া, খুলনা', 'খুলনা', 'ডুমুরিয়া', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(35, 'লায়লা আক্তার', '4251086508', '01964097553', NULL, '1998-01-11', 'নার্গিস আক্তার', 'নাসরিন জাহান', 'চরপাড়া, ইউনিয়ন 5, আগৈলঝাড়া, বরিশাল', 'বরিশাল', 'আগৈলঝাড়া', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(36, 'সুলতানা রহমান', '7897832141', '01494220581', NULL, '1978-01-11', 'আলমগীর হোসেন', 'আব্দুল মান্নান', 'কামারপাড়া, ইউনিয়ন 6, অভয়নগর, যশোর', 'যশোর', 'অভয়নগর', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(37, 'আবুল কালাম', '6511425368', '01317239378', NULL, '1988-01-11', 'ইউনুস আলী', 'রহিমা বেগম', 'শ্যামপুর, ইউনিয়ন 7, অভয়নগর, যশোর', 'যশোর', 'অভয়নগর', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(38, 'সাবিনা ইয়াসমিন', '7893190215', '01981641251', NULL, '1961-01-11', 'সাবিনা ইয়াসমিন', 'আশরাফুল আলম', 'মধুপুর, ইউনিয়ন 8, সাভার, ঢাকা', 'ঢাকা', 'সাভার', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(39, 'শাহানা পারভীন', '3527545238', '01510533809', NULL, '1987-01-11', 'মোখলেসুর রহমান', 'হাসিনা খাতুন', 'নদীপাড়া, ইউনিয়ন 9, বাউফল, পটুয়াখালী', 'পটুয়াখালী', 'বাউফল', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(40, 'মরিয়ম আক্তার', '6884661720', '01457666592', NULL, '1998-01-11', 'রুবিনা আক্তার', 'ইউনুস আলী', 'আমবাগান, ইউনিয়ন 10, বাকেরগঞ্জ, বরিশাল', 'বরিশাল', 'বাকেরগঞ্জ', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(41, 'মরিয়ম আক্তার', '5028031349', '01592409885', NULL, '1996-01-11', 'নাজনিন আক্তার', 'শাহজাহান আলী', 'শ্যামপুর, ইউনিয়ন 1, দিঘলিয়া, খুলনা', 'খুলনা', 'দিঘলিয়া', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(42, 'শাহানা পারভীন', '6031318543', '01486452847', NULL, '1986-01-11', 'নাজমা বেগম', 'সুলতানা রহমান', 'আমবাগান, ইউনিয়ন 2, চারঘাট, রাজশাহী', 'রাজশাহী', 'চারঘাট', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(43, 'তাসলিমা আক্তার', '4988191348', '01968525060', NULL, '1976-01-11', 'শামীম আহমেদ', 'হাবিবুর রহমান', 'তেঁতুলতলা, ইউনিয়ন 3, পাইকগাছা, খুলনা', 'খুলনা', 'পাইকগাছা', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(44, 'মোহাম্মদ শফিকুল', '5790111803', '01861313359', NULL, '1997-01-11', 'ফারজানা পারভীন', 'সাইফুল ইসলাম', 'সোনারপুর, ইউনিয়ন 4, মনোহরদী, নরসিংদী', 'নরসিংদী', 'মনোহরদী', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(45, 'মোখলেসুর রহমান', '9399183406', '01965452216', NULL, '1987-01-11', 'শামীম আহমেদ', 'তাসলিমা আক্তার', 'কামারপাড়া, ইউনিয়ন 5, গলাচিপা, পটুয়াখালী', 'পটুয়াখালী', 'গলাচিপা', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(46, 'মরিয়ম আক্তার', '1297789592', '01660234502', NULL, '1993-01-11', 'মনিরুল ইসলাম', 'সাইফুল ইসলাম', 'বাঁশবাড়ীয়া, ইউনিয়ন 6, আগৈলঝাড়া, বরিশাল', 'বরিশাল', 'আগৈলঝাড়া', 'কৃষক', 'নিজস্ব', 1, '2026-01-11 07:56:00', '2026-01-11 07:56:00'),
+(47, 'লায়লা আক্তার', '1041497104', '01825692596', NULL, '1985-01-11', 'ফারজানা পারভীন', 'হাসিনা খাতুন', 'ঘাটপাড়া, ইউনিয়ন 7, চকরিয়া, কক্সবাজার', 'কক্সবাজার', 'চকরিয়া', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:01', '2026-01-11 07:56:01'),
+(48, 'রহিমা বেগম', '8086198044', '01579108561', NULL, '1983-01-11', 'আব্দুল করিম', 'সাইফুল ইসলাম', 'কামারপাড়া, ইউনিয়ন 8, বানারীপাড়া, বরিশাল', 'বরিশাল', 'বানারীপাড়া', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:01', '2026-01-11 07:56:01'),
+(49, 'ফাতেমা খাতুন', '7312278323', '01975264844', NULL, '1990-01-11', 'মোস্তাফিজুর রহমান', 'হাবিবুর রহমান', 'হাটবাজার, ইউনিয়ন 9, পবা, রাজশাহী', 'রাজশাহী', 'পবা', 'কৃষক', 'ইজারা', 1, '2026-01-11 07:56:01', '2026-01-11 07:56:01'),
+(50, 'সুলতানা রহমান', '5405195383', '01518470251', NULL, '1994-01-11', 'রফিকুল ইসলাম', 'নাজমুল হক', 'পুকুরপাড়, ইউনিয়ন 10, দিঘলিয়া, খুলনা', 'খুলনা', 'দিঘলিয়া', 'কৃষক', 'ভাগচাষ', 1, '2026-01-11 07:56:01', '2026-01-11 07:56:01'),
+(51, 'ইসমাইল বেপারী', '০৪৩৫৬০৯৮৫৪', '01897193833', 'jenyfa776@gmail.com', NULL, 'গিয়াস উদ্দিন', 'ফাতেমা আক্তার', 'বশিরাবাজার', 'কুমিল্লা', 'কুমিরা', 'কৃষক', 'Bangladesh', 39, '2026-01-11 10:52:52', '2026-01-11 10:52:52'),
+(52, 'ইসমাইল বেপারী', '০৪৩৫৬০৯৮৫৪', '01897193833', 'jenyfa776@gmail.com', '0199-12-04', 'গিয়াস উদ্দিন', 'ফাতেমা আক্তার', NULL, 'রাজশাহী', 'কুমিরা', 'কৃষক', 'Bangladesh', 39, '2026-01-11 11:41:48', '2026-01-11 11:41:48');
 
 -- --------------------------------------------------------
 
@@ -1853,43 +2263,47 @@ INSERT INTO `marketplace_categories` (`category_id`, `category_name`, `category_
 CREATE TABLE `marketplace_listings` (
   `listing_id` int(11) NOT NULL,
   `seller_id` int(11) NOT NULL,
-  `title` varchar(150) NOT NULL,
-  `description` text DEFAULT NULL,
+  `title` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price` decimal(10,2) DEFAULT NULL,
-  `currency` varchar(3) DEFAULT 'BDT',
+  `currency` varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'BDT',
   `category_id` int(11) DEFAULT NULL,
-  `listing_type` enum('sell','rent','buy','service') DEFAULT 'sell',
-  `status` enum('active','sold','expired','draft') DEFAULT 'active',
-  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`images`)),
+  `listing_type` enum('sell','rent','buy','service') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'sell',
+  `status` enum('active','sold','expired','draft') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `postal_code` int(11) DEFAULT NULL,
-  `village` varchar(100) DEFAULT NULL,
-  `full_location_bn` varchar(255) NOT NULL,
-  `contact_phone` varchar(30) DEFAULT NULL,
-  `contact_email` varchar(100) DEFAULT NULL,
+  `village` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `full_location_bn` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contact_phone` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contact_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `is_featured` tinyint(1) DEFAULT 0,
   `views_count` mediumint(8) UNSIGNED DEFAULT 0,
   `saves_count` smallint(5) UNSIGNED DEFAULT 0,
   `contacts_count` smallint(5) UNSIGNED DEFAULT 0,
-  `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
+  `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `boosted_at` timestamp NULL DEFAULT NULL,
   `expires_at` timestamp NULL DEFAULT (current_timestamp() + interval 60 day)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `marketplace_listings`
 --
 
 INSERT INTO `marketplace_listings` (`listing_id`, `seller_id`, `title`, `description`, `price`, `currency`, `category_id`, `listing_type`, `status`, `images`, `postal_code`, `village`, `full_location_bn`, `contact_phone`, `contact_email`, `is_featured`, `views_count`, `saves_count`, `contacts_count`, `tags`, `created_at`, `updated_at`, `boosted_at`, `expires_at`) VALUES
-(11, 29, 'হুডি', 'সাদা কালার, খুব ভালো মানের', 801.00, 'BDT', 2, 'sell', 'active', '[\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/c212ac2f-8ed0-4ce8-9293-c6006da86d20.png\",\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/271e9db5-7cf2-4c36-9e22-40bd8f287add.png\"]', 1361, 'ডগাই', 'ডগাই , সারুলিয়া, ডেমরা, ঢাকা', '01997900840', NULL, 0, 0, 1, 3, '[\"hoodie\",\"anime\",\"white\"]', '2025-12-06 01:27:01', '2025-12-31 17:54:08', NULL, '2026-02-04 07:27:01'),
-(12, 29, 'গোলাপী', 'ভদ্র মেয়ে গোলাপী', 119984.00, 'BDT', 5, 'service', 'active', '[\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/6d3f3d05-f7c7-4016-99b7-c698116a615c.png\"]', 3708, 'পাঁচপাড়া', 'পাঁচপাড়া, চন্দ্রগঞ্জ, লক্ষ্মীপুর সদর, লক্ষ্মীপুর', '01997900840', NULL, 0, 0, 1, 1, '[]', '2025-12-06 02:59:48', '2025-12-31 17:43:30', '2025-12-16 14:54:28', '2026-02-04 08:59:48'),
-(13, 29, 'সামান্থা', 'অভিনয় ভালো করে', 98000.00, 'BDT', 4, 'buy', 'active', '[\"marketplace\\/66d15c8c-49ee-47d4-9907-c81c305f1616.png\"]', 3708, 'পাঁচপাড়া', 'পাঁচপাড়া, চন্দ্রগঞ্জ, লক্ষ্মীপুর সদর, লক্ষ্মীপুর', '01997900840', NULL, 0, 0, 1, 1, '[]', '2025-12-06 03:28:34', '2025-12-31 17:45:27', '2025-12-06 09:19:44', '2026-02-04 09:28:34'),
+(11, 29, 'হুডি', 'সাদা কালার, খুব ভালো মানের', 801.00, 'BDT', 2, 'sell', 'sold', '[\"https:\\/\\/langal.blob.core.windows.net\\/public\\/marketplace\\/c212ac2f-8ed0-4ce8-9293-c6006da86d20.png\",\"https:\\/\\/langal.blob.core.windows.net\\/public\\/marketplace\\/271e9db5-7cf2-4c36-9e22-40bd8f287add.png\"]', 1361, 'ডগাই', 'ডগাই , সারুলিয়া, ডেমরা, ঢাকা', '01997900840', NULL, 0, 0, 1, 3, '[\"hoodie\",\"anime\",\"white\"]', '2025-12-06 01:27:01', '2026-01-04 03:29:39', NULL, '2026-02-04 07:27:01'),
+(12, 29, 'গোলাপী', 'ভদ্র মেয়ে গোলাপী', 119984.00, 'BDT', 5, 'service', 'sold', '[\"https:\\/\\/langal.blob.core.windows.net\\/public\\/marketplace\\/6d3f3d05-f7c7-4016-99b7-c698116a615c.png\"]', 3708, 'পাঁচপাড়া', 'পাঁচপাড়া, চন্দ্রগঞ্জ, লক্ষ্মীপুর সদর, লক্ষ্মীপুর', '01997900840', NULL, 0, 0, 1, 1, '[]', '2025-12-06 02:59:48', '2026-01-11 11:51:04', '2025-12-16 14:54:28', '2026-02-04 08:59:48'),
+(13, 29, 'সামান্থা', 'অভিনয় ভালো করে', 98000.00, 'BDT', 4, 'buy', 'sold', '[\"https:\\/\\/langal.blob.core.windows.net\\/public\\/marketplace\\/66d15c8c-49ee-47d4-9907-c81c305f1616.png\"]', 3708, 'পাঁচপাড়া', 'পাঁচপাড়া, চন্দ্রগঞ্জ, লক্ষ্মীপুর সদর, লক্ষ্মীপুর', '01997900840', NULL, 0, 0, 1, 1, '[]', '2025-12-06 03:28:34', '2026-01-11 10:58:57', '2025-12-06 09:19:44', '2026-02-04 09:28:34'),
 (14, 29, 'শেঙ্কু ভাই', 'নিজেকে অনেক বড় হেডম ওয়ালা ভাবে', 1000.00, 'BDT', 3, 'rent', 'active', '[\"marketplace\\/18ab5263-9e84-44b0-bb87-6d36fd01cdfe.png\"]', 3708, 'পাঁচপাড়া', 'পাঁচপাড়া, চন্দ্রগঞ্জ, লক্ষ্মীপুর সদর, লক্ষ্মীপুর', '01997900840', NULL, 0, 0, 2, 1, '[]', '2025-12-06 03:43:47', '2025-12-31 17:50:32', '2025-12-06 09:27:24', '2026-02-04 09:43:47'),
-(15, 29, 'Beauty test', 'test test test', 23.00, 'BDT', 2, 'buy', 'active', '[\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/400fb086-f724-4fa9-bcd6-3570fcb4de44.jpg\"]', 1361, 'ডগাই', 'ডগাই, সারুলিয়া, ডেমরা, ঢাকা', '01997900840', NULL, 0, 0, 1, 1, '[]', '2025-12-06 04:19:13', '2025-12-07 03:23:29', NULL, '2026-02-04 10:19:13'),
-(16, 30, 'সাকিব', 'নিজে বিক্রি হয়ে যাবো', 0.00, 'BDT', 5, 'sell', 'active', '[\"marketplace\\/0ae0305f-ba6a-4c92-b04e-c74e9be922cf.jpeg\"]', 3720, 'রমাপুর', 'রমাপুর, রামগঞ্জ, রামগঞ্জ, লক্ষ্মীপুর', '01882953533', NULL, 0, 0, 2, 4, '[]', '2025-12-06 04:53:24', '2025-12-07 03:42:44', NULL, '2026-02-04 10:53:24'),
+(15, 29, 'Beauty test', 'test test test', 23.00, 'BDT', 2, 'buy', 'active', '[\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/400fb086-f724-4fa9-bcd6-3570fcb4de44.jpg\"]', 1361, 'ডগাই', 'ডগাই, সারুলিয়া, ডেমরা, ঢাকা', '01997900840', NULL, 0, 0, 1, 1, '[]', '2025-12-06 04:19:13', '2026-01-11 11:41:34', '2026-01-11 11:41:34', '2026-02-04 10:19:13'),
+(16, 30, 'সাকিব', 'নিজে বিক্রি হয়ে যাবো', 0.00, 'BDT', 5, 'sell', 'active', '[\"marketplace\\/0ae0305f-ba6a-4c92-b04e-c74e9be922cf.jpeg\"]', 3720, 'রমাপুর', 'রমাপুর, রামগঞ্জ, রামগঞ্জ, লক্ষ্মীপুর', '01882953533', NULL, 0, 0, 2, 5, '[]', '2025-12-06 04:53:24', '2026-01-11 11:37:37', NULL, '2026-02-04 10:53:24'),
 (19, 31, 'পানি পড়া', 'কালা বাবার কালা পানি পড়া', 99.00, 'BDT', 7, 'service', 'active', '[\"marketplace\\/e12f055e-3f1e-42b0-a907-9cbce394d5d2.png\"]', 4300, 'কেরাতলা', 'কেরাতলা, সন্দ্বীপ, সন্দ্বীপ, চট্টগ্রাম', '01970890839', NULL, 0, 0, 3, 5, '[]', '2025-12-07 03:15:27', '2025-12-11 06:49:03', NULL, '2026-02-05 09:15:27'),
-(20, 33, 'গাছের পাতা সবুজ', 'একেববারে তাজা', 0.00, 'BDT', 2, 'rent', 'sold', '[\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/b7be823a-c49c-4ae5-9f37-74cf29377937.png\"]', 1215, 'নাখালপাড়া', 'নাখালপাড়া, তেজগাঁও টিএসও, তেজগাঁও, ঢাকা', '01888999000', NULL, 0, 0, 0, 0, '[]', '2025-12-07 08:33:35', '2025-12-07 09:26:03', NULL, '2026-02-05 14:33:35');
+(20, 33, 'গাছের পাতা সবুজ', 'একেববারে তাজা', 0.00, 'BDT', 2, 'rent', 'sold', '[\"http:\\/\\/localhost:8000\\/storage\\/marketplace\\/b7be823a-c49c-4ae5-9f37-74cf29377937.png\"]', 1215, 'নাখালপাড়া', 'নাখালপাড়া, তেজগাঁও টিএসও, তেজগাঁও, ঢাকা', '01888999000', NULL, 0, 0, 0, 0, '[]', '2025-12-07 08:33:35', '2025-12-07 09:26:03', NULL, '2026-02-05 14:33:35'),
+(21, 29, 'ট্রাক্টর', 'অনেক ভালো আর হর্স পাওয়ার ২০০ হাজার', 1199.00, 'BDT', 2, 'rent', 'draft', '[\"https:\\/\\/langal.blob.core.windows.net\\/public\\/marketplace\\/185fb0c3-865c-4120-931f-c6d0f917fd13.png\"]', 8340, 'মুক্রি পুর', 'মুক্রি পুর, চরভদে, চরভদে, ভোলা', '01997900840', NULL, 0, 0, 0, 0, '[]', '2026-01-04 03:28:12', '2026-01-11 11:36:55', NULL, '2026-03-04 21:28:12'),
+(22, 61, 'কামলা', 'কামলা খাটানোর মানুষ', 1400.00, 'BDT', 7, 'rent', 'active', '[\"marketplace\\/f906b13f-418d-4f12-bc66-cb1c0b28e550.jpg\"]', 1205, 'সায়েন্স ল্যাব', 'সায়েন্স ল্যাব, নিউ মার্কেট টিএসও, নিউমার্কেট, ঢাকা', '01882130240', NULL, 0, 0, 0, 0, '[]', '2026-01-04 15:07:48', '2026-01-04 15:07:48', NULL, '2026-03-05 09:07:48'),
+(23, 61, 'কামলা', 'কামলা খাটানোর মানুষ', 1400.00, 'BDT', 7, 'rent', 'active', '[\"marketplace\\/02c0aadd-e017-438f-b848-b7e2bd1377b8.jpg\"]', 1205, 'সায়েন্স ল্যাব', 'সায়েন্স ল্যাব, নিউ মার্কেট টিএসও, নিউমার্কেট, ঢাকা', '01882130240', NULL, 0, 0, 0, 0, '[]', '2026-01-04 15:07:54', '2026-01-04 15:07:54', NULL, '2026-03-05 09:07:54'),
+(24, 61, 'কামলা', 'কামলা খাটানোর মানুষ', 1400.00, 'BDT', 7, 'rent', 'active', '[\"marketplace\\/1f6890dd-351f-4f3b-963b-fd6adc27b0cc.jpg\"]', 1205, 'সায়েন্স ল্যাব', 'সায়েন্স ল্যাব, নিউ মার্কেট টিএসও, নিউমার্কেট, ঢাকা', '01882130240', NULL, 0, 0, 0, 0, '[]', '2026-01-04 15:07:55', '2026-01-05 18:18:50', NULL, '2026-03-05 09:07:55');
 
 -- --------------------------------------------------------
 
@@ -1957,7 +2371,24 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (19, '2025_12_12_155201_add_progress_tracking_columns_to_farmer_selected_crops', 10),
 (20, '2025_12_12_160932_add_detailed_crop_info_to_farmer_selected_crops', 11),
 (21, '2025_12_15_194408_add_certification_document_to_expert_qualifications_table', 12),
-(23, '2025_12_30_163847_add_next_notification_date_to_farmer_selected_crops_table', 13);
+(23, '2025_12_30_163847_add_next_notification_date_to_farmer_selected_crops_table', 13),
+(24, '2024_12_17_create_post_reports_table', 14),
+(25, '2026_01_06_000001_create_expert_availability_table', 15),
+(26, '2026_01_06_000002_create_expert_unavailable_dates_table', 15),
+(28, '2026_01_06_000004_create_conversation_participants_table', 15),
+(29, '2026_01_06_000005_create_consultation_messages_table', 15),
+(30, '2026_01_06_000006_create_consultation_calls_table', 15),
+(31, '2026_01_06_000007_create_consultation_feedback_table', 15),
+(32, '2026_01_06_000008_create_consultation_prescriptions_table', 15),
+(33, '2026_01_06_000009_create_notification_tokens_table', 15),
+(34, '2026_01_06_000010_create_notification_queue_table', 15),
+(35, '2026_01_06_000011_update_expert_qualifications_for_consultation', 15),
+(36, '2026_01_06_000012_update_notifications_for_consultation', 15),
+(37, '2026_01_07_005132_add_last_active_at_to_users_table', 16),
+(38, '2026_01_06_000003_create_consultation_appointments_table', 17),
+(39, '2026_01_11_000001_create_field_data_farmers_table', 18),
+(40, '2026_01_11_000002_add_manual_farmer_to_field_data_collection', 19),
+(41, '2026_01_11_170120_make_farmer_id_nullable_in_field_data_collection', 20);
 
 -- --------------------------------------------------------
 
@@ -1968,6 +2399,11 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 CREATE TABLE `notifications` (
   `notification_id` int(11) NOT NULL,
   `notification_type` varchar(255) NOT NULL,
+  `notification_category` enum('system','appointment','message','call','reminder','feedback','prescription','marketing') NOT NULL DEFAULT 'system',
+  `priority` enum('low','normal','high','urgent') NOT NULL DEFAULT 'normal',
+  `action_url` varchar(255) DEFAULT NULL COMMENT 'Deep link URL',
+  `action_type` varchar(50) DEFAULT NULL,
+  `image_url` varchar(500) DEFAULT NULL,
   `title` varchar(150) NOT NULL,
   `message` text NOT NULL,
   `related_entity_id` varchar(36) DEFAULT NULL,
@@ -1975,33 +2411,113 @@ CREATE TABLE `notifications` (
   `recipient_id` int(11) DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT 0,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `read_at` timestamp NULL DEFAULT NULL
+  `read_at` timestamp NULL DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `notifications`
 --
 
-INSERT INTO `notifications` (`notification_id`, `notification_type`, `title`, `message`, `related_entity_id`, `sender_id`, `recipient_id`, `is_read`, `created_at`, `read_at`) VALUES
-(1, 'crop_reminder', 'ফসল নরবচন সফল হযছ', 'আপন সফলভব বগন ও সরষ নরবচন করছন', NULL, NULL, 29, 1, '2025-12-12 09:20:13', NULL),
-(2, 'crop_reminder', 'বেগুন - আগামীকাল বীজতলা প্রস্তুতি', 'আগামীকাল (Day 1) আপনার বেগুন চাষে বীজতলা প্রস্তুতি শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজ বোপন, জল দেওয়া', '1', NULL, 29, 1, '2025-12-12 10:00:19', NULL),
-(3, 'crop_reminder', 'সরিষা - আগামীকাল বীজতলা প্রস্তুতি', 'আগামীকাল (Day 1) আপনার সরিষা চাষে বীজতলা প্রস্তুতি শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজ বোপন, জল দেওয়া', '2', NULL, 29, 1, '2025-12-12 10:00:19', NULL),
-(4, 'crop_reminder', 'সরিষা ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার সরিষা ফসলের স্ট্যাটাস সক্রিয় থেকে সম্পন্ন এ পরিবর্তিত হয়েছে।', '2', NULL, 29, 1, '2025-12-12 10:02:16', NULL),
-(5, 'crop_reminder', 'অভিনন্দন! সরিষা চাষ সফলভাবে সম্পন্ন হয়েছে।', '', '2', NULL, 29, 1, '2025-12-12 10:02:16', NULL),
-(6, 'crop_reminder', 'আপনি বোরো ধান চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '3', NULL, 29, 1, '2025-12-12 10:21:45', NULL),
-(7, 'crop_reminder', 'আপনি আলু চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '4', NULL, 29, 1, '2025-12-12 10:21:45', NULL),
-(8, 'crop_reminder', 'বোরো ধান ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার বোরো ধান ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '3', NULL, 29, 1, '2025-12-12 10:24:35', NULL),
-(9, 'crop_reminder', 'আপনার বোরো ধান চাষ শুরু হয়েছে!', '', '3', NULL, 29, 1, '2025-12-12 10:24:35', NULL),
-(10, 'crop_reminder', 'আলু ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার আলু ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '4', NULL, 29, 1, '2025-12-12 10:45:29', NULL),
-(11, 'crop_reminder', 'আপনার আলু চাষ শুরু হয়েছে!', '', '4', NULL, 29, 1, '2025-12-12 10:45:29', NULL),
-(12, 'crop_reminder', 'বোরো ধান - আগামীকাল বীজতলা প্রস্তুতি', 'আগামীকাল (Day 1) আপনার বোরো ধান চাষে বীজতলা প্রস্তুতি শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজতলা তৈরি, জল দেওয়া', '3', NULL, 29, 1, '2025-12-12 10:49:43', NULL),
-(13, 'crop_reminder', 'আলু - আগামীকাল বীজ রোপণ', 'আগামীকাল (Day 1) আপনার আলু চাষে বীজ রোপণ শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজ রোপণ, জল দেওয়া', '4', NULL, 29, 1, '2025-12-12 10:49:43', NULL),
-(14, 'crop_reminder', 'আপনি গাজর চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '5', NULL, 29, 1, '2025-12-15 10:53:48', NULL),
-(15, 'crop_reminder', 'গাজর ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার গাজর ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '5', NULL, 29, 1, '2025-12-15 10:54:10', NULL),
-(16, 'crop_reminder', 'আপনার গাজর চাষ শুরু হয়েছে!', '', '5', NULL, 29, 1, '2025-12-15 10:54:10', NULL),
-(17, 'crop_reminder', 'আপনি কলা চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '6', NULL, 29, 1, '2025-12-30 11:20:38', NULL),
-(18, 'crop_reminder', 'কলা ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার কলা ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '6', NULL, 29, 1, '2025-12-30 11:21:14', NULL),
-(19, 'crop_reminder', 'আপনার কলা চাষ শুরু হয়েছে!', '', '6', NULL, 29, 1, '2025-12-30 11:21:14', NULL);
+INSERT INTO `notifications` (`notification_id`, `notification_type`, `notification_category`, `priority`, `action_url`, `action_type`, `image_url`, `title`, `message`, `related_entity_id`, `sender_id`, `recipient_id`, `is_read`, `created_at`, `read_at`, `expires_at`) VALUES
+(1, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'ফসল নরবচন সফল হযছ', 'আপন সফলভব বগন ও সরষ নরবচন করছন', NULL, NULL, 29, 1, '2025-12-12 09:20:13', '2026-01-11 11:40:39', NULL),
+(2, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'বেগুন - আগামীকাল বীজতলা প্রস্তুতি', 'আগামীকাল (Day 1) আপনার বেগুন চাষে বীজতলা প্রস্তুতি শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজ বোপন, জল দেওয়া', '1', NULL, 29, 1, '2025-12-12 10:00:19', '2026-01-11 11:40:39', NULL),
+(3, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'সরিষা - আগামীকাল বীজতলা প্রস্তুতি', 'আগামীকাল (Day 1) আপনার সরিষা চাষে বীজতলা প্রস্তুতি শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজ বোপন, জল দেওয়া', '2', NULL, 29, 1, '2025-12-12 10:00:19', '2026-01-11 11:40:39', NULL),
+(4, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'সরিষা ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার সরিষা ফসলের স্ট্যাটাস সক্রিয় থেকে সম্পন্ন এ পরিবর্তিত হয়েছে।', '2', NULL, 29, 1, '2025-12-12 10:02:16', '2026-01-11 11:40:39', NULL),
+(5, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'অভিনন্দন! সরিষা চাষ সফলভাবে সম্পন্ন হয়েছে।', '', '2', NULL, 29, 1, '2025-12-12 10:02:16', '2026-01-11 11:40:39', NULL),
+(6, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনি বোরো ধান চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '3', NULL, 29, 1, '2025-12-12 10:21:45', '2026-01-11 11:40:39', NULL),
+(7, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনি আলু চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '4', NULL, 29, 1, '2025-12-12 10:21:45', '2026-01-11 11:40:39', NULL),
+(8, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'বোরো ধান ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার বোরো ধান ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '3', NULL, 29, 1, '2025-12-12 10:24:35', '2026-01-11 11:40:39', NULL),
+(9, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনার বোরো ধান চাষ শুরু হয়েছে!', '', '3', NULL, 29, 1, '2025-12-12 10:24:35', '2026-01-11 11:40:39', NULL),
+(10, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আলু ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার আলু ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '4', NULL, 29, 1, '2025-12-12 10:45:29', '2026-01-11 11:40:39', NULL),
+(11, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনার আলু চাষ শুরু হয়েছে!', '', '4', NULL, 29, 1, '2025-12-12 10:45:29', '2026-01-11 11:40:39', NULL),
+(12, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'বোরো ধান - আগামীকাল বীজতলা প্রস্তুতি', 'আগামীকাল (Day 1) আপনার বোরো ধান চাষে বীজতলা প্রস্তুতি শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজতলা তৈরি, জল দেওয়া', '3', NULL, 29, 1, '2025-12-12 10:49:43', '2026-01-11 11:40:39', NULL),
+(13, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আলু - আগামীকাল বীজ রোপণ', 'আগামীকাল (Day 1) আপনার আলু চাষে বীজ রোপণ শুরু হবে। প্রস্তুতি নিন। কাজসমূহ: বীজ রোপণ, জল দেওয়া', '4', NULL, 29, 1, '2025-12-12 10:49:43', '2026-01-11 11:40:39', NULL),
+(14, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনি গাজর চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '5', NULL, 29, 1, '2025-12-15 10:53:48', '2026-01-11 11:40:39', NULL),
+(15, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'গাজর ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার গাজর ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '5', NULL, 29, 1, '2025-12-15 10:54:10', '2026-01-11 11:40:39', NULL),
+(16, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনার গাজর চাষ শুরু হয়েছে!', '', '5', NULL, 29, 1, '2025-12-15 10:54:10', '2026-01-11 11:40:39', NULL),
+(17, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনি কলা চাষের জন্য নির্বাচন করেছেন।', 'শীঘ্রই আপনার চাষাবাদ শুরু করুন। বিস্তারিত পরিকল্পনা দেখতে অ্যাপে যান।', '6', NULL, 29, 1, '2025-12-30 11:20:38', '2026-01-11 11:40:39', NULL),
+(18, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'কলা ফসলের স্ট্যাটাস পরিবর্তিত হয়েছে', 'আপনার কলা ফসলের স্ট্যাটাস পরিকল্পিত থেকে সক্রিয় এ পরিবর্তিত হয়েছে।', '6', NULL, 29, 1, '2025-12-30 11:21:14', '2026-01-11 11:40:39', NULL),
+(19, 'crop_reminder', 'system', 'normal', NULL, NULL, NULL, 'আপনার কলা চাষ শুরু হয়েছে!', '', '6', NULL, 29, 1, '2025-12-30 11:21:14', '2026-01-11 11:40:39', NULL),
+(20, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'পরামর্শ বাতিল হয়েছে', 'দুঃখিত, বিশেষজ্ঞ আপনার অনুরোধ প্রত্যাখ্যান করেছেন', '3', 71, 29, 1, '2026-01-07 15:39:51', '2026-01-11 11:40:39', NULL),
+(21, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'নতুন পরামর্শ অনুরোধ', 'একজন কৃষক আপনার সাথে পরামর্শের জন্য অনুরোধ করেছেন', '4', 29, 71, 1, '2026-01-07 15:40:48', NULL, NULL),
+(22, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'নতুন পরামর্শ অনুরোধ', 'একজন কৃষক আপনার সাথে পরামর্শের জন্য অনুরোধ করেছেন', '5', 29, 71, 1, '2026-01-07 17:45:36', NULL, NULL),
+(23, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'পরামর্শ নিশ্চিত হয়েছে', 'আপনার পরামর্শের অনুরোধ নিশ্চিত করা হয়েছে', '5', 71, 29, 1, '2026-01-07 17:56:31', '2026-01-11 11:40:39', NULL),
+(24, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'মোফাসসেল আলম মারুফ আপনাকে ভিডিও কল করছেন', '2', NULL, 71, 1, '2026-01-07 18:39:54', '2026-01-07 18:56:09', NULL),
+(25, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'মোফাসসেল আলম মারুফ আপনাকে ভিডিও কল করছেন', '5', NULL, 71, 1, '2026-01-07 18:42:21', '2026-01-07 18:56:05', NULL),
+(26, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'মোফাসসেল আলম মারুফ আপনাকে ভিডিও কল করছেন', '5', NULL, 71, 1, '2026-01-07 18:47:57', '2026-01-07 18:56:00', NULL),
+(27, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'প্রফেসর মারুফ আপনাকে ভিডিও কল করছেন', '2', NULL, 29, 1, '2026-01-07 18:56:57', '2026-01-11 11:40:39', NULL),
+(28, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'নতুন পরামর্শ অনুরোধ', 'একজন কৃষক আপনার সাথে পরামর্শের জন্য অনুরোধ করেছেন', '6', 29, 71, 1, '2026-01-07 19:03:11', '2026-01-07 19:03:41', NULL),
+(29, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'পরামর্শ নিশ্চিত হয়েছে', 'আপনার পরামর্শের অনুরোধ নিশ্চিত করা হয়েছে', '6', 71, 29, 1, '2026-01-07 19:05:02', '2026-01-11 11:40:39', NULL),
+(30, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'প্রফেসর মারুফ আপনাকে ভিডিও কল করছেন', '6', NULL, 29, 1, '2026-01-07 19:05:50', '2026-01-11 11:40:39', NULL),
+(31, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'প্রফেসর মারুফ আপনাকে ভিডিও কল করছেন', '6', NULL, 29, 1, '2026-01-07 19:30:45', '2026-01-11 11:40:39', NULL),
+(32, 'system', 'system', 'normal', NULL, NULL, NULL, 'কল শেষ', 'কল শেষ হয়েছে', NULL, NULL, 29, 1, '2026-01-07 20:18:24', '2026-01-11 11:40:39', NULL),
+(33, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'প্রফেসর মারুফ আপনাকে ভিডিও কল করছেন', '6', NULL, 29, 1, '2026-01-07 20:21:01', '2026-01-11 11:40:39', NULL),
+(34, 'system', 'system', 'normal', NULL, NULL, NULL, 'কল শেষ', 'কল শেষ হয়েছে', NULL, NULL, 29, 1, '2026-01-07 20:21:07', '2026-01-11 11:40:39', NULL),
+(35, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'মোফাসসেল আলম মারুফ আপনাকে ভিডিও কল করছেন', '6', NULL, 71, 1, '2026-01-07 20:27:13', '2026-01-07 22:20:17', NULL),
+(36, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'পরামর্শ বাতিল', 'একটি পরামর্শ বাতিল করা হয়েছে', '6', NULL, 71, 1, '2026-01-07 20:59:33', '2026-01-07 22:20:14', NULL),
+(37, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'পরামর্শ বাতিল হয়েছে', 'দুঃখিত, বিশেষজ্ঞ আপনার অনুরোধ প্রত্যাখ্যান করেছেন', '4', 71, 29, 1, '2026-01-07 21:14:34', '2026-01-11 11:40:39', NULL),
+(38, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'নতুন পরামর্শ অনুরোধ', 'একজন কৃষক আপনার সাথে পরামর্শের জন্য অনুরোধ করেছেন', '7', 29, 71, 1, '2026-01-07 21:36:58', '2026-01-07 21:37:08', NULL),
+(39, 'consultation_request', 'appointment', 'normal', NULL, NULL, NULL, 'পরামর্শ নিশ্চিত হয়েছে', 'আপনার পরামর্শের অনুরোধ নিশ্চিত করা হয়েছে', '7', 71, 29, 1, '2026-01-07 21:37:15', '2026-01-11 11:40:39', NULL),
+(40, 'consultation_request', 'call', 'high', NULL, NULL, NULL, 'ইনকামিং কল', 'প্রফেসর মারুফ আপনাকে ভিডিও কল করছেন', '7', NULL, 29, 1, '2026-01-07 21:37:37', '2026-01-11 11:40:39', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notification_queue`
+--
+
+CREATE TABLE `notification_queue` (
+  `queue_id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `notification_type` varchar(50) NOT NULL COMMENT 'appointment_request, call_reminder, etc.',
+  `channel` enum('push','sms','email','in_app') NOT NULL DEFAULT 'push',
+  `title` varchar(255) NOT NULL,
+  `title_bn` varchar(255) DEFAULT NULL,
+  `body` text NOT NULL,
+  `body_bn` text DEFAULT NULL,
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Extra payload data' CHECK (json_valid(`data`)),
+  `image_url` varchar(500) DEFAULT NULL,
+  `scheduled_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'When to send',
+  `priority` enum('low','normal','high') NOT NULL DEFAULT 'normal',
+  `status` enum('pending','sent','failed','cancelled') NOT NULL DEFAULT 'pending',
+  `attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `max_attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 3,
+  `sent_at` timestamp NULL DEFAULT NULL,
+  `error_message` text DEFAULT NULL,
+  `related_entity_type` varchar(50) DEFAULT NULL COMMENT 'appointment, message, etc.',
+  `related_entity_id` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `notification_queue`
+--
+
+INSERT INTO `notification_queue` (`queue_id`, `user_id`, `notification_type`, `channel`, `title`, `title_bn`, `body`, `body_bn`, `data`, `image_url`, `scheduled_at`, `priority`, `status`, `attempts`, `max_attempts`, `sent_at`, `error_message`, `related_entity_type`, `related_entity_id`, `created_at`, `updated_at`) VALUES
+(1, 71, 'new_appointment', 'push', 'নতুন পরামর্শ অনুরোধ', NULL, 'একজন কৃষক আপনার সাথে পরামর্শের জন্য অনুরোধ করেছেন', NULL, NULL, NULL, '2026-01-07 03:42:33', 'normal', 'pending', 0, 3, NULL, NULL, NULL, NULL, '2026-01-07 03:42:33', NULL),
+(2, 71, 'appointment_cancelled', 'push', 'পরামর্শ বাতিল', NULL, 'একটি পরামর্শ বাতিল করা হয়েছে', NULL, NULL, NULL, '2026-01-07 03:57:15', 'normal', 'pending', 0, 3, NULL, NULL, NULL, NULL, '2026-01-07 03:57:15', NULL),
+(3, 29, 'appointment_confirmed', 'push', 'পরামর্শ নিশ্চিত হয়েছে', NULL, 'আপনার পরামর্শের অনুরোধ নিশ্চিত করা হয়েছে', NULL, NULL, NULL, '2026-01-07 04:08:21', 'normal', 'pending', 0, 3, NULL, NULL, NULL, NULL, '2026-01-07 04:08:21', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notification_tokens`
+--
+
+CREATE TABLE `notification_tokens` (
+  `token_id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `device_token` varchar(500) NOT NULL COMMENT 'FCM/APNs token',
+  `device_type` enum('android','ios','web') NOT NULL,
+  `device_id` varchar(100) DEFAULT NULL COMMENT 'Unique device identifier',
+  `device_name` varchar(100) DEFAULT NULL,
+  `app_version` varchar(20) DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `last_used_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -2104,7 +2620,7 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 (63, 'App\\Models\\User', 29, 'farmer-app', 'd8fa373726afffef0b427dab15fd36095e7263f438dd098e3e352d88f2bb8e8e', '[\"farmer\"]', '2025-12-11 06:39:26', NULL, '2025-12-11 06:25:32', '2025-12-11 06:39:26'),
 (64, 'App\\Models\\User', 34, 'customer-app', '0b0026c61568c02c05a61fd1f51a6e0ac63d7ca2bbc8dead61fa3fdb2789ff27', '[\"customer\"]', '2025-12-11 06:49:02', NULL, '2025-12-11 06:47:46', '2025-12-11 06:49:02'),
 (65, 'App\\Models\\User', 33, 'customer-app', '657871d3dce1279e7dddac189c84e553d36faf8aed737fe2d7650e8170ca5849', '[\"customer\"]', '2025-12-11 06:50:23', NULL, '2025-12-11 06:50:17', '2025-12-11 06:50:23'),
-(66, 'App\\Models\\User', 29, 'farmer-app', 'eae0fe0ba416386cb21f8f455a081fe3dec73e63f5fcf46c2d8263a85933591a', '[\"farmer\"]', '2025-12-12 12:57:40', NULL, '2025-12-12 03:13:58', '2025-12-12 12:57:40'),
+(66, 'App\\Models\\User', 29, 'farmer-app', 'eae0fe0ba416386cb21f8f455a081fe3dec73e63f5fcf46c2d8263a85933591a', '[\"farmer\"]', '2026-01-06 22:25:17', NULL, '2025-12-12 03:13:58', '2026-01-06 22:25:17'),
 (67, 'App\\Models\\User', 29, 'farmer-app', '35f4e8a66c6c93722992ff8360d494da01182ce244e698abad6e0d85f5aa746a', '[\"farmer\"]', NULL, NULL, '2025-12-12 05:08:16', '2025-12-12 05:08:16'),
 (68, 'App\\Models\\User', 29, 'farmer-app', 'b5713f97bec066b6b7941f4381e253042efbb507494655daabcdc111bc94c842', '[\"farmer\"]', '2025-12-15 04:06:39', NULL, '2025-12-15 03:08:51', '2025-12-15 04:06:39'),
 (69, 'App\\Models\\User', 29, 'farmer-app', 'b668ab1662ea4b756c52e34dc9e18a41988e18c163d11b5218c14b6d4cec74c6', '[\"farmer\"]', '2025-12-15 05:06:05', NULL, '2025-12-15 04:25:21', '2025-12-15 05:06:05'),
@@ -2214,7 +2730,7 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 (173, 'App\\Models\\User', 39, 'data-operator-app', 'c1e61f9f87811f5f7f08e7b30bcb76513b9be026f1c7fabbe0b131610e2528b3', '[\"data_operator\"]', '2025-12-17 05:57:16', NULL, '2025-12-17 05:56:35', '2025-12-17 05:57:16'),
 (174, 'App\\Models\\User', 62, 'expert-app', '60330d3f7a9572f67c9e39371c36ad62fe651d97eab6f853bff3de4f65ac2d54', '[\"expert\"]', '2025-12-17 05:57:45', NULL, '2025-12-17 05:57:43', '2025-12-17 05:57:45'),
 (175, 'App\\Models\\User', 60, 'expert-app', '599adee64d0cef89ff6a8abc81d21c77b60bdd1754c9259af53c30800960700a', '[\"expert\"]', '2025-12-17 05:58:12', NULL, '2025-12-17 05:58:11', '2025-12-17 05:58:12'),
-(176, 'App\\Models\\User', 61, 'farmer-app', 'd61a1c574a8bf4f322050177499f4f6b2a384dd9f628df972b8d7569739a7329', '[\"farmer\"]', '2025-12-17 12:29:04', NULL, '2025-12-17 11:58:16', '2025-12-17 12:29:04'),
+(176, 'App\\Models\\User', 61, 'farmer-app', 'd61a1c574a8bf4f322050177499f4f6b2a384dd9f628df972b8d7569739a7329', '[\"farmer\"]', '2026-01-08 01:06:28', NULL, '2025-12-17 11:58:16', '2026-01-08 01:06:28'),
 (177, 'App\\Models\\User', 66, 'customer-app', '28b855ce9b974e1cececfe9a58531d4a08a9c6d27b553f56ea578541159346b6', '[\"customer\"]', '2025-12-17 06:03:01', NULL, '2025-12-17 05:59:00', '2025-12-17 06:03:01'),
 (178, 'App\\Models\\User', 60, 'expert-app', 'f4ab713e1c505b6e82c9558dafe925ffc8af5ca7a374baeb7e2a5402db2f6571', '[\"expert\"]', NULL, NULL, '2025-12-17 06:03:57', '2025-12-17 06:03:57'),
 (179, 'App\\Models\\User', 39, 'data-operator-app', '8af8b41c34fcd99cb8658787a5bc80f4b4eb86077e279dc1a820c0255def0532', '[\"data_operator\"]', '2025-12-17 06:05:20', NULL, '2025-12-17 06:04:18', '2025-12-17 06:05:20'),
@@ -2254,7 +2770,117 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 (213, 'App\\Models\\User', 29, 'farmer-app', '5533e01744a49f0638afff57387df98ee5c8f55f7ca3317b61a6a9ae9009299d', '[\"farmer\"]', '2025-12-31 19:02:42', NULL, '2025-12-31 19:00:34', '2025-12-31 19:02:42'),
 (214, 'App\\Models\\User', 33, 'customer-app', '7a7f674ad045325c78077ece426fd4ff514226ea7118a71cd1b32d16175926a3', '[\"customer\"]', '2025-12-31 19:04:58', NULL, '2025-12-31 19:02:57', '2025-12-31 19:04:58'),
 (215, 'App\\Models\\User', 33, 'customer-app', '12b7a2b8cb5400d87e8b92508f7b62c5d1a76b31591766ad6711df45ef208564', '[\"customer\"]', '2025-12-31 19:20:27', NULL, '2025-12-31 19:20:26', '2025-12-31 19:20:27'),
-(216, 'App\\Models\\User', 29, 'farmer-app', '90a16edec974744504dc5024c26421296c858165dbf5b2ba6fe7ed065d15c494', '[\"farmer\"]', '2025-12-31 19:42:46', NULL, '2025-12-31 19:42:43', '2025-12-31 19:42:46');
+(216, 'App\\Models\\User', 29, 'farmer-app', '90a16edec974744504dc5024c26421296c858165dbf5b2ba6fe7ed065d15c494', '[\"farmer\"]', '2025-12-31 19:42:46', NULL, '2025-12-31 19:42:43', '2025-12-31 19:42:46'),
+(217, 'App\\Models\\User', 29, 'farmer-app', '72d58e500d8c95b81e37afb8fa3f05013bb3a9b174c345b8aa3e0856b12f372c', '[\"farmer\"]', NULL, NULL, '2026-01-04 00:57:48', '2026-01-04 00:57:48'),
+(218, 'App\\Models\\User', 29, 'farmer-app', 'bc21710405b924d7a893d65c91072d379acd10e5a2a08f531a602f6dfbdf619a', '[\"farmer\"]', NULL, NULL, '2026-01-04 00:57:56', '2026-01-04 00:57:56'),
+(219, 'App\\Models\\User', 29, 'farmer-app', '7ac142090b4271c38b4f399baa0d066e5ea85378e1502da70f2a618b732c7cd4', '[\"farmer\"]', NULL, NULL, '2026-01-04 00:58:37', '2026-01-04 00:58:37'),
+(220, 'App\\Models\\User', 29, 'farmer-app', '41f43227135e5e30210ab86158f6b1c9bcd94982892a7d3b8e425b571904ba00', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:02:28', '2026-01-04 01:02:28'),
+(221, 'App\\Models\\User', 33, 'customer-app', '72b44187efae0795614957db331fc5b162f62184f128c2e6ad846acb7432058c', '[\"customer\"]', NULL, NULL, '2026-01-04 01:02:45', '2026-01-04 01:02:45'),
+(222, 'App\\Models\\User', 33, 'customer-app', '07a62485330ab1a32a32b313cf09932feb0a3c2b9546f787d4b35e8a1558e0a0', '[\"customer\"]', NULL, NULL, '2026-01-04 01:02:50', '2026-01-04 01:02:50'),
+(223, 'App\\Models\\User', 29, 'farmer-app', 'd0a5f3ebff829ab91d44316b308b00257d17b371733161c3ea0a548a3fbbc6b2', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:03:16', '2026-01-04 01:03:16'),
+(224, 'App\\Models\\User', 29, 'farmer-app', '9d55446cae605db1f2c6d9482e7100979cc4820491aed5ba7ab740990894544d', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:07:52', '2026-01-04 01:07:52'),
+(225, 'App\\Models\\User', 29, 'farmer-app', 'cc482d7b7cb47259f56a901f59c9a6012a8dbd71194e38304a22e53c061bf49a', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:17:15', '2026-01-04 01:17:15'),
+(226, 'App\\Models\\User', 29, 'farmer-app', '976bd9c99a2d4e72348b18da5077d6333553d335683734edcb9904d23f0d7fe0', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:21:34', '2026-01-04 01:21:34'),
+(227, 'App\\Models\\User', 29, 'farmer-app', '0df180a6fcafb8cae083bbdd5403246c2c6d30bd33705729e7ff2b92ea9b1236', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:24:20', '2026-01-04 01:24:20'),
+(228, 'App\\Models\\User', 29, 'farmer-app', 'e5754be50279c3cdc0f59eb5c1c58634099ac29b06f741adcb38eb80154e950f', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:29:08', '2026-01-04 01:29:08'),
+(229, 'App\\Models\\User', 29, 'farmer-app', 'e4ebc40879a70685780571952c864269f55471ae0be927c52d7d0ddf66b32375', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:32:44', '2026-01-04 01:32:44'),
+(230, 'App\\Models\\User', 29, 'farmer-app', '17877a9b9b1825ecb0b5f2b1e19bc7d757a7bd7a4f4356c912b101aecb650ce2', '[\"farmer\"]', NULL, NULL, '2026-01-04 01:33:13', '2026-01-04 01:33:13'),
+(231, 'App\\Models\\User', 29, 'farmer-app', '92bf3b7887c85d5a4ffc77c68e2bb5a1415c191cb57194f9c6a6649b8d00f8bb', '[\"farmer\"]', '2026-01-04 01:42:44', NULL, '2026-01-04 01:42:23', '2026-01-04 01:42:44'),
+(232, 'App\\Models\\User', 33, 'customer-app', '1d41b0df3af577563c8b1b73178813a83b8b83c965547de600d04c14fda4c146', '[\"customer\"]', '2026-01-04 01:42:59', NULL, '2026-01-04 01:42:58', '2026-01-04 01:42:59'),
+(233, 'App\\Models\\User', 29, 'farmer-app', '0956dd0d2a2efb720c24ead552ea558f8e674e657847feb2f657109202fd25ab', '[\"farmer\"]', '2026-01-04 02:46:18', NULL, '2026-01-04 01:43:36', '2026-01-04 02:46:18'),
+(234, 'App\\Models\\User', 29, 'farmer-app', '3d4d1a24902e0b765c72b3f88e03e86fd1668a4f73f075b0df40521fb7879af8', '[\"farmer\"]', '2026-01-04 02:49:01', NULL, '2026-01-04 02:47:22', '2026-01-04 02:49:01'),
+(235, 'App\\Models\\User', 33, 'customer-app', 'd75d93c694fc6a3ac7cc0b43c0cff0627a508c32a1f6e8f665348ec44bbe6842', '[\"customer\"]', '2026-01-04 02:55:03', NULL, '2026-01-04 02:49:22', '2026-01-04 02:55:03'),
+(236, 'App\\Models\\User', 29, 'farmer-app', '002a879bbc40c03e96b65d5ec27d75714ca2394868ee46cf3e8f8cb82206ace7', '[\"farmer\"]', '2026-01-04 02:55:43', NULL, '2026-01-04 02:55:32', '2026-01-04 02:55:43'),
+(237, 'App\\Models\\User', 33, 'customer-app', '89ed8e0693c84cf594c83722c6e42215d1435e3992e3df4f5315dbb09e15d7b2', '[\"customer\"]', '2026-01-04 02:58:47', NULL, '2026-01-04 02:56:00', '2026-01-04 02:58:47'),
+(238, 'App\\Models\\User', 29, 'farmer-app', 'cf1404bb127a91888cb1412d31ace676972b416ee740818ec2020abc199d107a', '[\"farmer\"]', '2026-01-04 13:02:12', NULL, '2026-01-04 02:59:35', '2026-01-04 13:02:12'),
+(239, 'App\\Models\\User', 61, 'farmer-app', '7c0f6ed53feec0d0daf4a7b3f1e6c341f3b498be1a3f4e1cefd1afb210b74429', '[\"farmer\"]', '2026-01-04 15:11:48', NULL, '2026-01-04 14:47:35', '2026-01-04 15:11:48'),
+(240, 'App\\Models\\User', 29, 'farmer-app', 'e96d8cc1c0c8a9a185bed27fb96d16f09426913474ee516399ef112fa6b54f2d', '[\"farmer\"]', '2026-01-04 15:03:19', NULL, '2026-01-04 14:52:02', '2026-01-04 15:03:19'),
+(241, 'App\\Models\\User', 29, 'farmer-app', 'bd99750f3497da130e0d70abf1e5640a1fc728f6b90db39cbf17ae9d1572d1ca', '[\"farmer\"]', '2026-01-04 15:07:08', NULL, '2026-01-04 15:04:07', '2026-01-04 15:07:08'),
+(242, 'App\\Models\\User', 29, 'farmer-app', '440194b7fbf62732cac2969497fabab7b07316dc137446f76feb30d3265778c3', '[\"farmer\"]', '2026-01-04 15:08:57', NULL, '2026-01-04 15:08:55', '2026-01-04 15:08:57'),
+(243, 'App\\Models\\User', 29, 'farmer-app', '50ee0c2d80a98bce25248abcdb92fa12e29bd271c6531091e911c791502ba708', '[\"farmer\"]', '2026-01-04 22:19:42', NULL, '2026-01-04 15:16:36', '2026-01-04 22:19:42'),
+(244, 'App\\Models\\User', 29, 'farmer-app', 'fa3540acf057bf730651e3b0fdefac8039618ba0f98b2e9fb89a7d67c6fa1e11', '[\"farmer\"]', '2026-01-07 22:28:03', NULL, '2026-01-04 15:31:37', '2026-01-07 22:28:03'),
+(245, 'App\\Models\\User', 29, 'farmer-app', 'fff10d480fdec41911cfa731d97d5b9939e58110d623be29949254365d849161', '[\"farmer\"]', '2026-01-05 20:17:29', NULL, '2026-01-04 22:48:43', '2026-01-05 20:17:29'),
+(246, 'App\\Models\\User', 29, 'farmer-app', '1b8a987a6c09e835ce1c0a239c6f34b1ac3e6b78fd9a4585d002d8c32a858720', '[\"farmer\"]', '2026-01-05 00:59:13', NULL, '2026-01-05 00:47:04', '2026-01-05 00:59:13');
+INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
+(247, 'App\\Models\\User', 29, 'farmer-app', '7bb1404ab0e1a114d1e546deed0a226d05feb18e5ad677f04edf54868021143a', '[\"farmer\"]', '2026-01-05 01:16:47', NULL, '2026-01-05 01:15:45', '2026-01-05 01:16:47'),
+(248, 'App\\Models\\User', 29, 'farmer-app', 'b4969a57bc5a3ff800282c41775142f16c812c3ebd4fd5e8f815eba349297401', '[\"farmer\"]', '2026-01-05 02:16:18', NULL, '2026-01-05 01:30:27', '2026-01-05 02:16:18'),
+(249, 'App\\Models\\User', 33, 'customer-app', '8c5eb8d0e56d68015ba50e5114b37531e677415dcc955ffa28dc35836e524407', '[\"customer\"]', '2026-01-05 02:18:03', NULL, '2026-01-05 02:16:53', '2026-01-05 02:18:03'),
+(250, 'App\\Models\\User', 29, 'farmer-app', '955db4839fa6451f9b68cf100fb98fd2a3e27bb06c6ca6bc2a20fe6afc390ad4', '[\"farmer\"]', '2026-01-05 17:50:36', NULL, '2026-01-05 17:48:35', '2026-01-05 17:50:36'),
+(251, 'App\\Models\\User', 29, 'farmer-app', 'f2ee1bf21ff9109e5d020a7edc6ce2cd1d673bc16db398d4f8e6877952edb585', '[\"farmer\"]', '2026-01-06 20:05:03', NULL, '2026-01-05 18:15:06', '2026-01-06 20:05:03'),
+(252, 'App\\Models\\User', 29, 'farmer-app', '4b98fc37942e2aca6a7e919f2c7bf8b042ee7da447d2c1ff05be7769835168b1', '[\"farmer\"]', '2026-01-05 20:04:51', NULL, '2026-01-05 19:58:32', '2026-01-05 20:04:51'),
+(253, 'App\\Models\\User', 29, 'farmer-app', '8ca265f6eb722213c08a386492f881383899e92982a949b8cfa8d23654036c21', '[\"farmer\"]', '2026-01-06 01:11:48', NULL, '2026-01-05 21:10:43', '2026-01-06 01:11:48'),
+(254, 'App\\Models\\User', 29, 'farmer-app', 'c2b6eafdefbbcd18210f3f3c25a770f2e3115246378ad648c997a74969133be9', '[\"farmer\"]', '2026-01-05 23:56:40', NULL, '2026-01-05 23:50:52', '2026-01-05 23:56:40'),
+(255, 'App\\Models\\User', 29, 'farmer-app', 'b68c7fc0e28f07474ea73da96d34af7d8a52e162e32ddb558d80fd1285837d4e', '[\"farmer\"]', '2026-01-07 23:40:58', NULL, '2026-01-06 01:03:07', '2026-01-07 23:40:58'),
+(256, 'App\\Models\\User', 29, 'farmer-app', '22a32a771ea76714c9ebdec61797b93693226c2326a9f2be127843ef6f9518f0', '[\"farmer\"]', '2026-01-06 01:12:07', NULL, '2026-01-06 01:12:06', '2026-01-06 01:12:07'),
+(257, 'App\\Models\\User', 29, 'farmer-app', '1f7df1c2c6803647699ce6673f1667cc9550c78aacd6de88c7880ff429dbfd3e', '[\"farmer\"]', '2026-01-06 19:25:03', NULL, '2026-01-06 01:12:57', '2026-01-06 19:25:03'),
+(258, 'App\\Models\\User', 29, 'farmer-app', '9c938b7f048bf9087afc8f1e462214e6fbee0749885413bd7917796295bd8858', '[\"farmer\"]', '2026-01-06 02:42:16', NULL, '2026-01-06 02:42:00', '2026-01-06 02:42:16'),
+(259, 'App\\Models\\User', 69, 'expert-app', '07733cca059b64ea74774e0b497aadb61033f4c932036003df5a64cd617eef26', '[\"expert\"]', NULL, NULL, '2026-01-06 19:36:01', '2026-01-06 19:36:01'),
+(260, 'App\\Models\\User', 70, 'expert-app', '53f35e9a2ba3b423df5282d7053a8f77c3e8138fc08d92b28e0a3472ed061c1e', '[\"expert\"]', NULL, NULL, '2026-01-06 19:45:25', '2026-01-06 19:45:25'),
+(261, 'App\\Models\\User', 71, 'expert-app', '5a7d8ee326ab94338c2b4c173e41b254c73ea5239af4fab74c2f8274b074cc85', '[\"expert\"]', '2026-01-07 22:28:18', NULL, '2026-01-06 19:52:18', '2026-01-07 22:28:18'),
+(262, 'App\\Models\\User', 71, 'expert-app', '76952650a27db13629b4ffc1bf89140bb23b04f02e63f255d17eb5ad6dafe823', '[\"expert\"]', '2026-01-06 20:13:21', NULL, '2026-01-06 20:05:08', '2026-01-06 20:13:21'),
+(263, 'App\\Models\\User', 39, 'data-operator-app', 'd952520760e8823e5f0508c8c5a40085d003976c47b9e3c14a4ebb9554d29bc8', '[\"data_operator\"]', '2026-01-06 20:15:32', NULL, '2026-01-06 20:14:19', '2026-01-06 20:15:32'),
+(264, 'App\\Models\\User', 71, 'expert-app', '5df0fc17e8bb5a0e51e106dd41a4c5535183cbd08d0c55de2a42df17912fdff7', '[\"expert\"]', '2026-01-06 20:26:18', NULL, '2026-01-06 20:16:06', '2026-01-06 20:26:18'),
+(265, 'App\\Models\\User', 71, 'expert-app', '428569c40961fb0a48c9efa75db6bfadbf3057599466e6c9ef576035ee0ef123', '[\"expert\"]', '2026-01-06 22:05:32', NULL, '2026-01-06 20:27:22', '2026-01-06 22:05:32'),
+(266, 'App\\Models\\User', 29, 'farmer-app', 'd30a5af6f30a0db2eb6d3088b85fd358b7923f6eed41dbc7b820843a4c7751f9', '[\"farmer\"]', '2026-01-11 07:42:11', NULL, '2026-01-06 22:06:02', '2026-01-11 07:42:11'),
+(267, 'App\\Models\\User', 71, 'expert-app', '7bef5658e0d341ccf7eb52161bc4512307b15108e76adb3c946b0a9a8ee6d341', '[\"expert\"]', '2026-01-06 23:32:40', NULL, '2026-01-06 22:25:34', '2026-01-06 23:32:40'),
+(268, 'App\\Models\\User', 71, 'expert-app', '05998d8cc2a8630fc598c96a16644cec1f90e3dfb28653ccdd8886d02c3a0cf7', '[\"expert\"]', '2026-01-07 00:52:22', NULL, '2026-01-06 23:33:31', '2026-01-07 00:52:22'),
+(269, 'App\\Models\\User', 71, 'expert-app', 'd14577182bd711259ebf2fcb673d13df391203b6ac11044ca8d28e58c6cc1f1a', '[\"expert\"]', '2026-01-07 22:31:01', NULL, '2026-01-07 00:57:50', '2026-01-07 22:31:01'),
+(270, 'App\\Models\\User', 29, 'farmer-app', 'bd201ff3f7d3e92b27d84001c7f0431d9f7df4d661e7af9c62606ee82fd0856e', '[\"farmer\"]', '2026-01-07 22:06:01', NULL, '2026-01-07 21:34:00', '2026-01-07 22:06:01'),
+(271, 'App\\Models\\User', 29, 'farmer-app', '9d23458c2e6cf74a29930379c043053a60e559e4900252c886bc31c12efb45b0', '[\"farmer\"]', NULL, NULL, '2026-01-08 01:06:57', '2026-01-08 01:06:57'),
+(272, 'App\\Models\\User', 29, 'farmer-app', 'dfada39616900649508e51ff8b9d526f947fd65ab131b35b74c2a4418e2c99fd', '[\"farmer\"]', NULL, NULL, '2026-01-08 01:07:26', '2026-01-08 01:07:26'),
+(273, 'App\\Models\\User', 29, 'farmer-app', '5a893a2b308f6de00a929de1ebed1254fb5aaf68a8e9e8bfa2482319b4f66b0e', '[\"farmer\"]', NULL, NULL, '2026-01-08 01:12:15', '2026-01-08 01:12:15'),
+(274, 'App\\Models\\User', 29, 'farmer-app', '417a4df0c45b2feb27df8f9a7ab346abfa53b81d1ab7ae4172f87a9491fd5fd7', '[\"farmer\"]', '2026-01-08 01:35:42', NULL, '2026-01-08 01:14:42', '2026-01-08 01:35:42'),
+(275, 'App\\Models\\User', 29, 'farmer-app', '20078e325206d34191d9fa94297de95d48dee807840a5cc65ce3df66e5d5e3ec', '[\"farmer\"]', '2026-01-11 07:13:24', NULL, '2026-01-11 07:02:10', '2026-01-11 07:13:24'),
+(276, 'App\\Models\\User', 71, 'expert-app', '20149fd78cd02349743256588bac7b44701626f555f395eade111ed5f759e569', '[\"expert\"]', '2026-01-11 07:15:59', NULL, '2026-01-11 07:13:58', '2026-01-11 07:15:59'),
+(277, 'App\\Models\\User', 29, 'farmer-app', 'd9fd67577648088a5791314823195e5ba389adb886e2aa6769df9e10f9f92f32', '[\"farmer\"]', '2026-01-11 09:16:11', NULL, '2026-01-11 07:16:42', '2026-01-11 09:16:11'),
+(278, 'App\\Models\\User', 39, 'data-operator-app', 'c3b99015d92bfd325bb9623322d3229c76a2fb52386e8159d59188d45c625959', '[\"data_operator\"]', '2026-01-11 08:00:53', NULL, '2026-01-11 07:42:14', '2026-01-11 08:00:53'),
+(279, 'App\\Models\\User', 39, 'data-operator-app', '3d67536a0e71799678dcd0ccfccb889428e1602079c9451b228343ceb79d0dd8', '[\"data_operator\"]', '2026-01-11 08:03:18', NULL, '2026-01-11 07:45:30', '2026-01-11 08:03:18'),
+(280, 'App\\Models\\User', 29, 'farmer-app', '55e5878538924b747f2cf91a526554d96b2d704c283c8b019ca1d4b06a65ee9e', '[\"farmer\"]', '2026-01-11 08:36:56', NULL, '2026-01-11 07:52:24', '2026-01-11 08:36:56'),
+(281, 'App\\Models\\User', 39, 'data-operator-app', '4cc7130a0fb9df6277d2220db0e276d7bbe29c28dfc01308a50486d2d377ef01', '[\"data_operator\"]', '2026-01-11 08:04:01', NULL, '2026-01-11 08:04:00', '2026-01-11 08:04:01'),
+(282, 'App\\Models\\User', 39, 'data-operator-app', '27c3cba673ab13029005da52d0f5ad9b8f0da704abfd9403f0ae992e815800c1', '[\"data_operator\"]', '2026-01-11 08:08:32', NULL, '2026-01-11 08:07:27', '2026-01-11 08:08:32'),
+(283, 'App\\Models\\User', 39, 'data-operator-app', '677eff03f4a0fad385ffb83ebe9c58d44a4be9302d51370a09f6d9fb4c7e013e', '[\"data_operator\"]', '2026-01-11 08:10:45', NULL, '2026-01-11 08:08:44', '2026-01-11 08:10:45'),
+(284, 'App\\Models\\User', 39, 'data-operator-app', '3a1f543dd5da1cc219a1ce160e1e79937be60440c2914872d8dcf14f008a5b75', '[\"data_operator\"]', '2026-01-11 08:14:19', NULL, '2026-01-11 08:11:01', '2026-01-11 08:14:19'),
+(285, 'App\\Models\\User', 39, 'data-operator-app', 'ce04f56691493fff3c1050b8ee6156f9e55a48308a988bc286a625ee2ce902b9', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:18:03', '2026-01-11 08:18:03'),
+(286, 'App\\Models\\User', 39, 'data-operator-app', '37d41907265f1670016023fb89245cac1c22d6549e0416e6a962bf45e1762835', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:18:58', '2026-01-11 08:18:58'),
+(287, 'App\\Models\\User', 39, 'data-operator-app', '02785df344c29fc30b7b012d28160b9d1b67aa605784c689e1ef1931b45d8795', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:19:29', '2026-01-11 08:19:29'),
+(288, 'App\\Models\\User', 29, 'farmer-app', '281d51f2d6bb2fe71d0842bde60a65e99374b7750c687572feef5a647b7e31bd', '[\"farmer\"]', '2026-01-11 08:20:12', NULL, '2026-01-11 08:20:09', '2026-01-11 08:20:12'),
+(289, 'App\\Models\\User', 39, 'data-operator-app', 'ab6a9aa56c1e7c7939bfd5429729e1760680f6c17ea7e90394e7c140134b1006', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:20:45', '2026-01-11 08:20:45'),
+(290, 'App\\Models\\User', 39, 'data-operator-app', 'abf6c55333dca270618ab1bf5a5d446c647bda895bf7a5107242ccc07cc79e76', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:22:12', '2026-01-11 08:22:12'),
+(291, 'App\\Models\\User', 39, 'data-operator-app', '31aef21c8ca0cc7cfc2cd07c10036f588599567c227072c86d7a50ca70ca6065', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:23:11', '2026-01-11 08:23:11'),
+(292, 'App\\Models\\User', 39, 'data-operator-app', '261c12dccc627263076ff02d2321a2e4b79813ae390099474e171d22dbd496d2', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:24:15', '2026-01-11 08:24:15'),
+(293, 'App\\Models\\User', 39, 'data-operator-app', '8c59c53b99c4b3dbe679ffe8b7c571fddc2b5eef8a4b42b7cc165a34843a8264', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:24:34', '2026-01-11 08:24:34'),
+(294, 'App\\Models\\User', 39, 'data-operator-app', 'c571dbb1e004e6623d5f217f4063e66e78060394aa085a853cf55c1d69db5e0f', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:27:18', '2026-01-11 08:27:18'),
+(295, 'App\\Models\\User', 39, 'data-operator-app', 'dfee6d99990e73e7c994a87b4c8f5edcd1bd853d99a8a2cebd5c829035608e5c', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:30:37', '2026-01-11 08:30:37'),
+(296, 'App\\Models\\User', 39, 'data-operator-app', '7182464a6e9d6ca514e81f9d8559403f2626e82eff981855e263e52fe558dea5', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:32:41', '2026-01-11 08:32:41'),
+(297, 'App\\Models\\User', 39, 'data-operator-app', 'a54575eed75c87dde3d19d6247c3b66fea4f5acb8829fe5636647a0e4aec4f29', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:32:58', '2026-01-11 08:32:58'),
+(298, 'App\\Models\\User', 39, 'data-operator-app', '106a9c5c38a3a6e7e94ec9efbdbadd289e3c291ff55a52624f64db513e2137c1', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:34:03', '2026-01-11 08:34:03'),
+(299, 'App\\Models\\User', 39, 'data-operator-app', '327d41464e74e48bb3d2ab8085b2371815a696072c58687f97d92513689f2206', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:41:27', '2026-01-11 08:41:27'),
+(300, 'App\\Models\\User', 39, 'data-operator-app', 'aad6ce8014060da6179b9a57d9df7e317fd6433b76ce337d45a8fbdf3bb0ed82', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:45:48', '2026-01-11 08:45:48'),
+(301, 'App\\Models\\User', 39, 'data-operator-app', 'a53e8bdf8f0c931b7bfd73fd1d09f96feb72509471ad010b21babce2c5c64d85', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:48:10', '2026-01-11 08:48:10'),
+(302, 'App\\Models\\User', 39, 'data-operator-app', 'c87c49fe3a2edff755e94208da1fdc96e4a6812d8d9019b50d5f7386d4825e94', '[\"data_operator\"]', NULL, NULL, '2026-01-11 08:50:08', '2026-01-11 08:50:08'),
+(303, 'App\\Models\\User', 39, 'data-operator-app', '38c0c91f400de7aab8d197d1b09a1873b0e139d13b468ab88e5e6782b28d3a3e', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:05:19', '2026-01-11 09:05:19'),
+(304, 'App\\Models\\User', 39, 'data-operator-app', '85ef3fc2f109038b6f6d088f5f401578465ec64fb8b37d762348c8cedacfd7e2', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:05:26', '2026-01-11 09:05:26'),
+(305, 'App\\Models\\User', 29, 'farmer-app', '38207868c1f98e4d78919cf6ab8393de5d5c11bd9746a6b2b289ba27872515da', '[\"farmer\"]', NULL, NULL, '2026-01-11 09:06:11', '2026-01-11 09:06:11'),
+(306, 'App\\Models\\User', 29, 'farmer-app', '1eac99902a51cae248721430bf42654c6926671d63d1f1a183238b9e65c5a342', '[\"farmer\"]', NULL, NULL, '2026-01-11 09:06:32', '2026-01-11 09:06:32'),
+(307, 'App\\Models\\User', 39, 'data-operator-app', 'b7d92cf8ebd6bdf8f25d43617a102cb9f11dccc0624ef36bee39bd895a274f50', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:09:48', '2026-01-11 09:09:48'),
+(308, 'App\\Models\\User', 71, 'expert-app', '8721a2cb9083d35bba60a83cf08c208258d1edb3b1d74224509c6922335761e1', '[\"expert\"]', '2026-01-11 09:43:37', NULL, '2026-01-11 09:17:10', '2026-01-11 09:43:37'),
+(309, 'App\\Models\\User', 39, 'data-operator-app', 'ec5dc22455e1edf957db881819bd8ba0fb61c14f1485e8914044c9f4539c84aa', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:23:03', '2026-01-11 09:23:03'),
+(310, 'App\\Models\\User', 29, 'farmer-app', '80cff67f6cd7988f168a263824ce722dd4615402f87c106b8113113e2dde1806', '[\"farmer\"]', '2026-01-11 09:24:18', NULL, '2026-01-11 09:23:56', '2026-01-11 09:24:18'),
+(311, 'App\\Models\\User', 39, 'data-operator-app', '9a25280efbeb56ec2138e3dab7130dd74144b434231031d17700921420820710', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:24:38', '2026-01-11 09:24:38'),
+(312, 'App\\Models\\User', 39, 'data-operator-app', '86a75aa7de8194c3d6c6d62186e4735ea7a0363078b651a6fc3eee08b7d85034', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:24:59', '2026-01-11 09:24:59'),
+(313, 'App\\Models\\User', 39, 'data-operator-app', '1e05dd20bece8a0aba62de320562a792f27db1b7df91783dd206c236879e17fe', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:25:41', '2026-01-11 09:25:41'),
+(314, 'App\\Models\\User', 39, 'data-operator-app', '75f8087dbb56e9725b28af862136b1394fc3faf83c213719c37e95fe3c39dd09', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:32:48', '2026-01-11 09:32:48'),
+(315, 'App\\Models\\User', 39, 'data-operator-app', '05f325828eedd5a6813be2062e0d38eb38abd4f070cfa3a48ebcf35dfe61670e', '[\"data_operator\"]', NULL, NULL, '2026-01-11 09:34:19', '2026-01-11 09:34:19'),
+(316, 'App\\Models\\User', 39, 'data-operator-app', '408c6db9b6735010a3da5c708186f0a1afdfacf56fb4f970b0dc74e302100690', '[\"data_operator\"]', '2026-01-11 09:37:42', NULL, '2026-01-11 09:37:41', '2026-01-11 09:37:42'),
+(317, 'App\\Models\\User', 29, 'farmer-app', '860a7b44c0ec140f397e469d5bc2e639ef5dfee2dd83251682be630ac7238acf', '[\"farmer\"]', '2026-01-11 09:38:31', NULL, '2026-01-11 09:38:28', '2026-01-11 09:38:31'),
+(318, 'App\\Models\\User', 39, 'data-operator-app', '118df106e347181b5a6c1e685fe6cc01de7bda5dacec128c0f5221c63400217b', '[\"data_operator\"]', '2026-01-11 09:40:23', NULL, '2026-01-11 09:38:54', '2026-01-11 09:40:23'),
+(319, 'App\\Models\\User', 29, 'farmer-app', '7792abaf0fd4982e29159784514879a989c8c23cb6ca265ae7f050a95f855c18', '[\"farmer\"]', '2026-01-11 09:41:14', NULL, '2026-01-11 09:40:48', '2026-01-11 09:41:14'),
+(320, 'App\\Models\\User', 39, 'data-operator-app', '3fb21316b635204ed6854b06bbb9feea5921fcf62732ddd346b09ea59fe4152c', '[\"data_operator\"]', '2026-01-11 11:59:35', NULL, '2026-01-11 09:41:32', '2026-01-11 11:59:35'),
+(321, 'App\\Models\\User', 29, 'farmer-app', 'ec654d49d3f25a40bc58a676e902b27c236a27f6cf516fab7b00ae2f4db32e0a', '[\"farmer\"]', '2026-01-11 09:44:20', NULL, '2026-01-11 09:44:19', '2026-01-11 09:44:20'),
+(322, 'App\\Models\\User', 33, 'customer-app', '534b732c16ecb425fc6d0e3df1dfeb2d37dc90951a0d777cd7032b64a5d69db1', '[\"customer\"]', '2026-01-11 10:53:41', NULL, '2026-01-11 09:45:34', '2026-01-11 10:53:41'),
+(323, 'App\\Models\\User', 29, 'farmer-app', 'bb0828e7ab39e896ce9bbb66304eedfebfdc346861fa1a3e1e836d1a79f04d2d', '[\"farmer\"]', '2026-01-11 11:02:06', NULL, '2026-01-11 10:54:02', '2026-01-11 11:02:06'),
+(324, 'App\\Models\\User', 29, 'farmer-app', 'fcc7770063657c3b6bb853f3c35399a9498c0ef74fbf95ad700917aecc173fdc', '[\"farmer\"]', '2026-01-11 11:59:15', NULL, '2026-01-11 11:02:58', '2026-01-11 11:59:15'),
+(325, 'App\\Models\\User', 29, 'farmer-app', 'a6ecd82a35ae42273f2d591833e64008aaed0ad2e76525e9d41bd8841228cda7', '[\"farmer\"]', '2026-01-11 11:59:19', NULL, '2026-01-11 11:31:47', '2026-01-11 11:59:19');
 
 -- --------------------------------------------------------
 
@@ -2265,12 +2891,12 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 CREATE TABLE `posts` (
   `post_id` int(11) NOT NULL,
   `author_id` int(11) NOT NULL,
-  `content` text NOT NULL,
-  `post_type` enum('general','marketplace','question','advice','expert_advice') DEFAULT 'general',
-  `marketplace_listing_id` varchar(36) DEFAULT NULL,
-  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`images`)),
-  `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
-  `location` varchar(255) DEFAULT NULL,
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `post_type` enum('general','marketplace','question','advice','expert_advice') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'general',
+  `marketplace_listing_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `likes_count` int(11) DEFAULT 0,
   `comments_count` int(11) DEFAULT 0,
   `views_count` int(11) DEFAULT 0,
@@ -2279,7 +2905,7 @@ CREATE TABLE `posts` (
   `is_deleted` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `posts`
@@ -2295,9 +2921,15 @@ INSERT INTO `posts` (`post_id`, `author_id`, `content`, `post_type`, `marketplac
 (8, 61, 'পুরোনো আলুর দাম বাড়েনি\nকৃষিপণ্যের ক্ষেত্রে আরেকটি প্রবণতা হলো, মৌসুমের শেষ দিকে এসে সবজির দাম বাড়ে। বাজারের এ স্বাভাবিক প্রবণতা এ বছর আলুর ক্ষেত্রে খাটেনি। রাজধানীর বাজারগুলোতে এখন প্রতি কেজি পুরোনো আলু বিক্রি হচ্ছে ২০-২৫ টাকায়। আর বিভিন্ন উৎপাদন এলাকায় ১৫ টাকা কেজি দরেও পুরোনো আলু বিক্রি হচ্ছে।\n\nসরকারি সংস্থা ট্রেডিং করপোরেশন অব বাংলাদেশের (টিসিবি) তথ্য অনুসারে, ২০২৪ সালের এই সময়ে বাজারে প্রতি কেজি আলু বিক্রি হয়েছে ৬০ থেকে ৬৫ টাকায়। অর্থাৎ এক বছরের ব্যবধানে খুচরা পর্যায়ে আলুর দাম দুই-তৃতীয়াংশ বা তিন গুণের বেশি কম রয়েছে। পুরোনো আলু কম থাকার কারণ, গত বছর চাহিদার তুলনায় বেশি পরিমাণে আলু চাষ হয়েছিল।\n\nকৃষি সম্প্রসারণ অধিদপ্তরের মতে, দেশে বছরে আলুর চাহিদা প্রায় ৯০ লাখ টন। গত অর্থবছরে মোট ১ কোটি ২৯ লাখ টন আলু উৎপাদিত হয়। আর ২০২৩-২৪ অর্থবছরে আলু উৎপাদিত হয়েছিল ১ কোটি ৬ লাখ টন। অর্থাৎ গত বছর আলুর উৎপাদন বেড়েছিল। মূলত গত দু-তিন বছরে বাজারে ভালো দাম পাওয়ায় আলু চাষ করে লাভবান হয়েছিলেন কৃষকেরা। এতে তাঁরা গত বছরে আলু চাষ বাড়িয়ে দেন। কিন্তু চাহিদার তুলনায় উৎপাদন বেশি হওয়ায় দাম পড়ে যায়। তবে এ বছর মৌসুম শেষে আলুর দাম কেমন থাকবে তা উৎপাদনের পুরো চিত্র পাওয়া গেলে ধারণা পাওয়া যাবে।', 'general', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/1aa69135-bb16-4da6-b573-57f6a9538ef8.avif\"]', NULL, NULL, 1, 3, 0, 0, 0, 1, '2025-12-17 05:34:24', '2025-12-17 11:48:36'),
 (9, 61, 'পুরোনো আলুর দাম বাড়েনি\nকৃষিপণ্যের ক্ষেত্রে আরেকটি প্রবণতা হলো, মৌসুমের শেষ দিকে এসে সবজির দাম বাড়ে। বাজারের এ স্বাভাবিক প্রবণতা এ বছর আলুর ক্ষেত্রে খাটেনি। রাজধানীর বাজারগুলোতে এখন প্রতি কেজি পুরোনো আলু বিক্রি হচ্ছে ২০-২৫ টাকায়। আর বিভিন্ন উৎপাদন এলাকায় ১৫ টাকা কেজি দরেও পুরোনো আলু বিক্রি হচ্ছে।\n\nসরকারি সংস্থা ট্রেডিং করপোরেশন অব বাংলাদেশের (টিসিবি) তথ্য অনুসারে, ২০২৪ সালের এই সময়ে বাজারে প্রতি কেজি আলু বিক্রি হয়েছে ৬০ থেকে ৬৫ টাকায়। অর্থাৎ এক বছরের ব্যবধানে খুচরা পর্যায়ে আলুর দাম দুই-তৃতীয়াংশ বা তিন গুণের বেশি কম রয়েছে। পুরোনো আলু কম থাকার কারণ, গত বছর চাহিদার তুলনায় বেশি পরিমাণে আলু চাষ হয়েছিল।\n\nকৃষি সম্প্রসারণ অধিদপ্তরের মতে, দেশে বছরে আলুর চাহিদা প্রায় ৯০ লাখ টন। গত অর্থবছরে মোট ১ কোটি ২৯ লাখ টন আলু উৎপাদিত হয়। আর ২০২৩-২৪ অর্থবছরে আলু উৎপাদিত হয়েছিল ১ কোটি ৬ লাখ টন। অর্থাৎ গত বছর আলুর উৎপাদন বেড়েছিল। মূলত গত দু-তিন বছরে বাজারে ভালো দাম পাওয়ায় আলু চাষ করে লাভবান হয়েছিলেন কৃষকেরা। এতে তাঁরা গত বছরে আলু চাষ বাড়িয়ে দেন। কিন্তু চাহিদার তুলনায় উৎপাদন বেশি হওয়ায় দাম পড়ে যায়। তবে এ বছর মৌসুম শেষে আলুর দাম কেমন থাকবে তা উৎপাদনের পুরো চিত্র পাওয়া গেলে ধারণা পাওয়া যাবে।', 'general', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/64fde1e7-abef-4f41-b2a2-6e7629f74581.avif\"]', NULL, NULL, 3, 3, 0, 0, 0, 0, '2025-12-17 05:49:15', '2025-12-17 15:52:28'),
 (10, 61, 'শ্রীলঙ্কার দুর্যোগে বাংলাদেশের ‘আলু কূটনীতির’ সুযোগ\nঢাকায় যখন নতুন আলুর কেজি ৬০ টাকা আর হিমাগারের আলু ৩০ টাকার কমে বিক্রি হচ্ছে, তখন শ্রীলঙ্কায় এক কেজি আলু ৫০০ রুপিতেও মিলছে না। কেন?\nগত ২৮ নভেম্বর শ্রীলঙ্কার স্থলভাগে আঘাত হানে ঘূর্ণিঝড় দিতওয়া। এরপর তিন দিন ধরে ভারী বৃষ্টি এবং ঝোড়ো বাতাসে দেশটির ২৫টি জেলা প্লাবিত হয়েছে। শ্রীলঙ্কার বিভিন্ন স্থানে বিদ্যুৎ–বিভ্রাট এবং যোগাযোগব্যবস্থায় মারাত্মক ব্যাঘাত দেখা দিয়েছে। বহু বছর দেশটির মানুষ এমন ধ্বংসযজ্ঞ দেখেনি। এক দশকের মধ্যে সবচেয়ে ভয়াবহ বন্যা ও ভূমিধসে অন্তত ৪১০ জনের মৃত্যু হয়েছে বলে জানা গেছে। এখনো নিখোঁজ রয়েছেন অন্তত ৩৩৬ জন।\n\nএদিকে পাহাড়ধসের ঝুঁকি এখনো বলবৎ থাকায় জেলাগুলোতে রেড অ্যালার্ট জারি আছে। স্থানীয় লোকজন ‘আশ্রয়কেন্দ্রে’ গাদাগাদি করে থাকতে বাধ্য হচ্ছেন।', 'general', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/5c637f87-dca3-4066-9b97-b2ad60f4cd89.avif\"]', NULL, NULL, 2, 1, 0, 0, 0, 0, '2025-12-17 12:44:39', '2025-12-17 14:50:10'),
-(11, 61, 'মানবিক সংস্থায় পৃথিবীর নানা দেশে কাজ করার অভিজ্ঞতা আছে সুরজকান্তি ম্যানডিজের। সুনামির সময় তামিলনাড়ুতে আমরা একসঙ্গে কাজ করেছিলাম। সুরজ জানিয়েছেন, ‘অনেক জায়গায় সম্পূর্ণ কমিউনিটি উচ্ছেদ হয়ে গেছে, অনেক পরিবার এখনো অতিরিক্ত ভিড়ের মধ্যে গা–ঘেঁষাঘেঁষি করে অস্থায়ী আশ্রয়কেন্দ্রে থাকছে। সবাই কঠিন অনিশ্চয়তায় দিন কাটাচ্ছে। সুরজ খুবই শক্ত মনের। তবু তাঁর গলা ধরে আসে, ভেতরের কান্না চাপা থাকে না।\n\nশ্রীলঙ্কার দুর্যোগ ব্যবস্থাপনা কেন্দ্র (ডিএমসি) খুবই করিতকর্মা আর আমলাতান্ত্রিকতামুক্ত একটি প্রতিষ্ঠান। গত মার্চে এই প্রতিষ্ঠানের দায়িত্ব পেয়েছেন অবসরপ্রাপ্ত মেজর জেনারেল সাম্পথ কোনটুওয়েগোদা। ডিএমসির মহাপরিচালক জাতিসংঘের বিভিন্ন সংস্থা এবং আন্তর্জাতিক অংশীদারদের সঙ্গে ঘনিষ্ঠ সমন্বয়ে ত্রাণ কার্যক্রম পরিচালনা করছেন।\n\nপ্রতিবেশী দেশগুলোও যে যার সাধ্যমতো এগিয়ে আসার অঙ্গীকার করেছে। এর মধ্যে একটি দেশ তাদের গুদামে থাকা ‘পূর্ব সংরক্ষিত’ মালামাল পাঠাতে গিয়ে মেয়াদোত্তীর্ণ খাদ্যদ্রব্য পাঠিয়ে মহাবিপাকে পড়েছে। সোশ্যাল মিডিয়ায় এটিকে ‘সহায়তা কূটনীতির প্রহসন’ বলে ব্যাপক সমালোচনা করা হয়েছে। শ্রীলঙ্কার দুর্যোগ ব্যবস্থাপনা এবং বিদেশবিষয়ক সংশ্লিষ্ট ব্যক্তিরা পরিস্থিতিটিকে ‘গুরুতর উদ্বেগের’ বিষয় বলে অভিহিত করেছেন এবং দেশটির কাছ থেকে আনুষ্ঠানিক ব্যাখ্যা চেয়েছেন।', 'marketplace', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/1b8f1c3d-1f34-4f0a-83ea-9c869b991ac1.avif\",\"http:\\/\\/localhost:8000\\/storage\\/posts\\/b7ebf569-fa4c-451e-a865-4d08ebea836e.avif\"]', NULL, NULL, 2, 2, 0, 0, 0, 0, '2025-12-17 12:55:28', '2025-12-17 14:55:33'),
-(12, 62, 'কৃষি পরামর্শক বাতায়ন সম্পর্কে\nকৃষি-পরামর্শক বাতায়ন বাংলাদেশ কৃষি গবেষণা কাউন্সিল (বিএআরসি) কর্তৃক বাস্তবায়িত ক্রপ জোনিং প্রকল্পের আওতায় নির্মাণ করা হয়েছে। এটি আইসিটিভিত্তিক একটি দ্বৈত ভাষার প্ল্যাটফর্ম যার মাধ্যমে প্রয়োজন মাফিক কৃষি প্রযুক্তি বিষয়ক পরামর্শমূলক সেবা পাওয়া যাবে। এটি কৃষি এবং কৃষিক্ষেত্রের সংগে সংশ্লিষ্ঠ অন্যান্য গুরুত্বপূর্ণ তথ্য প্রাপ্তির গেটওয়ে হিসেবেও কাজ করবে। এছাড়াও, , কৃষি-পরামর্শক বাতায়নটি কৃষক, বেসরকারী প্রতিষ্ঠান, সরকারী সংস্থা, গবেষক এবং অন্যান্য উপকারভোগিদের জন্য প্রয়োজনীয় তথ্য প্রাপ্তি, গুরুত্বপূর্ণ তথ্য প্রাপ্তিতে সহযোগিতা এবং তথ্য বিনিময়ের জন্য একটি প্ল্যাটফর্ম হিসেবে কাজ করবে।\nউক্ত কৃষি পরামর্শক বাতায়নটির চূড়ান্ত লক্ষ্য হলো, কৃষি উপকারভোগির সমন্বয়ের মাধ্যমে কৃষক এবং কৃষি উৎপাদন সংশ্লিষ্ট অন্যান্য পর্যায়ে উৎপাদন পরিকল্পনায় সহায়তা করা। এছাড়াও, এ কৃষি পরামর্শক বাতায়নটি নির্দিষ্ট এলাকার তথ্যাবলী সরবরাহ, তথ্য-ভান্ডার থেকে প্রয়োজনীয় তথ্য সংগ্রহ করা, স্থানিক তথ্য এবং জিআইএস এর ব্যবহার উপযোগি প্রয়োজনীয় তথ্য প্রাপ্তির সুযোগ সৃষ্টি করা।', 'expert_advice', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/9c17a941-d072-4cdb-a3b0-e6a1b22beac9.jpeg\"]', NULL, NULL, 3, 1, 0, 0, 0, 0, '2025-12-17 13:55:59', '2025-12-17 15:52:05'),
-(13, 29, '৩০ ডিসেম্বরের এই সকালটি ঢাকার ইতিহাসে অন্যরকম এক হাহাকার নিয়ে এসেছে। উত্তরের হাড়কাঁপানো হিমেল হাওয়া আর ঘন কুয়াশায় ঢাকা রাজধানী আজ এক বিষণ্ণ চাদরে মুড়িয়ে আছে। প্রকৃতিতে যেমন তীব্র শীতের কামড়, রাজনৈতিক অঙ্গনেও তেমনি নেমে এসেছে এক স্তব্ধতা।\n\nশীতের তীব্রতায় ঢাকা ও বেগম জিয়ার বিদায়:\n\nকুয়াশার চাদরে ঢাকা শহর: ভোরের আলো ফোটার আগেই আজ ঢাকাকে গ্রাস করেছে ঘন কুয়াশা। বাতাসের আদ্রতা আর হিমেল হাওয়া যেন হাড়ের ভেতর গিয়ে বিঁধছে। রাস্তার মোড়ে মোড়ে আগুনের পাশে জড়ো হওয়া মানুষগুলোর চোখেমুখে এক ধরণের অনিশ্চয়তা।\n\nরাজপথের স্তব্ধতা: শীতের সকালে এমনিতে যানজট কম থাকে, কিন্তু আজকের নীরবতা অন্যরকম। এভারকেয়ার হাসপাতাল থেকে শুরু করে নয়াপল্টন পর্যন্ত—সবখানেই কনকনে ঠান্ডার মাঝেও মানুষের ভিড় বাড়ছে, কিন্তু সেই ভিড়ে কোনো উচ্চ শব্দ নেই, শুধু এক চাপা কান্না আর স্তব্ধতা।\n\nএক যুগের অবসান: প্রকৃতির এই রুক্ষ আর হিমশীতল পরিবেশের মধ্যেই খবর আসে বাংলাদেশের তিনবারের সাবেক প্রধানমন্ত্রী বেগম খালেদা জিয়ার চিরবিদায়ের। দীর্ঘ লড়াই শেষে তিনি আজ সব মায়ার ঊর্ধ্বে চলে গেলেন।\n\nঢাকার রাজপথের এই হাড়কাঁপানো ঠান্ডার মাঝেও হাজারো মানুষ আজ রাস্তায় নেমে এসেছে তাঁদের প্রিয় নেত্রীকে শেষ বিদায় জানাতে। চারদিকে বইছে উত্তরের শীতল হাওয়া, আর মানুষের মনে জমাট বেঁধেছে শোকের বরফ।\n\nপ্রকৃতির এই হিমাঙ্ক ছোঁয়া শীতের মাঝেই বাংলাদেশের রাজনীতির একটি বিশাল নক্ষত্র আজ নিভে গেল।', 'general', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/3ddd5abc-c627-4a82-8678-e2663a6aa914.png\"]', NULL, NULL, 2, 3, 0, 0, 0, 0, '2025-12-30 11:29:20', '2025-12-31 17:53:07');
+(11, 61, 'মানবিক সংস্থায় পৃথিবীর নানা দেশে কাজ করার অভিজ্ঞতা আছে সুরজকান্তি ম্যানডিজের। সুনামির সময় তামিলনাড়ুতে আমরা একসঙ্গে কাজ করেছিলাম। সুরজ জানিয়েছেন, ‘অনেক জায়গায় সম্পূর্ণ কমিউনিটি উচ্ছেদ হয়ে গেছে, অনেক পরিবার এখনো অতিরিক্ত ভিড়ের মধ্যে গা–ঘেঁষাঘেঁষি করে অস্থায়ী আশ্রয়কেন্দ্রে থাকছে। সবাই কঠিন অনিশ্চয়তায় দিন কাটাচ্ছে। সুরজ খুবই শক্ত মনের। তবু তাঁর গলা ধরে আসে, ভেতরের কান্না চাপা থাকে না।\n\nশ্রীলঙ্কার দুর্যোগ ব্যবস্থাপনা কেন্দ্র (ডিএমসি) খুবই করিতকর্মা আর আমলাতান্ত্রিকতামুক্ত একটি প্রতিষ্ঠান। গত মার্চে এই প্রতিষ্ঠানের দায়িত্ব পেয়েছেন অবসরপ্রাপ্ত মেজর জেনারেল সাম্পথ কোনটুওয়েগোদা। ডিএমসির মহাপরিচালক জাতিসংঘের বিভিন্ন সংস্থা এবং আন্তর্জাতিক অংশীদারদের সঙ্গে ঘনিষ্ঠ সমন্বয়ে ত্রাণ কার্যক্রম পরিচালনা করছেন।\n\nপ্রতিবেশী দেশগুলোও যে যার সাধ্যমতো এগিয়ে আসার অঙ্গীকার করেছে। এর মধ্যে একটি দেশ তাদের গুদামে থাকা ‘পূর্ব সংরক্ষিত’ মালামাল পাঠাতে গিয়ে মেয়াদোত্তীর্ণ খাদ্যদ্রব্য পাঠিয়ে মহাবিপাকে পড়েছে। সোশ্যাল মিডিয়ায় এটিকে ‘সহায়তা কূটনীতির প্রহসন’ বলে ব্যাপক সমালোচনা করা হয়েছে। শ্রীলঙ্কার দুর্যোগ ব্যবস্থাপনা এবং বিদেশবিষয়ক সংশ্লিষ্ট ব্যক্তিরা পরিস্থিতিটিকে ‘গুরুতর উদ্বেগের’ বিষয় বলে অভিহিত করেছেন এবং দেশটির কাছ থেকে আনুষ্ঠানিক ব্যাখ্যা চেয়েছেন।', 'marketplace', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/1b8f1c3d-1f34-4f0a-83ea-9c869b991ac1.avif\",\"http:\\/\\/localhost:8000\\/storage\\/posts\\/b7ebf569-fa4c-451e-a865-4d08ebea836e.avif\"]', NULL, NULL, 3, 3, 0, 0, 0, 0, '2025-12-17 12:55:28', '2026-01-04 19:30:45'),
+(12, 62, 'কৃষি পরামর্শক বাতায়ন সম্পর্কে\nকৃষি-পরামর্শক বাতায়ন বাংলাদেশ কৃষি গবেষণা কাউন্সিল (বিএআরসি) কর্তৃক বাস্তবায়িত ক্রপ জোনিং প্রকল্পের আওতায় নির্মাণ করা হয়েছে। এটি আইসিটিভিত্তিক একটি দ্বৈত ভাষার প্ল্যাটফর্ম যার মাধ্যমে প্রয়োজন মাফিক কৃষি প্রযুক্তি বিষয়ক পরামর্শমূলক সেবা পাওয়া যাবে। এটি কৃষি এবং কৃষিক্ষেত্রের সংগে সংশ্লিষ্ঠ অন্যান্য গুরুত্বপূর্ণ তথ্য প্রাপ্তির গেটওয়ে হিসেবেও কাজ করবে। এছাড়াও, , কৃষি-পরামর্শক বাতায়নটি কৃষক, বেসরকারী প্রতিষ্ঠান, সরকারী সংস্থা, গবেষক এবং অন্যান্য উপকারভোগিদের জন্য প্রয়োজনীয় তথ্য প্রাপ্তি, গুরুত্বপূর্ণ তথ্য প্রাপ্তিতে সহযোগিতা এবং তথ্য বিনিময়ের জন্য একটি প্ল্যাটফর্ম হিসেবে কাজ করবে।\nউক্ত কৃষি পরামর্শক বাতায়নটির চূড়ান্ত লক্ষ্য হলো, কৃষি উপকারভোগির সমন্বয়ের মাধ্যমে কৃষক এবং কৃষি উৎপাদন সংশ্লিষ্ট অন্যান্য পর্যায়ে উৎপাদন পরিকল্পনায় সহায়তা করা। এছাড়াও, এ কৃষি পরামর্শক বাতায়নটি নির্দিষ্ট এলাকার তথ্যাবলী সরবরাহ, তথ্য-ভান্ডার থেকে প্রয়োজনীয় তথ্য সংগ্রহ করা, স্থানিক তথ্য এবং জিআইএস এর ব্যবহার উপযোগি প্রয়োজনীয় তথ্য প্রাপ্তির সুযোগ সৃষ্টি করা।', 'expert_advice', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/9c17a941-d072-4cdb-a3b0-e6a1b22beac9.jpeg\"]', NULL, NULL, 3, 1, 0, 0, 0, 0, '2025-12-17 13:55:59', '2026-01-04 19:31:20'),
+(13, 29, '৩০ ডিসেম্বরের এই সকালটি ঢাকার ইতিহাসে অন্যরকম এক হাহাকার নিয়ে এসেছে। উত্তরের হাড়কাঁপানো হিমেল হাওয়া আর ঘন কুয়াশায় ঢাকা রাজধানী আজ এক বিষণ্ণ চাদরে মুড়িয়ে আছে। প্রকৃতিতে যেমন তীব্র শীতের কামড়, রাজনৈতিক অঙ্গনেও তেমনি নেমে এসেছে এক স্তব্ধতা।\n\nশীতের তীব্রতায় ঢাকা ও বেগম জিয়ার বিদায়:\n\nকুয়াশার চাদরে ঢাকা শহর: ভোরের আলো ফোটার আগেই আজ ঢাকাকে গ্রাস করেছে ঘন কুয়াশা। বাতাসের আদ্রতা আর হিমেল হাওয়া যেন হাড়ের ভেতর গিয়ে বিঁধছে। রাস্তার মোড়ে মোড়ে আগুনের পাশে জড়ো হওয়া মানুষগুলোর চোখেমুখে এক ধরণের অনিশ্চয়তা।\n\nরাজপথের স্তব্ধতা: শীতের সকালে এমনিতে যানজট কম থাকে, কিন্তু আজকের নীরবতা অন্যরকম। এভারকেয়ার হাসপাতাল থেকে শুরু করে নয়াপল্টন পর্যন্ত—সবখানেই কনকনে ঠান্ডার মাঝেও মানুষের ভিড় বাড়ছে, কিন্তু সেই ভিড়ে কোনো উচ্চ শব্দ নেই, শুধু এক চাপা কান্না আর স্তব্ধতা।\n\nএক যুগের অবসান: প্রকৃতির এই রুক্ষ আর হিমশীতল পরিবেশের মধ্যেই খবর আসে বাংলাদেশের তিনবারের সাবেক প্রধানমন্ত্রী বেগম খালেদা জিয়ার চিরবিদায়ের। দীর্ঘ লড়াই শেষে তিনি আজ সব মায়ার ঊর্ধ্বে চলে গেলেন।\n\nঢাকার রাজপথের এই হাড়কাঁপানো ঠান্ডার মাঝেও হাজারো মানুষ আজ রাস্তায় নেমে এসেছে তাঁদের প্রিয় নেত্রীকে শেষ বিদায় জানাতে। চারদিকে বইছে উত্তরের শীতল হাওয়া, আর মানুষের মনে জমাট বেঁধেছে শোকের বরফ।\n\nপ্রকৃতির এই হিমাঙ্ক ছোঁয়া শীতের মাঝেই বাংলাদেশের রাজনীতির একটি বিশাল নক্ষত্র আজ নিভে গেল।', 'general', NULL, '[\"http:\\/\\/localhost:8000\\/storage\\/posts\\/3ddd5abc-c627-4a82-8678-e2663a6aa914.png\"]', NULL, NULL, 2, 5, 0, 0, 0, 0, '2025-12-30 11:29:20', '2026-01-05 17:55:03'),
+(14, 61, 'কামলা খাটার লোক আছে।', 'marketplace', NULL, '[\"https:\\/\\/langal.blob.core.windows.net\\/public\\/posts\\/0b83d3fe-2b42-4504-831d-e463651c1946.jpg\"]', NULL, NULL, 4, 3, 0, 0, 0, 0, '2026-01-04 14:52:59', '2026-01-11 07:02:20'),
+(15, 29, 'abc', 'general', NULL, '[]', NULL, NULL, 2, 0, 0, 0, 0, 0, '2026-01-05 17:49:47', '2026-01-11 07:14:11'),
+(16, 29, 'আরমান কে বিক্রি দিবো', 'marketplace', NULL, '[]', NULL, NULL, 0, 0, 0, 0, 0, 1, '2026-01-11 08:05:20', '2026-01-11 08:05:54'),
+(17, 29, 'আমার ট্রাক্টর এখন পাওয়া যাচ্ছে!', 'marketplace', '21', '[]', NULL, NULL, 1, 1, 0, 0, 0, 0, '2026-01-11 08:41:33', '2026-01-11 09:16:04'),
+(18, 29, 'কামলা খাটার লোক আছে।', 'marketplace', '13', '[\"https:\\/\\/langal.blob.core.windows.net\\/public\\/posts\\/d3e9981f-e4af-4498-8bde-ba471353c055.jpeg\"]', NULL, NULL, 0, 0, 0, 0, 0, 0, '2026-01-11 08:46:37', '2026-01-11 08:46:37'),
+(19, 29, 'আমার শেঙ্কু ভাই এখন পাওয়া যাচ্ছে!', 'marketplace', '14', '[]', NULL, NULL, 0, 0, 0, 0, 0, 0, '2026-01-11 08:48:14', '2026-01-11 08:48:50');
 
 -- --------------------------------------------------------
 
@@ -2327,10 +2959,18 @@ INSERT INTO `post_likes` (`like_id`, `post_id`, `user_id`, `liked_at`) VALUES
 (51, 10, 61, '2025-12-17 14:50:09'),
 (55, 11, 61, '2025-12-17 14:55:32'),
 (56, 12, 61, '2025-12-17 14:56:02'),
-(57, 12, 29, '2025-12-17 15:52:05'),
 (58, 9, 29, '2025-12-17 15:52:15'),
-(59, 13, 29, '2025-12-30 11:30:31'),
-(60, 13, 33, '2025-12-31 17:52:47');
+(60, 13, 33, '2025-12-31 17:52:47'),
+(61, 14, 61, '2026-01-04 14:53:13'),
+(63, 11, 29, '2026-01-05 01:30:45'),
+(64, 12, 29, '2026-01-05 01:31:20'),
+(65, 14, 33, '2026-01-05 02:17:16'),
+(66, 15, 29, '2026-01-05 21:11:09'),
+(67, 13, 29, '2026-01-05 23:54:46'),
+(68, 14, 71, '2026-01-06 20:24:43'),
+(70, 14, 29, '2026-01-11 07:02:22'),
+(71, 15, 71, '2026-01-11 07:14:14'),
+(72, 17, 29, '2026-01-11 09:15:52');
 
 -- --------------------------------------------------------
 
@@ -2440,6 +3080,7 @@ CREATE TABLE `users` (
   `phone` varchar(15) NOT NULL,
   `is_verified` tinyint(1) DEFAULT 0,
   `is_active` tinyint(1) DEFAULT 1,
+  `last_active_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -2448,27 +3089,28 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `email`, `password_hash`, `user_type`, `phone`, `is_verified`, `is_active`, `created_at`, `updated_at`) VALUES
-(15, 'testfarmer@example.com', '$2y$12$0v9b8bzYeuUXtgU2EIBEVuWAUByCe7FuYFcNfPkIO1Is80nRSyFsa', 'farmer', '01999999999', 1, 1, '2025-12-04 14:18:43', '2025-12-04 14:18:43'),
-(20, NULL, '$2y$12$TOEboDqIGlM1sfvFFBSTseBxA1M88oU2OyUV3K6.1WO6p8nePyyla', 'farmer', '01729387385', 1, 1, '2025-12-04 14:37:16', '2025-12-04 14:37:16'),
-(28, NULL, '$2y$12$SCtdGrW6Wx3dnTDZ90F3BOuH5gNHgnlvht6x8ErcN/2EvIk1DOwwW', 'farmer', '01859561145', 1, 1, '2025-12-04 15:04:43', '2025-12-04 15:17:03'),
-(29, NULL, '$2y$12$8Wa9Q1Y9Oohj8q/OkjljaO3.jYvN.9m5vnTqmyM8l8iGUCdyqH8/6', 'farmer', '01997900840', 1, 1, '2025-12-05 12:08:26', '2025-12-05 12:08:26'),
-(30, NULL, '$2y$12$.tTGnCDlgKj7gIKkeJ1QOOZe7f1GuxsXzJeR0JZ4P1ILjZFf0vFq.', 'farmer', '01882953533', 1, 1, '2025-12-05 12:29:01', '2025-12-05 12:29:01'),
-(31, NULL, '$2y$12$mtk4Qs.BBPSkXv1EO8j7e.OR7C.WU65qAHYbvYq.ajzMqhOAHCLUG', 'farmer', '01970890839', 1, 1, '2025-12-07 02:52:00', '2025-12-07 02:52:00'),
-(32, NULL, '$2y$12$Cdh19HCTjhHKCeoxGROa9eRop54Fw6iSCCablIUjpYTV2f5pEgIOe', 'farmer', '01888636718', 1, 1, '2025-12-07 03:35:28', '2025-12-07 03:35:28'),
-(33, NULL, '$2y$12$IFZE2g3CwtkpkQHqOJCNYOML5jT9pPZF.WVJS2sIxJlU6/4gM848u', 'customer', '01888999000', 1, 1, '2025-12-07 06:43:52', '2025-12-17 07:39:54'),
-(34, NULL, '$2y$12$GYEyWxxehLOPLx3qrZCjBuWkf/gHsrMHoXFUQ0NmfzUCXvRcda1iu', 'customer', '01626014224', 1, 1, '2025-12-11 06:47:44', '2025-12-11 06:47:44'),
-(35, NULL, '$2y$12$QtT01V5dfib8jUJNFaKDxuVGzko5Pa2HxOSFU8Ssj/eMyRiwAOQBm', 'farmer', '01888636717', 1, 1, '2025-12-15 06:34:43', '2025-12-15 06:34:43'),
-(39, NULL, '$2y$12$7n/bCA2qXAX7fZwFzC7qa.V7q7njpIMeuAdxV1woMAhQtlzkvRkia', 'data_operator', '01888636715', 1, 1, '2025-12-15 08:26:50', '2025-12-17 07:56:14'),
-(52, NULL, '$2y$12$GhK9..cc4d.VyPeiEl2eMO80CDAPWkC8vS5ce3VImyY9JmBigpQt6', 'customer', '01982736253', 1, 1, '2025-12-16 10:22:09', '2025-12-16 10:22:09'),
-(56, NULL, '$2y$12$FaFhGL3KCXme1HIc4pt15eN67a5DkSMZR2bss5FRUPls782phnEQ2', 'farmer', '01323233333', 1, 1, '2025-12-16 10:37:27', '2025-12-16 10:37:27'),
-(57, NULL, '$2y$12$tl5gTuFvCA5T5fDHBg7rVu/82DA8qyHPyUN5Flt.bU3VUHz8NkUDy', 'farmer', '01234567891', 1, 1, '2025-12-16 10:45:53', '2025-12-16 10:45:53'),
-(60, NULL, '$2y$12$aOqYY609auucYgF0u5xz4u6tx3eMgPc7oHuJIdra4zNYuj.Si6Yhy', 'expert', '01493433333', 1, 1, '2025-12-16 11:09:59', '2025-12-16 11:09:59'),
-(61, NULL, '$2y$12$47iVcmrLysjJQSXg0oisNOcT9rK7hmbWWzAoIv3z6B/Rr.D/eNBei', 'farmer', '01882130240', 1, 1, '2025-12-17 04:36:44', '2025-12-17 04:36:44'),
-(62, NULL, '$2y$12$t66y97vMR0llztQPLX6ZUupc1FgtSeZ.oz8yEAfZncG/94FkZBpze', 'expert', '01888636712', 1, 1, '2025-12-17 04:50:52', '2025-12-17 07:43:54'),
-(66, NULL, '$2y$12$ODcTDbyq08BLU0TO5qW/quojdZoCXGWhx9.tBiSS9CGqHfm57zcva', 'customer', '01988636719', 1, 1, '2025-12-17 05:56:09', '2025-12-17 05:56:09'),
-(67, NULL, '$2y$12$anjQUDEinpWACwF2MH1pI.CLdQ2m5kzqX9a4XSGrRj6VuAHVp9fyO', 'customer', '01888636711', 1, 1, '2025-12-17 06:09:27', '2025-12-17 06:09:27'),
-(68, NULL, '$2y$12$XCIPLV4Xu9IyVEkhkb8r0ubS7YBHAYM.bOSQK7tQdQdcrZugxBB8q', 'customer', '01888636709', 1, 1, '2025-12-17 07:11:02', '2025-12-17 07:11:02');
+INSERT INTO `users` (`user_id`, `email`, `password_hash`, `user_type`, `phone`, `is_verified`, `is_active`, `last_active_at`, `created_at`, `updated_at`) VALUES
+(15, 'testfarmer@example.com', '$2y$12$0v9b8bzYeuUXtgU2EIBEVuWAUByCe7FuYFcNfPkIO1Is80nRSyFsa', 'farmer', '01999999999', 1, 1, NULL, '2025-12-04 14:18:43', '2025-12-04 14:18:43'),
+(20, NULL, '$2y$12$TOEboDqIGlM1sfvFFBSTseBxA1M88oU2OyUV3K6.1WO6p8nePyyla', 'farmer', '01729387385', 1, 1, NULL, '2025-12-04 14:37:16', '2025-12-04 14:37:16'),
+(28, NULL, '$2y$12$SCtdGrW6Wx3dnTDZ90F3BOuH5gNHgnlvht6x8ErcN/2EvIk1DOwwW', 'farmer', '01859561145', 1, 1, NULL, '2025-12-04 15:04:43', '2025-12-04 15:17:03'),
+(29, NULL, '$2y$12$8Wa9Q1Y9Oohj8q/OkjljaO3.jYvN.9m5vnTqmyM8l8iGUCdyqH8/6', 'farmer', '01997900840', 1, 1, NULL, '2025-12-05 12:08:26', '2025-12-05 12:08:26'),
+(30, NULL, '$2y$12$.tTGnCDlgKj7gIKkeJ1QOOZe7f1GuxsXzJeR0JZ4P1ILjZFf0vFq.', 'farmer', '01882953533', 1, 1, NULL, '2025-12-05 12:29:01', '2025-12-05 12:29:01'),
+(31, NULL, '$2y$12$mtk4Qs.BBPSkXv1EO8j7e.OR7C.WU65qAHYbvYq.ajzMqhOAHCLUG', 'farmer', '01970890839', 1, 1, NULL, '2025-12-07 02:52:00', '2025-12-07 02:52:00'),
+(32, NULL, '$2y$12$Cdh19HCTjhHKCeoxGROa9eRop54Fw6iSCCablIUjpYTV2f5pEgIOe', 'farmer', '01888636718', 1, 1, NULL, '2025-12-07 03:35:28', '2025-12-07 03:35:28'),
+(33, NULL, '$2y$12$IFZE2g3CwtkpkQHqOJCNYOML5jT9pPZF.WVJS2sIxJlU6/4gM848u', 'customer', '01888999000', 1, 1, NULL, '2025-12-07 06:43:52', '2025-12-17 07:39:54'),
+(34, NULL, '$2y$12$GYEyWxxehLOPLx3qrZCjBuWkf/gHsrMHoXFUQ0NmfzUCXvRcda1iu', 'customer', '01626014224', 1, 1, NULL, '2025-12-11 06:47:44', '2025-12-11 06:47:44'),
+(35, NULL, '$2y$12$QtT01V5dfib8jUJNFaKDxuVGzko5Pa2HxOSFU8Ssj/eMyRiwAOQBm', 'farmer', '01888636717', 1, 1, NULL, '2025-12-15 06:34:43', '2025-12-15 06:34:43'),
+(39, NULL, '$2y$12$7n/bCA2qXAX7fZwFzC7qa.V7q7njpIMeuAdxV1woMAhQtlzkvRkia', 'data_operator', '01888636715', 1, 1, NULL, '2025-12-15 08:26:50', '2025-12-17 07:56:14'),
+(52, NULL, '$2y$12$GhK9..cc4d.VyPeiEl2eMO80CDAPWkC8vS5ce3VImyY9JmBigpQt6', 'customer', '01982736253', 1, 1, NULL, '2025-12-16 10:22:09', '2025-12-16 10:22:09'),
+(56, NULL, '$2y$12$FaFhGL3KCXme1HIc4pt15eN67a5DkSMZR2bss5FRUPls782phnEQ2', 'farmer', '01323233333', 1, 1, NULL, '2025-12-16 10:37:27', '2025-12-16 10:37:27'),
+(57, NULL, '$2y$12$tl5gTuFvCA5T5fDHBg7rVu/82DA8qyHPyUN5Flt.bU3VUHz8NkUDy', 'farmer', '01234567891', 1, 1, NULL, '2025-12-16 10:45:53', '2025-12-16 10:45:53'),
+(60, NULL, '$2y$12$aOqYY609auucYgF0u5xz4u6tx3eMgPc7oHuJIdra4zNYuj.Si6Yhy', 'expert', '01493433333', 1, 1, NULL, '2025-12-16 11:09:59', '2025-12-16 11:09:59'),
+(61, NULL, '$2y$12$47iVcmrLysjJQSXg0oisNOcT9rK7hmbWWzAoIv3z6B/Rr.D/eNBei', 'farmer', '01882130240', 1, 1, NULL, '2025-12-17 04:36:44', '2025-12-17 04:36:44'),
+(62, NULL, '$2y$12$t66y97vMR0llztQPLX6ZUupc1FgtSeZ.oz8yEAfZncG/94FkZBpze', 'expert', '01888636712', 1, 1, NULL, '2025-12-17 04:50:52', '2025-12-17 07:43:54'),
+(66, NULL, '$2y$12$ODcTDbyq08BLU0TO5qW/quojdZoCXGWhx9.tBiSS9CGqHfm57zcva', 'customer', '01988636719', 1, 1, NULL, '2025-12-17 05:56:09', '2025-12-17 05:56:09'),
+(67, NULL, '$2y$12$anjQUDEinpWACwF2MH1pI.CLdQ2m5kzqX9a4XSGrRj6VuAHVp9fyO', 'customer', '01888636711', 1, 1, NULL, '2025-12-17 06:09:27', '2025-12-17 06:09:27'),
+(68, NULL, '$2y$12$XCIPLV4Xu9IyVEkhkb8r0ubS7YBHAYM.bOSQK7tQdQdcrZugxBB8q', 'customer', '01888636709', 1, 1, NULL, '2025-12-17 07:11:02', '2025-12-17 07:11:02'),
+(71, NULL, '$2y$12$o6i4pxNzwiDU4FRWtcOVN.OIPxrXkwzkE5ZT9/T5oPob4dBOvm/Y2', 'expert', '01843024285', 1, 1, '2026-01-11 09:17:10', '2026-01-06 19:52:17', '2026-01-11 09:17:10');
 
 -- --------------------------------------------------------
 
@@ -2504,7 +3146,7 @@ INSERT INTO `user_profiles` (`profile_id`, `user_id`, `full_name`, `nid_number`,
 (7, 15, 'Test Farmer', '12345678901234567', '1990-01-01', 'Test Father', 'Test Mother', 'Test Address', NULL, NULL, NULL, NULL, 'rejected', 39, '2025-12-15 11:49:42', '2025-12-04 14:18:43', '2025-12-15 11:49:42'),
 (11, 20, 'Test Farmer', '7623362635789', '1990-01-01', 'Test Father', 'Test Mother', 'Test Address', NULL, NULL, NULL, NULL, 'approved', 39, '2025-12-16 10:54:52', '2025-12-04 14:37:16', '2025-12-16 10:54:52'),
 (12, 28, 'জাহাঙ্গীর আলম', '2848955809', '2025-12-03', 'ছাবির মিয়া', 'আনোয়ারা বেগম', 'পাঁচপাড়া, চন্দ্রগঞ্জ, লক্ষ্মীপুর', 'পাঁচপাড়া', NULL, 'profile_photos/Quvs39SDEAR8FlBYfaGqVEylQutumSFLBxZ2JkF7.png', NULL, 'rejected', 39, '2025-12-15 11:40:17', '2025-12-04 15:04:43', '2025-12-15 11:40:17'),
-(13, 29, 'মোফাসসেল আলম মারুফ', '9597839043', '2002-08-25', 'জাহাঙ্গীর আলম', 'কমলা বেগম', 'গ্রাম: পাঁচপাড়া, ডাকঘর: চন্দ্রগঞ্জ, উপজেলা: লক্ষ্মীপুর সদর, জেলা: লক্ষ্মীপুর, বিভাগ: চট্টগ্রাম', 'পাঁচপাড়া', 3708, 'profile_photos/J0L8bCNGaSmSlr7oq83SAraIPuHnrrL3jlKmLfup.png', NULL, 'approved', 39, '2025-12-15 14:37:53', '2025-12-05 12:08:27', '2025-12-15 14:37:53'),
+(13, 29, 'মোফাসসেল আলম মারুফ', '9597839043', '2002-08-25', 'জাহাঙ্গীর আলম', 'কমলা বেগম', 'গ্রাম: পাঁচপাড়া, ডাকঘর: চন্দ্রগঞ্জ, উপজেলা: লক্ষ্মীপুর সদর, জেলা: লক্ষ্মীপুর, বিভাগ: চট্টগ্রাম', 'পাঁচপাড়া', 3708, 'profile_photos/1UGNBQmf6qwt9JaM1w56StHjWTcsTHhO9uxnH4L1.png', NULL, 'approved', 39, '2025-12-15 14:37:53', '2025-12-05 12:08:27', '2026-01-06 01:13:26'),
 (14, 30, 'সাকিব ইবনে রশিদ', '1010101010', '2002-02-03', 'রশিদ মিয়া', 'সাকিবের আম্মু', 'গ্রাম: রমাপুর , ডাকঘর: রামগঞ্জ, উপজেলা: রামগঞ্জ, জেলা: লক্ষ্মীপুর, বিভাগ: চট্টগ্রাম', 'রমাপুর', 3720, 'profile_photos/8xoJLRZ948KS0prZrP7Wu1FFl8PPHGGOis7NvVVg.jpg', NULL, 'approved', 39, '2025-12-15 14:41:06', '2025-12-05 12:29:01', '2025-12-15 14:41:06'),
 (15, 31, 'কালা সামির', '10102020220', '2005-03-25', 'সামিরের আব্বু', 'সামিরের আম্মু', 'কেরাতলা, সন্দ্বীপ, সন্দ্বীপ, চট্টগ্রাম', 'কেরাতলা', 4300, 'profile_photos/wL9ax2JsNho3swH0qqgh18kHoqlNor3lgW5fHyPN.png', NULL, 'rejected', 39, '2025-12-15 11:33:49', '2025-12-07 02:52:02', '2025-12-15 17:58:01'),
 (16, 32, 'ইসমাইল হোসেন', '878365483575', '2003-02-27', 'গিয়াস উদ্দিন', 'ফাতেমা বেগম', 'লক্ষণপুর, ভবানী জীবনপুর, বেগমগঞ্জ, নোয়াখালী', 'লক্ষণপুর', 3837, 'profile_photos/pMACHtNYtNNuYfLwmSDacg5A31yAgPNCFnUeazE5.jpg', NULL, 'approved', 39, '2025-12-15 11:33:42', '2025-12-07 03:35:28', '2025-12-15 11:33:42'),
@@ -2519,23 +3161,12 @@ INSERT INTO `user_profiles` (`profile_id`, `user_id`, `full_name`, `nid_number`,
 (43, 62, 'রমিজ উদ্দিন', '900673050', '2000-04-06', 'ইউশা কাদির', 'ইফাতুর খাতুন', 'নান্নুপুর, সারিয়াকান্দি, সারিয়াকান্দি, বগুড়া', 'নান্নুপুর', 5830, 'expert/profiles/NKonSC1R4diWwvefcE5dNl0HYE8pGPcmZ3hw5oEq.png', NULL, 'approved', 39, '2025-12-17 05:11:12', '2025-12-17 04:50:53', '2025-12-17 05:11:12'),
 (47, 66, 'নাহিন', '5676356796', '2000-03-05', 'ছমির উদ্দিন', 'বিবি রহিমা', 'গ্রাম: লক্ষণপুর, ডাকঘর: ভবানী জীবনপুর, উপজেলা: বেগমগঞ্জ, জেলা: নোয়াখালী, বিভাগ: চট্টগ্রাম', 'লক্ষণপুর', 3837, 'profile_photos/customers/A0AW0sVTFwPs4uQWEuQMfGqmmPlyIssoIaL4lLgS.jpg', 'nid_photos/customers/NLXcvj7Ea7gLIfg4VNor39aumBjKBeqEcmZ73vfC.png', 'approved', 39, '2025-12-17 05:57:16', '2025-12-17 05:56:09', '2025-12-17 05:57:16'),
 (48, 67, 'ইসমাইল', '9006734681', '2001-02-05', 'গিয়াস', 'ফাতেমা', 'গ্রাম: নান্নুপুর, ডাকঘর: বকশীগঞ্জ, উপজেলা: বকশীগঞ্জ, জেলা: শেরপুর, বিভাগ: ময়মনসিংহ', 'নান্নুপুর', 2140, 'profile_photos/customers/wfVPh9VumH35mw9jjoMYNhu8GQWkySwICVMMpBlb.jpg', 'nid_photos/customers/dnf6voaMcDGOe5ebihl64LGZyE1i9SSd7BgQOGPJ.png', 'rejected', 39, '2025-12-17 06:10:12', '2025-12-17 06:09:28', '2025-12-17 06:10:12'),
-(49, 68, 'মোঃ ইসমাইল হোসেন', '9006730600', '2000-03-04', 'গিয়াস উদ্দিন', 'ফাতেমা বেগম', 'গ্রাম: লক্ষণপুর, ডাকঘর: ভবানী জীবনপুর, উপজেলা: বেগমগঞ্জ, জেলা: নোয়াখালী, বিভাগ: চট্টগ্রাম', 'লক্ষণপুর', 3837, 'profile_photos/customers/ieWYobfHF0opoFvsPKvElPwhVZhEHstipxd2MB8J.jpg', 'nid_photos/customers/ApM2Bt1pBu98CoPvAD1FWO0zDzLcK1koy9bz1kxQ.png', 'pending', NULL, NULL, '2025-12-17 07:11:03', '2025-12-17 07:11:03');
+(49, 68, 'মোঃ ইসমাইল হোসেন', '9006730600', '2000-03-04', 'গিয়াস উদ্দিন', 'ফাতেমা বেগম', 'গ্রাম: লক্ষণপুর, ডাকঘর: ভবানী জীবনপুর, উপজেলা: বেগমগঞ্জ, জেলা: নোয়াখালী, বিভাগ: চট্টগ্রাম', 'লক্ষণপুর', 3837, 'profile_photos/customers/ieWYobfHF0opoFvsPKvElPwhVZhEHstipxd2MB8J.jpg', 'nid_photos/customers/ApM2Bt1pBu98CoPvAD1FWO0zDzLcK1koy9bz1kxQ.png', 'pending', NULL, NULL, '2025-12-17 07:11:03', '2025-12-17 07:11:03'),
+(52, 71, 'প্রফেসর মারুফ', '১২৩৪৫৬৭৮৭৬৫৪', '2001-03-31', 'জাহাঙ্গীর আলম', 'কমলা বেগম', 'ডগাই , সারুলিয়া, ডেমরা, ঢাকা', 'ডগাই', 1361, 'expert/profiles/AuyohUHcFAX1ySUeHb8Isr7TRNAYDPwqbZcgqHxw.png', NULL, 'approved', 39, '2026-01-06 20:15:34', '2026-01-06 19:52:17', '2026-01-06 20:15:34');
 
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `cache`
---
-ALTER TABLE `cache`
-  ADD PRIMARY KEY (`key`);
-
---
--- Indexes for table `cache_locks`
---
-ALTER TABLE `cache_locks`
-  ADD PRIMARY KEY (`key`);
 
 --
 -- Indexes for table `comments`
@@ -2545,15 +3176,6 @@ ALTER TABLE `comments`
   ADD KEY `idx_comments_post` (`post_id`),
   ADD KEY `idx_comments_author` (`author_id`),
   ADD KEY `fk_comment_parent` (`parent_comment_id`);
-
---
--- Indexes for table `comment_likes`
---
-ALTER TABLE `comment_likes`
-  ADD PRIMARY KEY (`like_id`),
-  ADD UNIQUE KEY `uq_comment_user` (`comment_id`,`user_id`),
-  ADD KEY `idx_comment_likes_comment` (`comment_id`),
-  ADD KEY `idx_comment_likes_user` (`user_id`);
 
 --
 -- Indexes for table `comment_reports`
@@ -2575,12 +3197,71 @@ ALTER TABLE `consultations`
   ADD KEY `idx_consultations_status_priority` (`status`,`priority`);
 
 --
+-- Indexes for table `consultation_appointments`
+--
+ALTER TABLE `consultation_appointments`
+  ADD PRIMARY KEY (`appointment_id`);
+
+--
+-- Indexes for table `consultation_calls`
+--
+ALTER TABLE `consultation_calls`
+  ADD PRIMARY KEY (`call_id`),
+  ADD KEY `idx_call_appointment` (`appointment_id`),
+  ADD KEY `idx_call_caller` (`caller_id`),
+  ADD KEY `idx_call_callee` (`callee_id`),
+  ADD KEY `idx_call_status` (`call_status`),
+  ADD KEY `idx_call_channel` (`agora_channel`);
+
+--
+-- Indexes for table `consultation_feedback`
+--
+ALTER TABLE `consultation_feedback`
+  ADD PRIMARY KEY (`feedback_id`),
+  ADD UNIQUE KEY `uk_feedback_appointment` (`appointment_id`),
+  ADD KEY `idx_feedback_farmer` (`farmer_id`),
+  ADD KEY `idx_feedback_expert` (`expert_id`),
+  ADD KEY `idx_feedback_rating` (`overall_rating`),
+  ADD KEY `idx_feedback_expert_approved` (`expert_id`,`is_approved`,`overall_rating`);
+
+--
+-- Indexes for table `consultation_messages`
+--
+ALTER TABLE `consultation_messages`
+  ADD PRIMARY KEY (`message_id`),
+  ADD KEY `idx_message_conversation` (`conversation_id`),
+  ADD KEY `idx_message_sender` (`sender_id`),
+  ADD KEY `idx_message_receiver` (`receiver_id`),
+  ADD KEY `idx_message_appointment` (`appointment_id`),
+  ADD KEY `idx_message_created` (`created_at`),
+  ADD KEY `idx_message_unread` (`receiver_id`,`is_read`),
+  ADD KEY `idx_messages_unread` (`receiver_id`,`is_read`,`created_at`);
+
+--
+-- Indexes for table `consultation_prescriptions`
+--
+ALTER TABLE `consultation_prescriptions`
+  ADD PRIMARY KEY (`prescription_id`),
+  ADD KEY `idx_prescription_appointment` (`appointment_id`),
+  ADD KEY `idx_prescription_expert` (`expert_id`),
+  ADD KEY `idx_prescription_farmer` (`farmer_id`);
+
+--
 -- Indexes for table `consultation_responses`
 --
 ALTER TABLE `consultation_responses`
   ADD PRIMARY KEY (`response_id`),
   ADD KEY `idx_responses_consultation` (`consultation_id`),
   ADD KEY `idx_responses_expert` (`expert_id`);
+
+--
+-- Indexes for table `conversation_participants`
+--
+ALTER TABLE `conversation_participants`
+  ADD PRIMARY KEY (`participant_id`),
+  ADD UNIQUE KEY `uk_conversation_user` (`conversation_id`,`user_id`),
+  ADD KEY `idx_participant_user` (`user_id`),
+  ADD KEY `idx_participant_conversation` (`conversation_id`);
 
 --
 -- Indexes for table `crop_recommendations`
@@ -2627,6 +3308,15 @@ ALTER TABLE `disease_treatments`
   ADD KEY `idx_treatments_disease` (`disease_name`);
 
 --
+-- Indexes for table `expert_availability`
+--
+ALTER TABLE `expert_availability`
+  ADD PRIMARY KEY (`availability_id`),
+  ADD KEY `idx_expert_availability_expert` (`expert_id`),
+  ADD KEY `idx_expert_availability_day` (`day_of_week`),
+  ADD KEY `idx_expert_availability_time` (`start_time`,`end_time`);
+
+--
 -- Indexes for table `expert_qualifications`
 --
 ALTER TABLE `expert_qualifications`
@@ -2634,6 +3324,15 @@ ALTER TABLE `expert_qualifications`
   ADD KEY `idx_expert_user` (`user_id`),
   ADD KEY `idx_expert_specialization` (`specialization`),
   ADD KEY `idx_expert_rating` (`rating`);
+
+--
+-- Indexes for table `expert_unavailable_dates`
+--
+ALTER TABLE `expert_unavailable_dates`
+  ADD PRIMARY KEY (`unavailable_id`),
+  ADD UNIQUE KEY `uk_expert_date` (`expert_id`,`unavailable_date`),
+  ADD KEY `idx_unavailable_expert` (`expert_id`),
+  ADD KEY `idx_unavailable_date` (`unavailable_date`);
 
 --
 -- Indexes for table `farmer_details`
@@ -2655,6 +3354,19 @@ ALTER TABLE `farmer_selected_crops`
   ADD KEY `farmer_selected_crops_status_index` (`status`),
   ADD KEY `farmer_selected_crops_season_index` (`season`),
   ADD KEY `farmer_selected_crops_next_notification_date_index` (`next_notification_date`);
+
+--
+-- Indexes for table `field_data_collection`
+--
+ALTER TABLE `field_data_collection`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `field_data_collection_manual_farmer_id_index` (`manual_farmer_id`);
+
+--
+-- Indexes for table `field_data_farmers`
+--
+ALTER TABLE `field_data_farmers`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `field_data_reports`
@@ -2718,6 +3430,25 @@ ALTER TABLE `notifications`
   ADD KEY `idx_notifications_read` (`is_read`),
   ADD KEY `idx_notifications_sender` (`sender_id`),
   ADD KEY `idx_notifications_recipient` (`recipient_id`);
+
+--
+-- Indexes for table `notification_queue`
+--
+ALTER TABLE `notification_queue`
+  ADD PRIMARY KEY (`queue_id`),
+  ADD KEY `idx_queue_user` (`user_id`),
+  ADD KEY `idx_queue_status` (`status`),
+  ADD KEY `idx_queue_scheduled` (`scheduled_at`,`status`),
+  ADD KEY `idx_queue_type` (`notification_type`);
+
+--
+-- Indexes for table `notification_tokens`
+--
+ALTER TABLE `notification_tokens`
+  ADD PRIMARY KEY (`token_id`),
+  ADD UNIQUE KEY `uk_user_device` (`user_id`,`device_token`),
+  ADD KEY `idx_token_user` (`user_id`),
+  ADD KEY `idx_token_active` (`is_active`);
 
 --
 -- Indexes for table `password_reset_tokens`
@@ -2807,13 +3538,7 @@ ALTER TABLE `user_profiles`
 -- AUTO_INCREMENT for table `comments`
 --
 ALTER TABLE `comments`
-  MODIFY `comment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
-
---
--- AUTO_INCREMENT for table `comment_likes`
---
-ALTER TABLE `comment_likes`
-  MODIFY `like_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `comment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `comment_reports`
@@ -2828,10 +3553,46 @@ ALTER TABLE `consultations`
   MODIFY `consultation_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `consultation_appointments`
+--
+ALTER TABLE `consultation_appointments`
+  MODIFY `appointment_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `consultation_calls`
+--
+ALTER TABLE `consultation_calls`
+  MODIFY `call_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `consultation_feedback`
+--
+ALTER TABLE `consultation_feedback`
+  MODIFY `feedback_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `consultation_messages`
+--
+ALTER TABLE `consultation_messages`
+  MODIFY `message_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `consultation_prescriptions`
+--
+ALTER TABLE `consultation_prescriptions`
+  MODIFY `prescription_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `consultation_responses`
 --
 ALTER TABLE `consultation_responses`
   MODIFY `response_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `conversation_participants`
+--
+ALTER TABLE `conversation_participants`
+  MODIFY `participant_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `crop_recommendations`
@@ -2864,10 +3625,22 @@ ALTER TABLE `disease_treatments`
   MODIFY `treatment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `expert_availability`
+--
+ALTER TABLE `expert_availability`
+  MODIFY `availability_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
 -- AUTO_INCREMENT for table `expert_qualifications`
 --
 ALTER TABLE `expert_qualifications`
-  MODIFY `expert_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `expert_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `expert_unavailable_dates`
+--
+ALTER TABLE `expert_unavailable_dates`
+  MODIFY `unavailable_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `farmer_details`
@@ -2880,6 +3653,18 @@ ALTER TABLE `farmer_details`
 --
 ALTER TABLE `farmer_selected_crops`
   MODIFY `selection_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `field_data_collection`
+--
+ALTER TABLE `field_data_collection`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+
+--
+-- AUTO_INCREMENT for table `field_data_farmers`
+--
+ALTER TABLE `field_data_farmers`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `field_data_reports`
@@ -2897,49 +3682,61 @@ ALTER TABLE `marketplace_categories`
 -- AUTO_INCREMENT for table `marketplace_listings`
 --
 ALTER TABLE `marketplace_listings`
-  MODIFY `listing_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `listing_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `marketplace_listing_saves`
 --
 ALTER TABLE `marketplace_listing_saves`
-  MODIFY `save_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `save_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+
+--
+-- AUTO_INCREMENT for table `notification_queue`
+--
+ALTER TABLE `notification_queue`
+  MODIFY `queue_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `notification_tokens`
+--
+ALTER TABLE `notification_tokens`
+  MODIFY `token_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=217;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=326;
 
 --
 -- AUTO_INCREMENT for table `posts`
 --
 ALTER TABLE `posts`
-  MODIFY `post_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `post_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `post_likes`
 --
 ALTER TABLE `post_likes`
-  MODIFY `like_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `like_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `post_reports`
 --
 ALTER TABLE `post_reports`
-  MODIFY `report_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `report_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `soil_test_reports`
@@ -2951,13 +3748,13 @@ ALTER TABLE `soil_test_reports`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT for table `user_profiles`
 --
 ALTER TABLE `user_profiles`
-  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- Constraints for dumped tables
@@ -2972,13 +3769,6 @@ ALTER TABLE `comments`
   ADD CONSTRAINT `fk_comment_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `comment_likes`
---
-ALTER TABLE `comment_likes`
-  ADD CONSTRAINT `fk_commentlike_comment` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`comment_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_commentlike_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `consultations`
 --
 ALTER TABLE `consultations`
@@ -2986,11 +3776,49 @@ ALTER TABLE `consultations`
   ADD CONSTRAINT `fk_consultations_farmer` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `consultation_calls`
+--
+ALTER TABLE `consultation_calls`
+  ADD CONSTRAINT `consultation_calls_appointment_id_foreign` FOREIGN KEY (`appointment_id`) REFERENCES `consultation_appointments` (`appointment_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_calls_callee_id_foreign` FOREIGN KEY (`callee_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_calls_caller_id_foreign` FOREIGN KEY (`caller_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `consultation_feedback`
+--
+ALTER TABLE `consultation_feedback`
+  ADD CONSTRAINT `consultation_feedback_appointment_id_foreign` FOREIGN KEY (`appointment_id`) REFERENCES `consultation_appointments` (`appointment_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_feedback_expert_id_foreign` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_feedback_farmer_id_foreign` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `consultation_messages`
+--
+ALTER TABLE `consultation_messages`
+  ADD CONSTRAINT `consultation_messages_appointment_id_foreign` FOREIGN KEY (`appointment_id`) REFERENCES `consultation_appointments` (`appointment_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_messages_receiver_id_foreign` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_messages_sender_id_foreign` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `consultation_prescriptions`
+--
+ALTER TABLE `consultation_prescriptions`
+  ADD CONSTRAINT `consultation_prescriptions_appointment_id_foreign` FOREIGN KEY (`appointment_id`) REFERENCES `consultation_appointments` (`appointment_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_prescriptions_expert_id_foreign` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `consultation_prescriptions_farmer_id_foreign` FOREIGN KEY (`farmer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `consultation_responses`
 --
 ALTER TABLE `consultation_responses`
   ADD CONSTRAINT `fk_responses_consultation` FOREIGN KEY (`consultation_id`) REFERENCES `consultations` (`consultation_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_responses_expert` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `conversation_participants`
+--
+ALTER TABLE `conversation_participants`
+  ADD CONSTRAINT `conversation_participants_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `crop_recommendations`
@@ -3025,10 +3853,22 @@ ALTER TABLE `disease_treatments`
   ADD CONSTRAINT `fk_treatments_diagnosis` FOREIGN KEY (`diagnosis_id`) REFERENCES `diagnoses` (`diagnosis_id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `expert_availability`
+--
+ALTER TABLE `expert_availability`
+  ADD CONSTRAINT `expert_availability_expert_id_foreign` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `expert_qualifications`
 --
 ALTER TABLE `expert_qualifications`
   ADD CONSTRAINT `fk_expert_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `expert_unavailable_dates`
+--
+ALTER TABLE `expert_unavailable_dates`
+  ADD CONSTRAINT `expert_unavailable_dates_expert_id_foreign` FOREIGN KEY (`expert_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `farmer_details`
@@ -3070,6 +3910,18 @@ ALTER TABLE `notifications`
   ADD CONSTRAINT `fk_notifications_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Constraints for table `notification_queue`
+--
+ALTER TABLE `notification_queue`
+  ADD CONSTRAINT `notification_queue_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `notification_tokens`
+--
+ALTER TABLE `notification_tokens`
+  ADD CONSTRAINT `notification_tokens_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `posts`
 --
 ALTER TABLE `posts`
@@ -3094,7 +3946,7 @@ ALTER TABLE `soil_test_reports`
 -- Constraints for table `user_profiles`
 --
 ALTER TABLE `user_profiles`
-  ADD CONSTRAINT `fk_user_profiles_postal_code` FOREIGN KEY (`postal_code`) REFERENCES `location` (`postal_code`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  ADD CONSTRAINT `fk_user_profiles_postal_code` FOREIGN KEY (`postal_code`) REFERENCES `location` (`postal_code`),
   ADD CONSTRAINT `fk_user_profiles_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_user_profiles_verified_by` FOREIGN KEY (`verified_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
 COMMIT;
