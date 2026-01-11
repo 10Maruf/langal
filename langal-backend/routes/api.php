@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\CropRecommendationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\TTSController;
 use App\Http\Controllers\TTSDebugController;
+use App\Http\Controllers\SocialFeedReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -385,4 +386,12 @@ Route::middleware('auth:sanctum')->prefix('prescriptions')->group(function () {
 // Review Routes (Protected)
 Route::middleware('auth:sanctum')->prefix('reviews')->group(function () {
     Route::post('/{id}/report', [FeedbackController::class, 'reportReview']);
+});
+
+// Social Feed Report Routes (Protected)
+Route::prefix('social-feed-reports')->group(function () {
+    Route::get('/', [SocialFeedReportController::class, 'getAllReports']);
+    Route::get('/stats', [SocialFeedReportController::class, 'getReportStats']);
+    Route::post('/{reportId}/accept', [SocialFeedReportController::class, 'acceptReport']);
+    Route::post('/{reportId}/decline', [SocialFeedReportController::class, 'declineReport']);
 });
