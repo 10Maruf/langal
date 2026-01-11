@@ -14,33 +14,50 @@ class FieldDataCollection extends Model
 
     protected $fillable = [
         'data_operator_id',
-        'farmer_id',
-        'manual_farmer_id',
+        // Farmer personal info (merged from field_data_farmers)
         'farmer_name',
-        'farmer_address',
         'farmer_phone',
+        'farmer_nid',
+        'farmer_email',
+        'farmer_dob',
+        'farmer_father',
+        'farmer_mother',
+        'farmer_occupation',
+        'farmer_land_ownership',
+        'farmer_address',
+        // Location info
+        'division',
+        'division_bn',
+        'district',
+        'district_bn',
+        'upazila',
+        'upazila_bn',
+        'village',
+        'post_office',
+        'post_office_bn',
+        'postal_code',
+        // Land details
         'land_size',
         'land_size_unit',
         'land_service_date',
         'irrigation_status',
+        // Crop info
         'season',
         'crop_type',
-        'organic_fertilizer_application',
-        'fertilizer_application',
-        'market_price',
-        'ph_value',
-        'expenses',
         'production_amount',
         'production_unit',
+        // Fertilizer info
+        'organic_fertilizer_application',
+        'fertilizer_application',
+        // Market & financial info
+        'market_price',
+        'expenses',
+        // Additional info
+        'ph_value',
         'available_resources',
         'collection_year',
         'notes',
-        'division',
-        'district',
-        'upazila',
-        'union',
-        'village',
-        'postal_code',
+        // Verification
         'verification_status',
         'verification_notes',
         'verified_at',
@@ -54,6 +71,7 @@ class FieldDataCollection extends Model
         'expenses' => 'decimal:2',
         'production_amount' => 'decimal:2',
         'land_service_date' => 'date',
+        'farmer_dob' => 'date',
         'verified_at' => 'datetime',
         'collection_year' => 'integer',
     ];
@@ -64,14 +82,6 @@ class FieldDataCollection extends Model
     public function dataOperator()
     {
         return $this->belongsTo(User::class, 'data_operator_id');
-    }
-
-    /**
-     * Get the farmer for whom data was collected
-     */
-    public function farmer()
-    {
-        return $this->belongsTo(User::class, 'farmer_id');
     }
 
     /**
@@ -115,14 +125,6 @@ class FieldDataCollection extends Model
     }
 
     /**
-     * Scope for specific farmer
-     */
-    public function scopeByFarmer($query, $farmerId)
-    {
-        return $query->where('farmer_id', $farmerId);
-    }
-
-    /**
      * Scope for specific year
      */
     public function scopeByYear($query, $year)
@@ -137,7 +139,6 @@ class FieldDataCollection extends Model
     {
         $parts = array_filter([
             $this->village,
-            $this->union,
             $this->upazila,
             $this->district,
             $this->division,

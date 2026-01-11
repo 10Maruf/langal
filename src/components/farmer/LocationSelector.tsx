@@ -85,7 +85,8 @@ const LocationSelector = ({ value, onChange, onAddressChange }: LocationSelector
             const fullAddress = addressParts.join(', ');
             onAddressChange(fullAddress);
         }
-    }, [value, onAddressChange]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value?.postal_code, value?.post_office_bn, value?.upazila_bn, value?.district_bn, value?.village]);
 
     const loadDivisions = async () => {
         try {
@@ -335,17 +336,6 @@ const LocationSelector = ({ value, onChange, onAddressChange }: LocationSelector
                             </div>
                         </div>
                     )}
-
-                    <div className="space-y-2">
-                        <Label htmlFor="village">গ্রামের নাম (বাংলায়)</Label>
-                        <Input
-                            id="village"
-                            type="text"
-                            placeholder="যেমন: রামপুর"
-                            value={village}
-                            onChange={(e) => handleVillageChange(e.target.value)}
-                        />
-                    </div>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -418,17 +408,6 @@ const LocationSelector = ({ value, onChange, onAddressChange }: LocationSelector
                             </Select>
                         </div>
                     )}
-
-                    <div className="space-y-2">
-                        <Label htmlFor="villageManual">গ্রামের নাম (বাংলায়)</Label>
-                        <Input
-                            id="villageManual"
-                            type="text"
-                            placeholder="যেমন: রামপুর"
-                            value={village}
-                            onChange={(e) => handleVillageChange(e.target.value)}
-                        />
-                    </div>
                 </div>
             )}
         </div>

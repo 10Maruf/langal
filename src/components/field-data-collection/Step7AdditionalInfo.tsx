@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertCircle, FileText, Camera } from "lucide-react";
-import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollectionNew';
+import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollection';
 
 interface Step7Props {
   formData: FieldDataFormData;

@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Mountain } from "lucide-react";
-import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollectionNew';
+import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollection';
 
 interface Step2Props {
   formData: FieldDataFormData;

@@ -19,7 +19,7 @@ class FieldDataCollectionController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = FieldDataCollection::with(['dataOperator', 'farmer', 'verifiedBy']);
+            $query = FieldDataCollection::with(['dataOperator', 'verifiedBy']);
 
             // Filter by data operator (if not admin)
             $user = Auth::user();
@@ -30,11 +30,6 @@ class FieldDataCollectionController extends Controller
             // Filter by status
             if ($request->has('status')) {
                 $query->where('verification_status', $request->status);
-            }
-
-            // Filter by farmer
-            if ($request->has('farmer_id')) {
-                $query->byFarmer($request->farmer_id);
             }
 
             // Filter by year
@@ -81,27 +76,49 @@ class FieldDataCollectionController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'farmer_id' => 'nullable|exists:users,user_id',
-            'farmer_name' => 'nullable|string|max:255',
-            'farmer_phone' => 'nullable|string|max:20',
+            // Farmer info (required)
+            'farmer_name' => 'required|string|max:255',
+            'farmer_phone' => 'required|string|max:20',
+            'farmer_nid' => 'nullable|string|max:20',
+            'farmer_email' => 'nullable|email|max:100',
+            'farmer_dob' => 'nullable|date',
+            'farmer_father' => 'nullable|string|max:255',
+            'farmer_mother' => 'nullable|string|max:255',
+            'farmer_occupation' => 'nullable|string|max:100',
+            'farmer_land_ownership' => 'nullable|string|max:50',
             'farmer_address' => 'nullable|string',
+            // Location info
+            'division' => 'nullable|string',
+            'division_bn' => 'nullable|string',
+            'district' => 'nullable|string',
+            'district_bn' => 'nullable|string',
+            'upazila' => 'nullable|string',
+            'upazila_bn' => 'nullable|string',
+            'village' => 'nullable|string',
+            'post_office' => 'nullable|string',
+            'post_office_bn' => 'nullable|string',
+            'postal_code' => 'nullable|string',
+            // Land details
             'land_size' => 'nullable|numeric|min:0',
             'land_size_unit' => 'nullable|in:decimal,bigha,katha,acre',
             'land_service_date' => 'nullable|date',
             'irrigation_status' => 'nullable|string',
+            // Crop info
             'season' => 'nullable|string',
             'crop_type' => 'nullable|string',
-            'organic_fertilizer_application' => 'nullable|string',
-            'fertilizer_application' => 'nullable|string',
-            'market_price' => 'nullable|numeric|min:0',
-            'ph_value' => 'nullable|numeric|min:0|max:14',
-            'expenses' => 'nullable|numeric|min:0',
             'production_amount' => 'nullable|numeric|min:0',
             'production_unit' => 'nullable|in:kg,maund,ton,quintal',
+            // Fertilizer info
+            'organic_fertilizer_application' => 'nullable|string',
+            'fertilizer_application' => 'nullable|string',
+            // Market & financial
+            'market_price' => 'nullable|numeric|min:0',
+            'expenses' => 'nullable|numeric|min:0',
+            // Additional
+            'ph_value' => 'nullable|numeric|min:0|max:14',
             'available_resources' => 'nullable|string',
             'collection_year' => 'nullable|integer|min:2000|max:2100',
             'notes' => 'nullable|string',
-            'postal_code' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -130,8 +147,7 @@ class FieldDataCollectionController extends Controller
             // Log incoming request for debugging
             Log::info('Field Data Collection Request:', [
                 'user_id' => $user->user_id,
-                'farmer_id' => $request->farmer_id,
-                'manual_farmer_id' => $request->manual_farmer_id,
+                'farmer_name' => $request->farmer_name,
                 'data_received' => $request->all()
             ]);
 
@@ -139,7 +155,6 @@ class FieldDataCollectionController extends Controller
             $division = $request->division ?? '';
             $district = $request->district ?? '';
             $upazila = $request->upazila ?? '';
-            $union = $request->union ?? '';
 
             // If location fields are empty but postal_code is provided, fetch from location table
             if (empty($division) && !empty($request->postal_code)) {
@@ -151,69 +166,58 @@ class FieldDataCollectionController extends Controller
                     $division = $locationData->division_bn ?? $locationData->division ?? '';
                     $district = $locationData->district_bn ?? $locationData->district ?? '';
                     $upazila = $locationData->upazila_bn ?? $locationData->upazila ?? '';
-                    $union = $locationData->post_office_bn ?? $locationData->post_office ?? '';
                     
                     Log::info('Location fetched from postal_code:', [
                         'postal_code' => $request->postal_code,
                         'division' => $division,
                         'district' => $district,
                         'upazila' => $upazila,
-                        'union' => $union,
                     ]);
-                }
-            }
-
-            // Prepare farmer details
-            $farmerName = $request->farmer_name;
-            $farmerPhone = $request->farmer_phone;
-            $farmerAddress = $request->farmer_address;
-
-            if ($request->farmer_id) {
-                $farmerUser = User::with('profile')->find($request->farmer_id);
-                if ($farmerUser) {
-                    $farmerName = $farmerUser->profile->full_name ?? $farmerUser->name ?? $farmerName;
-                    $farmerPhone = $farmerUser->phone ?? $farmerPhone;
-                    $farmerAddress = $farmerUser->profile->address ?? $farmerAddress;
-                }
-            } elseif ($request->manual_farmer_id) {
-                $manualFarmer = \App\Models\FieldDataFarmer::find($request->manual_farmer_id);
-                if ($manualFarmer) {
-                    $farmerName = $manualFarmer->full_name;
-                    $farmerPhone = $manualFarmer->phone;
-                    $farmerAddress = $manualFarmer->address;
                 }
             }
 
             $fieldData = FieldDataCollection::create([
                 'data_operator_id' => $user->user_id,
-                'farmer_id' => $request->farmer_id,
-                'manual_farmer_id' => $request->manual_farmer_id,
-                'farmer_name' => $farmerName ?? ($request->farmer_id ? 'Farmer #' . $request->farmer_id : 'Unknown Farmer'),
-                'farmer_phone' => $farmerPhone,
-                'farmer_address' => $farmerAddress,
-                
+                // Farmer info
+                'farmer_name' => $request->farmer_name,
+                'farmer_phone' => $request->farmer_phone,
+                'farmer_nid' => $request->farmer_nid,
+                'farmer_email' => $request->farmer_email,
+                'farmer_dob' => $request->farmer_dob,
+                'farmer_father' => $request->farmer_father,
+                'farmer_mother' => $request->farmer_mother,
+                'farmer_occupation' => $request->farmer_occupation ?? 'কৃষক',
+                'farmer_land_ownership' => $request->farmer_land_ownership,
+                'farmer_address' => $request->farmer_address,
                 // Location fields
                 'postal_code' => $request->postal_code,
-                'division' => $division,
-                'district' => $district,
-                'upazila' => $upazila,
-                'union' => $union,
+                'division' => $request->division ?? $division,
+                'division_bn' => $request->division_bn,
+                'district' => $request->district ?? $district,
+                'district_bn' => $request->district_bn,
+                'upazila' => $request->upazila ?? $upazila,
+                'upazila_bn' => $request->upazila_bn,
                 'village' => $request->village,
-
-                // Other fields
+                'post_office' => $request->post_office,
+                'post_office_bn' => $request->post_office_bn,
+                // Land details
                 'land_size' => $request->land_size,
                 'land_size_unit' => $request->land_size_unit ?? 'decimal',
                 'land_service_date' => $request->land_service_date,
                 'irrigation_status' => $request->irrigation_status,
+                // Crop info
                 'season' => $request->season,
                 'crop_type' => $request->crop_type,
-                'organic_fertilizer_application' => $request->organic_fertilizer_application,
-                'fertilizer_application' => $request->fertilizer_application,
-                'market_price' => $request->market_price,
-                'ph_value' => $request->ph_value,
-                'expenses' => $request->expenses,
                 'production_amount' => $request->production_amount,
                 'production_unit' => $request->production_unit ?? 'kg',
+                // Fertilizer info
+                'organic_fertilizer_application' => $request->organic_fertilizer_application,
+                'fertilizer_application' => $request->fertilizer_application,
+                // Market & financial
+                'market_price' => $request->market_price,
+                'expenses' => $request->expenses,
+                // Additional
+                'ph_value' => $request->ph_value,
                 'available_resources' => $request->available_resources,
                 'collection_year' => $request->collection_year ?? date('Y'),
                 'notes' => $request->notes,
@@ -226,7 +230,7 @@ class FieldDataCollectionController extends Controller
                 'success' => true,
                 'message' => 'Field data collected successfully',
                 'message_bn' => 'ফিল্ড ডেটা সফলভাবে সংগ্রহ করা হয়েছে',
-                'data' => $fieldData->load(['dataOperator', 'farmer']),
+                'data' => $fieldData->load(['dataOperator']),
             ], 201);
 
         } catch (\Exception $e) {
@@ -247,7 +251,7 @@ class FieldDataCollectionController extends Controller
     public function show($id)
     {
         try {
-            $fieldData = FieldDataCollection::with(['dataOperator', 'farmer', 'verifiedBy'])
+            $fieldData = FieldDataCollection::with(['dataOperator', 'verifiedBy'])
                 ->findOrFail($id);
 
             $user = Auth::user();
@@ -316,16 +320,14 @@ class FieldDataCollectionController extends Controller
             DB::beginTransaction();
 
             $fieldData->update($request->only([
-                'farmer_name', 'farmer_phone', 'farmer_address',
-                'land_size', 'land_size_unit', 'livestock_info',
-                'land_service_date', 'irrigation_status',
+                'farmer_name', 'farmer_phone', 'farmer_nid', 'farmer_email',
+                'farmer_dob', 'farmer_father', 'farmer_mother', 
+                'farmer_occupation', 'farmer_land_ownership', 'farmer_address',
+                'land_size', 'land_size_unit', 'land_service_date', 'irrigation_status',
                 'season', 'crop_type', 'organic_fertilizer_application',
-                'fertilizer_application', 'tree_fertilizer_info',
-                'market_price', 'ph_value', 'expenses',
-                'production_amount', 'production_unit',
-                'crop_calculation', 'available_resources',
-                'seminar_name', 'identity_number', 'collection_year',
-                'notes', 'latitude', 'longitude',
+                'fertilizer_application', 'market_price', 'ph_value', 'expenses',
+                'production_amount', 'production_unit', 'available_resources',
+                'collection_year', 'notes',
             ]));
 
             DB::commit();
@@ -334,7 +336,7 @@ class FieldDataCollectionController extends Controller
                 'success' => true,
                 'message' => 'Field data updated successfully',
                 'message_bn' => 'ফিল্ড ডেটা সফলভাবে আপডেট করা হয়েছে',
-                'data' => $fieldData->load(['dataOperator', 'farmer']),
+                'data' => $fieldData->load(['dataOperator']),
             ]);
 
         } catch (\Exception $e) {
@@ -420,17 +422,6 @@ class FieldDataCollectionController extends Controller
             // Get time-based counts
             $thisMonth = (clone $query)->whereMonth('created_at', date('m'))->count();
             $today = (clone $query)->whereDate('created_at', today())->count();
-            
-            // Get farmer type breakdown
-            $registeredFarmers = (clone $query)->whereNotNull('farmer_id')->count();
-            $manualFarmers = (clone $query)->whereNotNull('manual_farmer_id')->whereNull('farmer_id')->count();
-            
-            // Get unique farmer count from field_data_farmers table (manual entries)
-            $uniqueManualFarmers = \App\Models\FieldDataFarmer::query();
-            if ($user->user_type === 'data_operator') {
-                $uniqueManualFarmers->where('created_by', $user->user_id);
-            }
-            $totalManualFarmersCreated = $uniqueManualFarmers->count();
 
             $stats = [
                 'total' => $total,
@@ -439,9 +430,6 @@ class FieldDataCollectionController extends Controller
                 'rejected' => $rejected,
                 'this_month' => $thisMonth,
                 'today' => $today,
-                'registered_farmers' => $registeredFarmers,
-                'manual_farmers' => $manualFarmers,
-                'total_manual_farmers_created' => $totalManualFarmersCreated,
             ];
 
             return response()->json([
@@ -500,7 +488,7 @@ class FieldDataCollectionController extends Controller
                 'success' => true,
                 'message' => 'Field data verification updated',
                 'message_bn' => 'ফিল্ড ডেটা যাচাইকরণ আপডেট করা হয়েছে',
-                'data' => $fieldData->load(['dataOperator', 'farmer', 'verifiedBy']),
+                'data' => $fieldData->load(['dataOperator', 'verifiedBy']),
             ]);
 
         } catch (\Exception $e) {

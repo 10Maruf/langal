@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ShoppingCart, TrendingUp } from "lucide-react";
-import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollectionNew';
+import type { FieldDataFormData } from '@/pages/DataOperatorFieldDataCollection';
 
 interface Step5Props {
   formData: FieldDataFormData;
