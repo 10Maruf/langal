@@ -552,54 +552,55 @@ const VideoCallPage = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Video Area */}
       <div className="flex-1 relative">
-        {/* Remote Video (Full Screen) */}
+        {/* Remote Video Container (Full Screen) - No React children inside to avoid DOM conflicts with Agora */}
         <div
           ref={remoteVideoRef}
           className="absolute inset-0 bg-gray-800"
-        >
-          {/* Show placeholder when not connected or remote video not available */}
-          {(!connected || !remoteVideoEnabled) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-              <div className="text-center">
-                <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
-                  <AvatarImage
-                    src={getProfilePhotoUrl(otherParty?.avatarUrl)}
-                  />
-                  <AvatarFallback className="bg-gray-700 text-white text-4xl">
-                    {otherParty?.name?.charAt(0) || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <h2 className="text-white text-xl font-semibold mb-2">
-                  {otherParty?.name || "অজানা"}
-                </h2>
-                {!connected && connecting && (
-                  <p className="text-gray-400">সংযোগ হচ্ছে...</p>
-                )}
-                {!connected && !connecting && (
-                  <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
-                )}
-                {connected && !remoteUserJoined && (
-                  <p className="text-yellow-400">অপর পক্ষের অপেক্ষায়...</p>
-                )}
-                {connected && remoteUserJoined && !remoteVideoEnabled && (
-                  <p className="text-blue-400">ক্যামেরা বন্ধ আছে</p>
-                )}
-              </div>
+        />
+        
+        {/* Placeholder overlay - separate from video container to avoid DOM conflicts */}
+        {(!connected || !remoteVideoEnabled) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-800 z-5">
+            <div className="text-center">
+              <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
+                <AvatarImage
+                  src={getProfilePhotoUrl(otherParty?.avatarUrl)}
+                />
+                <AvatarFallback className="bg-gray-700 text-white text-4xl">
+                  {otherParty?.name?.charAt(0) || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <h2 className="text-white text-xl font-semibold mb-2">
+                {otherParty?.name || "অজানা"}
+              </h2>
+              {!connected && connecting && (
+                <p className="text-gray-400">সংযোগ হচ্ছে...</p>
+              )}
+              {!connected && !connecting && (
+                <p className="text-gray-400">কল শুরু করতে নিচের বাটনে ক্লিক করুন</p>
+              )}
+              {connected && !remoteUserJoined && (
+                <p className="text-yellow-400">অপর পক্ষের অপেক্ষায়...</p>
+              )}
+              {connected && remoteUserJoined && !remoteVideoEnabled && (
+                <p className="text-blue-400">ক্যামেরা বন্ধ আছে</p>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Local Video (Small) - Always show for camera toggle */}
+        {/* Local Video (Small) - No React children inside to avoid DOM conflicts */}
         <div
           ref={localVideoRef}
           className="absolute top-4 right-4 w-32 h-44 bg-gray-700 rounded-xl overflow-hidden shadow-lg z-10"
-        >
-          {isVideoOff && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-              <VideoOff className="h-8 w-8 text-gray-500" />
-            </div>
-          )}
-        </div>
+        />
+        
+        {/* Local video off overlay - separate from video container */}
+        {isVideoOff && (
+          <div className="absolute top-4 right-4 w-32 h-44 flex items-center justify-center bg-gray-800 rounded-xl z-10">
+            <VideoOff className="h-8 w-8 text-gray-500" />
+          </div>
+        )}
 
         {/* Call Duration */}
         {connected && (
