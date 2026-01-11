@@ -248,10 +248,8 @@ const VideoCallPage = () => {
     // This is now handled inside initializeAgora for proper closure
     console.log('[Agora] handleUserLeft called (legacy)');
   };
-  handleEndCall();
-};
 
-const startCallSession = async () => {
+  const startCallSession = async () => {
   try {
     setConnecting(true);
 
@@ -344,152 +342,152 @@ const startCallSession = async () => {
   } finally {
     setConnecting(false);
   }
-};
+  };
 
-const handleEndCall = async () => {
-  try {
-    if (callData?.call_id) {
-      await endCall(callData.call_id);
+  const handleEndCall = async () => {
+    try {
+      if (callData?.call_id) {
+        await endCall(callData.call_id);
+      }
+    } catch (err) {
+      console.error("Error ending call:", err);
+    } finally {
+      cleanup();
+      navigate(-1);
     }
-  } catch (err) {
-    console.error("Error ending call:", err);
-  } finally {
-    cleanup();
-    navigate(-1);
-  }
-};
+  };
 
-const cleanup = () => {
-  // Stop duration counter
-  if (durationIntervalRef.current) {
-    clearInterval(durationIntervalRef.current);
-  }
+  const cleanup = () => {
+    // Stop duration counter
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+    }
 
-  // Close local tracks
-  if (localTracksRef.current.audioTrack) {
-    localTracksRef.current.audioTrack.close();
-  }
-  if (localTracksRef.current.videoTrack) {
-    localTracksRef.current.videoTrack.close();
-  }
+    // Close local tracks
+    if (localTracksRef.current.audioTrack) {
+      localTracksRef.current.audioTrack.close();
+    }
+    if (localTracksRef.current.videoTrack) {
+      localTracksRef.current.videoTrack.close();
+    }
 
-  // Leave channel
-  if (clientRef.current) {
-    clientRef.current.leave();
-  }
+    // Leave channel
+    if (clientRef.current) {
+      clientRef.current.leave();
+    }
 
-  // Reset remote user state
-  remoteUsersRef.current.clear();
-  setRemoteUserJoined(false);
-  setRemoteVideoEnabled(false);
-  setConnected(false);
-};
+    // Reset remote user state
+    remoteUsersRef.current.clear();
+    setRemoteUserJoined(false);
+    setRemoteVideoEnabled(false);
+    setConnected(false);
+  };
 
-const toggleMute = () => {
-  if (localTracksRef.current.audioTrack) {
-    localTracksRef.current.audioTrack.setEnabled(isMuted);
-    setIsMuted(!isMuted);
-  }
-};
+  const toggleMute = () => {
+    if (localTracksRef.current.audioTrack) {
+      localTracksRef.current.audioTrack.setEnabled(isMuted);
+      setIsMuted(!isMuted);
+    }
+  };
 
-const toggleVideo = () => {
-  if (localTracksRef.current.videoTrack) {
-    localTracksRef.current.videoTrack.setEnabled(isVideoOff);
-    setIsVideoOff(!isVideoOff);
-  }
-};
+  const toggleVideo = () => {
+    if (localTracksRef.current.videoTrack) {
+      localTracksRef.current.videoTrack.setEnabled(isVideoOff);
+      setIsVideoOff(!isVideoOff);
+    }
+  };
 
-const toggleSpeaker = () => {
-  setIsSpeakerOn(!isSpeakerOn);
-  // In a real implementation, you would change the audio output device
-};
+  const toggleSpeaker = () => {
+    setIsSpeakerOn(!isSpeakerOn);
+    // In a real implementation, you would change the audio output device
+  };
 
-const switchCamera = async () => {
-  if (localTracksRef.current.videoTrack) {
-    const devices = await window.AgoraRTC.getCameras();
-    if (devices.length > 1) {
-      const currentDevice = localTracksRef.current.videoTrack.getTrackLabel();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const nextDevice = devices.find((d: any) => d.label !== currentDevice);
-      if (nextDevice) {
-        await localTracksRef.current.videoTrack.setDevice(nextDevice.deviceId);
+  const switchCamera = async () => {
+    if (localTracksRef.current.videoTrack) {
+      const devices = await window.AgoraRTC.getCameras();
+      if (devices.length > 1) {
+        const currentDevice = localTracksRef.current.videoTrack.getTrackLabel();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nextDevice = devices.find((d: any) => d.label !== currentDevice);
+        if (nextDevice) {
+          await localTracksRef.current.videoTrack.setDevice(nextDevice.deviceId);
+        }
       }
     }
-  }
-};
-
-const formatDuration = (seconds: number) => {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  if (hrs > 0) {
-    return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  }
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
-const getOtherParty = (): { name?: string; avatarUrl?: string } | null => {
-  if (!appointment) return null;
-  const isExpert = user?.type === "expert";
-  if (isExpert) {
-    // Farmer side - get farmer's profile
-    const farmerProfile = appointment.farmer?.profile;
-    return {
-      name: farmerProfile?.full_name,
-      avatarUrl: farmerProfile?.profile_photo_url_full || farmerProfile?.profile_photo_url || farmerProfile?.avatar_url
-    };
-  }
-  // Expert side - expert relation returns User model, so expert.profile works
-  const expertProfile = appointment.expert?.profile;
-  return {
-    name: expertProfile?.full_name,
-    avatarUrl: expertProfile?.profile_photo_url_full || expertProfile?.profile_photo_url || expertProfile?.avatar_url
   };
-};
 
-const otherParty = getOtherParty();
+  const formatDuration = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
 
-if (loading) {
-  return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="h-10 w-10 text-green-500 animate-spin mx-auto mb-3" />
-        <p className="text-white">লোড হচ্ছে...</p>
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const getOtherParty = (): { name?: string; avatarUrl?: string } | null => {
+    if (!appointment) return null;
+    const isExpert = user?.type === "expert";
+    if (isExpert) {
+      // Farmer side - get farmer's profile
+      const farmerProfile = appointment.farmer?.profile;
+      return {
+        name: farmerProfile?.full_name,
+        avatarUrl: farmerProfile?.profile_photo_url_full || farmerProfile?.profile_photo_url || farmerProfile?.avatar_url
+      };
+    }
+    // Expert side - expert relation returns User model, so expert.profile works
+    const expertProfile = appointment.expert?.profile;
+    return {
+      name: expertProfile?.full_name,
+      avatarUrl: expertProfile?.profile_photo_url_full || expertProfile?.profile_photo_url || expertProfile?.avatar_url
+    };
+  };
+
+  const otherParty = getOtherParty();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 text-green-500 animate-spin mx-auto mb-3" />
+          <p className="text-white">লোড হচ্ছে...</p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-if (error) {
-  return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-center">
-        <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-        <p className="text-white mb-4">{error}</p>
-        <Button onClick={() => navigate(-1)} variant="outline">
-          ফিরে যান
-        </Button>
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <p className="text-white mb-4">{error}</p>
+          <Button onClick={() => navigate(-1)} variant="outline">
+            ফিরে যান
+          </Button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-return (
-  <div className="min-h-screen bg-gray-900 flex flex-col">
-    {/* Video Area */}
-    <div className="flex-1 relative">
-      {/* Remote Video (Full Screen) */}
-      <div
-        ref={remoteVideoRef}
-        className="absolute inset-0 bg-gray-800"
-      >
-        {/* Show placeholder when not connected or remote video not available */}
-        {(!connected || !remoteVideoEnabled) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-            <div className="text-center">
-              <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
-                <AvatarImage
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      {/* Video Area */}
+      <div className="flex-1 relative">
+        {/* Remote Video (Full Screen) */}
+        <div
+          ref={remoteVideoRef}
+          className="absolute inset-0 bg-gray-800"
+        >
+          {/* Show placeholder when not connected or remote video not available */}
+          {(!connected || !remoteVideoEnabled) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+              <div className="text-center">
+                <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-gray-700">
+                  <AvatarImage
                   src={getProfilePhotoUrl(otherParty?.avatarUrl)}
                 />
                 <AvatarFallback className="bg-gray-700 text-white text-4xl">
