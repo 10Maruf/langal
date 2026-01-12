@@ -30,11 +30,44 @@ import {
 import DataOperatorProfile from "@/components/data-operator/DataOperatorProfile";
 import DataOperatorHeader from "@/components/data-operator/DataOperatorHeader";
 import { getAssetPath } from "@/lib/utils";
+import api from "@/services/api";
+
+// Dashboard stats interface
+interface DashboardStats {
+    pending_profiles: number;
+    pending_soil_tests: number;
+    today_field_data: number;
+    pending_reports: number;
+}
 
 const DataOperatorDashboardNew = () => {
     const navigate = useNavigate();
     const { user, logout, isLoading } = useAuth();
     const [showProfile, setShowProfile] = useState(false);
+    const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+        pending_profiles: 0,
+        pending_soil_tests: 0,
+        today_field_data: 0,
+        pending_reports: 0
+    });
+
+    // Fetch dashboard stats from API
+    useEffect(() => {
+        const fetchDashboardStats = async () => {
+            try {
+                const response = await api.get('/data-operator/dashboard-stats');
+                if (response.data.success) {
+                    setDashboardStats(response.data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch dashboard stats:', error);
+            }
+        };
+
+        if (user?.type === 'data_operator') {
+            fetchDashboardStats();
+        }
+    }, [user]);
 
     // Check user type only (ProtectedRoute handles authentication)
     useEffect(() => {
@@ -62,7 +95,7 @@ const DataOperatorDashboardNew = () => {
             description: "কৃষকদের প্রোফাইল যাচাই ও অনুমোদন করুন",
             icon: UserCheck,
             bgGradient: "from-blue-500 to-blue-600",
-            count: 12,
+            count: dashboardStats.pending_profiles,
             countLabel: "অপেক্ষমান",
             route: "/data-operator/profile-verification"
         },
@@ -72,8 +105,8 @@ const DataOperatorDashboardNew = () => {
             description: "সেন্সর দিয়ে মাটি পরীক্ষা ও বিশ্লেষণ",
             icon: CloudSun,
             bgGradient: "from-green-500 to-green-600",
-            count: 8,
-            countLabel: "নতুন পরীক্ষা",
+            count: null,
+            countLabel: null,
             route: "/data-operator/field-data"
         },
         {
@@ -82,8 +115,8 @@ const DataOperatorDashboardNew = () => {
             description: "মাঠ থেকে কৃষকের তথ্য সংগ্রহ করুন",
             icon: FileText,
             bgGradient: "from-amber-500 to-amber-600",
-            count: 0,
-            countLabel: "আজকের সংগ্রহ",
+            count: null,
+            countLabel: null,
             route: "/data-operator/field-data-collection"
         },
         // {
@@ -102,8 +135,8 @@ const DataOperatorDashboardNew = () => {
             description: "সরকারি রিপোর্ট ও PDF জেনারেশন",
             icon: FileText,
             bgGradient: "from-purple-500 to-purple-600",
-            count: 0,
-            countLabel: "PDF রিপোর্ট",
+            count: null,
+            countLabel: null,
             route: "/data-operator/field-data-statistics"
         },
         {
@@ -112,7 +145,7 @@ const DataOperatorDashboardNew = () => {
             description: "পোস্ট ও কমেন্ট রিপোর্ট পরিচালনা করুন",
             icon: Shield,
             bgGradient: "from-red-500 to-red-600",
-            count: 3,
+            count: dashboardStats.pending_reports,
             countLabel: "নতুন রিপোর্ট",
             route: "/data-operator/social-feed-reports"
         }
@@ -151,8 +184,21 @@ const DataOperatorDashboardNew = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <DataOperatorHeader />
+        <div 
+            className="min-h-screen relative"
+            style={{
+                backgroundImage: 'url(/img/DataOperator.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed'
+            }}
+        >
+            {/* Overlay for lower opacity */}
+            <div className="absolute inset-0 bg-white/60"></div>
+            
+            <div className="relative z-10">
+                <DataOperatorHeader />
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -177,23 +223,23 @@ const DataOperatorDashboardNew = () => {
                 */}
 
                 {/* Main Feature Cards - 4 items - Redesigned for Mobile */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
                     {features.map((feature) => {
                         const Icon = feature.icon;
                         return (
                             <Card
                                 key={feature.id}
-                                className="group relative overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-0"
+                                className="group relative overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border border-white/50 backdrop-blur-md bg-white/70 shadow-xl"
                                 onClick={() => navigate(feature.route)}
                             >
                                 {/* Gradient Background */}
                                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
 
-                                <CardContent className="relative p-6">
+                                <CardContent className="relative p-3 sm:p-4">
                                     {/* Icon Circle with Animation */}
-                                    <div className="flex items-center justify-center mb-4">
-                                        <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${feature.bgGradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                                            <Icon className="h-10 w-10 text-white" strokeWidth={2.5} />
+                                    <div className="flex items-center justify-center mb-2">
+                                        <div className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br ${feature.bgGradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                            <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" strokeWidth={2.5} />
 
                                             {/* Pulse ring animation */}
                                             <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${feature.bgGradient} opacity-30 animate-ping`}></div>
@@ -201,28 +247,30 @@ const DataOperatorDashboardNew = () => {
                                     </div>
 
                                     {/* Title */}
-                                    <h3 className="text-center text-lg font-bold text-gray-900 mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all">
+                                    <h3 className="text-center text-sm sm:text-base font-bold text-gray-900 mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all">
                                         {feature.title}
                                     </h3>
 
                                     {/* Description */}
-                                    <p className="text-center text-sm text-gray-600 mb-4 line-clamp-2 px-2">
+                                    <p className="text-center text-xs text-gray-600 mb-2 line-clamp-2 px-1">
                                         {feature.description}
                                     </p>
 
-                                    {/* Count Badge */}
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className={`inline-flex items-center justify-center px-4 py-2 rounded-full bg-gradient-to-r ${feature.bgGradient} text-white font-bold text-2xl shadow-md`}>
-                                            {feature.count}
+                                    {/* Count Badge - Only show if count is not null */}
+                                    {feature.count !== null && (
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <div className={`inline-flex items-center justify-center px-3 py-1 rounded-full bg-gradient-to-r ${feature.bgGradient} text-white font-bold text-lg shadow-md`}>
+                                                {feature.count}
+                                            </div>
+                                            <p className="text-xs font-medium text-gray-500">{feature.countLabel}</p>
                                         </div>
-                                        <p className="text-xs font-medium text-gray-500">{feature.countLabel}</p>
-                                    </div>
+                                    )}
 
                                     {/* Hover Arrow Indicator */}
-                                    <div className="mt-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className={`text-sm font-semibold bg-gradient-to-r ${feature.bgGradient} bg-clip-text text-transparent flex items-center gap-1`}>
+                                    <div className="mt-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className={`text-xs font-semibold bg-gradient-to-r ${feature.bgGradient} bg-clip-text text-transparent flex items-center gap-1`}>
                                             দেখুন
-                                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                             </svg>
                                         </div>
@@ -272,8 +320,9 @@ const DataOperatorDashboardNew = () => {
                 */}
             </div>
 
-            {/* Profile Dialog */}
-            <DataOperatorProfile open={showProfile} onOpenChange={setShowProfile} />
+                {/* Profile Dialog */}
+                <DataOperatorProfile open={showProfile} onOpenChange={setShowProfile} />
+            </div>
         </div>
     );
 };

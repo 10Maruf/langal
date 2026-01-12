@@ -758,8 +758,16 @@ const DataOperatorRegistration = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-2xl">
+        <div 
+            className="min-h-screen w-full flex items-center justify-center p-4"
+            style={{
+                backgroundImage: 'url(/img/DataOperator.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}
+        >
+            <Card className="w-full max-w-2xl backdrop-blur-md bg-white/80 border border-white/50 shadow-xl">
                 <CardHeader className="text-center">
                     <CardTitle className="text-xl">ডাটা অপারেটর নিবন্ধন</CardTitle>
                     <CardDescription>

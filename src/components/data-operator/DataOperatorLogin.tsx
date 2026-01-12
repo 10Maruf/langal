@@ -130,8 +130,16 @@ const DataOperatorLogin = ({ onBackToMainLogin }: DataOperatorLoginProps) => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-md">
+        <div 
+            className="min-h-screen w-full flex items-center justify-center p-4"
+            style={{
+                backgroundImage: 'url(/img/DataOperator.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}
+        >
+            <Card className="w-full max-w-md backdrop-blur-md bg-white/80 border border-white/50 shadow-xl">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl">ডাটা অপারেটর লগইন</CardTitle>
                     <CardDescription>

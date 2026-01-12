@@ -161,6 +161,9 @@ Route::prefix('data-operator')->group(function () {
         Route::post('/update-profile', [DataOperatorAuthController::class, 'updateProfile']);
         Route::post('/logout', [DataOperatorAuthController::class, 'logout']);
 
+        // Dashboard stats route
+        Route::get('/dashboard-stats', [DataOperatorAuthController::class, 'getDashboardStats']);
+
         // Profile verification routes
         Route::get('/farmers', [DataOperatorAuthController::class, 'getFarmers']);
         Route::get('/customers', [DataOperatorAuthController::class, 'getCustomers']);

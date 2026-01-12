@@ -1484,6 +1484,105 @@ class DataOperatorAuthController extends Controller
     }
 
     /**
+     * Get dashboard stats for data operator (pending profiles, reports, etc.)
+     */
+    public function getDashboardStats(Request $request): JsonResponse
+    {
+        try {
+            // Get pending profile counts for farmers, experts, customers
+            $pendingFarmers = DB::table('user_profiles')
+                ->join('users', 'user_profiles.user_id', '=', 'users.user_id')
+                ->where('users.user_type', 'farmer')
+                ->where('user_profiles.verification_status', 'pending')
+                ->count();
+
+            $pendingExperts = DB::table('user_profiles')
+                ->join('users', 'user_profiles.user_id', '=', 'users.user_id')
+                ->where('users.user_type', 'expert')
+                ->where('user_profiles.verification_status', 'pending')
+                ->count();
+
+            $pendingCustomers = DB::table('user_profiles')
+                ->join('users', 'user_profiles.user_id', '=', 'users.user_id')
+                ->where('users.user_type', 'customer')
+                ->where('user_profiles.verification_status', 'pending')
+                ->count();
+
+            $totalPendingProfiles = $pendingFarmers + $pendingExperts + $pendingCustomers;
+
+            // Get pending soil tests count (check if table exists)
+            $pendingSoilTests = 0;
+            try {
+                if (\Schema::hasTable('soil_test_reports')) {
+                    $pendingSoilTests = DB::table('soil_test_reports')
+                        ->whereNull('deleted_at')
+                        ->count();
+                }
+            } catch (\Exception $e) {
+                // Table might not exist
+            }
+
+            // Get today's field data collection count (check if table exists)
+            $todayFieldData = 0;
+            try {
+                if (\Schema::hasTable('field_data_collection')) {
+                    $todayFieldData = DB::table('field_data_collection')
+                        ->whereDate('created_at', now()->toDateString())
+                        ->count();
+                }
+            } catch (\Exception $e) {
+                // Table might not exist
+            }
+
+            // Get pending social feed reports count (check if tables exist)
+            $pendingReports = 0;
+            $pendingCommentReports = 0;
+            try {
+                if (\Schema::hasTable('post_reports')) {
+                    $pendingReports = DB::table('post_reports')
+                        ->where('status', 'pending')
+                        ->count();
+                }
+            } catch (\Exception $e) {
+                // Table might not exist
+            }
+
+            try {
+                if (\Schema::hasTable('comment_reports')) {
+                    $pendingCommentReports = DB::table('comment_reports')
+                        ->where('status', 'pending')
+                        ->count();
+                }
+            } catch (\Exception $e) {
+                // Table might not exist
+            }
+
+            $totalPendingReports = $pendingReports + $pendingCommentReports;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'pending_profiles' => $totalPendingProfiles,
+                    'pending_farmers' => $pendingFarmers,
+                    'pending_experts' => $pendingExperts,
+                    'pending_customers' => $pendingCustomers,
+                    'pending_soil_tests' => $pendingSoilTests,
+                    'today_field_data' => $todayFieldData,
+                    'pending_reports' => $totalPendingReports,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Dashboard Stats Error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch dashboard stats: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get comprehensive statistics for government reporting
      * This API provides accurate data for charts, graphs, and reports
      */

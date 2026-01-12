@@ -77,11 +77,11 @@ const DataOperatorHeader = () => {
                         {/* Logo and Title */}
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/data-operator-dashboard')}>
                             <div className="relative">
-                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 flex items-center justify-center shadow-lg">
-                                    <span className="text-white font-bold text-xl">🌾</span>
+                                <div className="h-12 w-12 rounded-xl overflow-hidden shadow-lg">
+                                    <img src="/img/image.png" alt="Data Operator Logo" className="h-full w-full object-cover" />
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
-                                    <UserCheck className="h-3 w-3 text-white" strokeWidth={3} />
+                                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full overflow-hidden shadow-md">
+                                    <img src="/img/Asset 3.png" alt="Langol Logo" className="h-full w-full object-cover" />
                                 </div>
                             </div>
                             <div>
