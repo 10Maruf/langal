@@ -102,9 +102,9 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
     useEffect(() => {
         if (highlightId && listings.length > 0 && highlightedCardRef.current) {
             setTimeout(() => {
-                highlightedCardRef.current?.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
+                highlightedCardRef.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
                 });
             }, 300);
         }
@@ -145,9 +145,16 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
         if (updatedListing) {
             setListings(prev => prev.map(l => l.id === listing.id ? updatedListing : l));
         }
+
+        // Get the phone number
+        const phoneNumber = listing.contactInfo?.phone || listing.author?.phone || "০১৭১২-৩৪৫৬৭৮";
+
+        // Open phone dialer
+        window.location.href = `tel:${phoneNumber.replace(/[^0-9+]/g, '')}`;
+
         toast({
             title: "যোগাযোগের তথ্য",
-            description: `${listing.author.name} এর সাথে যোগাযোগ করতে কল করুন: ${listing.contactInfo?.phone || "০১৭১২-৩৪৫৬৭৮"}`,
+            description: `${listing.author.name} এর সাথে যোগাযোগ করতে কল করুন: ${phoneNumber}`,
         });
     };
 
@@ -161,18 +168,18 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
             });
             return;
         }
-        
+
         // Optimistic update - immediately toggle the UI before API call
         const wasAlreadySaved = listing.isSaved;
         const newSavedState = !wasAlreadySaved;
-        
+
         // Update UI immediately
-        setListings(prev => prev.map(l => 
-            l.id === listing.id 
-                ? { ...l, isSaved: newSavedState, saves: newSavedState ? l.saves + 1 : Math.max(0, l.saves - 1) } 
+        setListings(prev => prev.map(l =>
+            l.id === listing.id
+                ? { ...l, isSaved: newSavedState, saves: newSavedState ? l.saves + 1 : Math.max(0, l.saves - 1) }
                 : l
         ));
-        
+
         // Show toast immediately with correct message
         toast({
             title: newSavedState ? "সেভ করা হয়েছে" : "সেভ সরানো হয়েছে",
@@ -180,15 +187,15 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
                 ? "আইটেমটি আপনার সেভ লিস্টে যোগ করা হয়েছে।"
                 : "আইটেমটি আপনার সেভ লিস্ট থেকে সরানো হয়েছে।",
         });
-        
+
         // Make API call in background
         const result = await marketplaceService.toggleSave(listing.id, user.user_id);
-        
+
         // If API fails, revert the optimistic update
         if (!result.listing) {
-            setListings(prev => prev.map(l => 
-                l.id === listing.id 
-                    ? { ...l, isSaved: wasAlreadySaved, saves: wasAlreadySaved ? l.saves + 1 : Math.max(0, l.saves - 1) } 
+            setListings(prev => prev.map(l =>
+                l.id === listing.id
+                    ? { ...l, isSaved: wasAlreadySaved, saves: wasAlreadySaved ? l.saves + 1 : Math.max(0, l.saves - 1) }
                     : l
             ));
             toast({
@@ -354,19 +361,19 @@ const CentralMarketplace = ({ showHeader = true }: CentralMarketplaceProps) => {
                                             listing_type_bn: listing.listingTypeBn,
                                             location: listing.location,
                                             seller: {
-                                            name: listing.author.name,
-                                            avatar: listing.author.avatar,
-                                            rating: listing.author.rating || 0,
-                                            verified: listing.author.verified || false
-                                        },
-                                        images: listing.images,
-                                        postedAt: listing.createdAt,
-                                        featured: listing.featured,
-                                        saved: listing.isSaved
-                                    }}
-                                    onContact={() => handleContact(listing)}
-                                    onSave={() => handleSave(listing)}
-                                />
+                                                name: listing.author.name,
+                                                avatar: listing.author.avatar,
+                                                rating: listing.author.rating || 0,
+                                                verified: listing.author.verified || false
+                                            },
+                                            images: listing.images,
+                                            postedAt: listing.createdAt,
+                                            featured: listing.featured,
+                                            saved: listing.isSaved
+                                        }}
+                                        onContact={() => handleContact(listing)}
+                                        onSave={() => handleSave(listing)}
+                                    />
                                 </div>
                             ))}
                         </div>
