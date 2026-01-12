@@ -8,9 +8,13 @@ import LocationSelector, { LocationData as SelectorLocationData } from "@/compon
 
 // Interface for the parent component to consume (keeps it simple)
 export interface LocationData {
+    division?: string;
     division_bn?: string;
+    district?: string;
     district_bn?: string;
+    upazila?: string;
     upazila_bn?: string;
+    post_office?: string;
     post_office_bn?: string;
     postal_code?: string;
 }
@@ -31,10 +35,15 @@ const LocationFilterPanel = ({ onLocationChange, isLoading = false }: LocationFi
         setSelectorValue(newLocation);
 
         // Convert to the simpler format expected by the Statistics page
+        // Include both English and Bangla names
         const simplifiedLocation: LocationData = {
+            division: newLocation.division,
             division_bn: newLocation.division_bn,
+            district: newLocation.district,
             district_bn: newLocation.district_bn,
+            upazila: newLocation.upazila,
             upazila_bn: newLocation.upazila_bn,
+            post_office: newLocation.post_office,
             post_office_bn: newLocation.post_office_bn,
             postal_code: newLocation.postal_code?.toString()
         };

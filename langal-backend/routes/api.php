@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ExpertAuthController;
 use App\Http\Controllers\Api\DataOperatorAuthController;
 use App\Http\Controllers\Api\DataOperatorNotificationController;
 use App\Http\Controllers\Api\FieldDataCollectionController;
+use App\Http\Controllers\Api\FieldDataStatisticsController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\DocumentUploadController;
@@ -196,6 +197,12 @@ Route::prefix('field-data')->middleware('auth:sanctum')->group(function () {
     Route::put('/{id}', [FieldDataCollectionController::class, 'update']);
     Route::delete('/{id}', [FieldDataCollectionController::class, 'destroy']);
     Route::post('/{id}/verify', [FieldDataCollectionController::class, 'verify']);
+});
+
+// Field Data Statistics Routes (Protected - For Government Reports)
+Route::prefix('field-data-stats')->middleware('auth:sanctum')->group(function () {
+    Route::post('/comprehensive', [FieldDataStatisticsController::class, 'getComprehensiveStats']);
+    Route::post('/pdf-report', [FieldDataStatisticsController::class, 'getPdfReportData']);
 });
 
 // Test route for authenticated farmer
