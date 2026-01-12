@@ -273,7 +273,7 @@ const FarmerDashboard = () => {
             image: socialFeedIcon,
             route: "/social-feed",
             color: "bg-blue-500",
-            stats: "২৪৫ নতুন পোস্ট"
+            stats: "ঘুরে আসুন"
         },
         {
             id: "recommendation",
@@ -282,7 +282,7 @@ const FarmerDashboard = () => {
             image: cropSelectionIcon,
             route: "/recommendation",
             color: "bg-green-500",
-            stats: "১৫ টি সুপারিশ"
+            stats: "AI সহায়তা"
         },
         {
             id: "diagnosis",
@@ -300,7 +300,7 @@ const FarmerDashboard = () => {
             image: marketplaceIcon,
             route: "/central-marketplace",
             color: "bg-purple-500",
-            stats: "৮৯ নতুন পণ্য"
+            stats: "বাজার খুলুন"
         },
         {
             id: "weather",
@@ -429,7 +429,7 @@ const FarmerDashboard = () => {
                                     <Users className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground">সক্রিয় কৃষক</p>
+                                    <p className="text-xs text-muted-foreground">নিবন্ধিত কৃষক</p>
                                     {farmerCountLoading ? (
                                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                     ) : (
