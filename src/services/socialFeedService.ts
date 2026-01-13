@@ -120,13 +120,12 @@ export class SocialFeedService {
         }
     }
 
-    // Get user posts
+    // Get user posts (including all approval statuses)
     async getUserPosts(authorId: string, viewerId?: number): Promise<SocialPost[]> {
         try {
-            const response = await axios.get(`${API_URL}/posts`, {
+            const response = await axios.get(`${API_URL}/my-posts`, {
                 params: { 
-                    author_id: authorId,
-                    user_id: viewerId
+                    user_id: authorId
                 }
             });
             return response.data;

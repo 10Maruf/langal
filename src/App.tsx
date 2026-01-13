@@ -31,6 +31,7 @@ import ConsultantProfile from "./pages/ConsultantProfile";
 import DataOperatorDashboard from "./pages/DataOperatorDashboard";
 import DataOperatorHome from "./pages/DataOperatorHome";
 import DataOperatorAuth from "./pages/DataOperatorAuth";
+import DataOperatorPostApproval from "./pages/DataOperatorPostApproval";
 import DataOperatorProfileVerification from "./pages/DataOperatorProfileVerification";
 import DataOperatorCropVerification from "./pages/DataOperatorCropVerification";
 import DataOperatorRegisterFarmer from "./pages/DataOperatorRegisterFarmer";
@@ -314,6 +315,14 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedTypes={['data_operator']}>
                         <DataOperatorProfileVerification />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/data-operator/post-approval"
+                    element={
+                      <ProtectedRoute allowedTypes={['data_operator']}>
+                        <DataOperatorPostApproval />
                       </ProtectedRoute>
                     }
                   />
