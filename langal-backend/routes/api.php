@@ -272,10 +272,20 @@ Route::prefix('social')->group(function () {
         Route::post('/posts/{id}/report', [PostController::class, 'reportPost']);
         Route::post('/posts/{id}/comments', [PostController::class, 'addComment']);
         Route::post('/posts/{postId}/comments/{commentId}/report', [PostController::class, 'reportComment']);
+        
+        // My posts (with approval status)
+        Route::get('/my-posts', [PostController::class, 'getMyPosts']);
 
         // Image upload for posts
         Route::post('/upload-images', [ImageUploadController::class, 'uploadPostImages']);
     // });
+});
+
+// Data Operator - Post Approval Routes
+Route::prefix('data-operator')->group(function () {
+    Route::get('/posts/pending', [PostController::class, 'getPendingPosts']);
+    Route::post('/posts/{id}/approve', [PostController::class, 'approvePost']);
+    Route::post('/posts/{id}/reject', [PostController::class, 'rejectPost']);
 });
 
 // Crop Recommendation Routes (AI-based)

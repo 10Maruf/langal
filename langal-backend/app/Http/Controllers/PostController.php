@@ -52,6 +52,7 @@ class PostController extends Controller
             LEFT JOIN marketplace_listings ml ON p.marketplace_listing_id = ml.listing_id AND ml.status = 'active'
             LEFT JOIN marketplace_categories mc ON ml.category_id = mc.category_id
             WHERE p.is_deleted = 0
+            AND p.approval_status = 'approved'
             AND (
                 p.post_type != 'marketplace' 
                 OR p.marketplace_listing_id IS NULL 
@@ -172,7 +173,9 @@ class PostController extends Controller
                 'postedAt' => $post->created_at,
                 'liked' => (bool)$post->is_liked,
                 'reported' => (bool)$post->is_reported,
-                'isOwnPost' => $post->author_id == ($request->user_id ?? 0)
+                'isOwnPost' => $post->author_id == ($request->user_id ?? 0),
+                'approvalStatus' => $post->approval_status ?? 'approved',
+                'approvedAt' => $post->approved_at ?? null
             ];
         }, $posts);
 
@@ -546,5 +549,193 @@ class PostController extends Controller
         return response()->json([
             'reported' => $reported
         ]);
+    }
+
+    // Get pending posts for Data Operator approval
+    public function getPendingPosts(Request $request)
+    {
+        $page = $request->query('page', 1);
+        $limit = $request->query('limit', 20);
+        $offset = ($page - 1) * $limit;
+        $status = $request->query('status', 'pending'); // pending, approved, rejected
+
+        $query = "
+            SELECT
+                p.*,
+                up.full_name as author_name,
+                u.user_type as author_type,
+                up.profile_photo_url as author_avatar,
+                up.address as author_location,
+                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id) as likes_count,
+                (SELECT COUNT(*) FROM post_reports WHERE post_id = p.post_id) as reports_count,
+                do_up.full_name as approved_by_name
+            FROM posts p
+            JOIN users u ON p.author_id = u.user_id
+            LEFT JOIN user_profiles up ON u.user_id = up.user_id
+            LEFT JOIN users do_user ON p.approved_by = do_user.user_id
+            LEFT JOIN user_profiles do_up ON do_user.user_id = do_up.user_id
+            WHERE p.is_deleted = 0
+            AND p.approval_status = ?
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
+        ";
+
+        $posts = DB::select($query, [$status, $limit, $offset]);
+
+        $formattedPosts = array_map(function ($post) {
+            return [
+                'id' => (string)$post->post_id,
+                'author' => [
+                    'name' => $post->author_name,
+                    'avatar' => $post->author_avatar ? url('storage/' . $post->author_avatar) : null,
+                    'location' => $post->author_location ?? 'Bangladesh',
+                    'userType' => $post->author_type,
+                ],
+                'content' => $post->content,
+                'images' => json_decode($post->images) ?? [],
+                'type' => $post->post_type,
+                'likes' => (int)$post->likes_count,
+                'reports' => (int)$post->reports_count,
+                'postedAt' => $post->created_at,
+                'approvalStatus' => $post->approval_status,
+                'approvedBy' => $post->approved_by_name,
+                'approvedAt' => $post->approved_at
+            ];
+        }, $posts);
+
+        // Get total count
+        $totalCount = DB::selectOne("
+            SELECT COUNT(*) as count FROM posts 
+            WHERE is_deleted = 0 AND approval_status = ?
+        ", [$status]);
+
+        return response()->json([
+            'posts' => $formattedPosts,
+            'pagination' => [
+                'total' => $totalCount->count,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => ceil($totalCount->count / $limit)
+            ]
+        ]);
+    }
+
+    // Approve a post
+    public function approvePost(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'data_operator_id' => 'required|integer'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        // Check if post exists
+        $post = DB::table('posts')->where('post_id', $id)->first();
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
+
+        // Update post status
+        DB::table('posts')
+            ->where('post_id', $id)
+            ->update([
+                'approval_status' => 'approved',
+                'approved_by' => $request->data_operator_id,
+                'approved_at' => now(),
+                'updated_at' => now()
+            ]);
+
+        // Notify the post author (optional - can be implemented later)
+        // Send notification to author that their post was approved
+
+        return response()->json([
+            'message' => 'Post approved successfully',
+            'post_id' => $id
+        ]);
+    }
+
+    // Reject a post
+    public function rejectPost(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'data_operator_id' => 'required|integer'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        // Check if post exists
+        $post = DB::table('posts')->where('post_id', $id)->first();
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
+
+        // Update post status
+        DB::table('posts')
+            ->where('post_id', $id)
+            ->update([
+                'approval_status' => 'rejected',
+                'approved_by' => $request->data_operator_id,
+                'approved_at' => now(),
+                'updated_at' => now()
+            ]);
+
+        // Notify the post author (optional)
+        // Send notification to author that their post was rejected
+
+        return response()->json([
+            'message' => 'Post rejected successfully',
+            'post_id' => $id
+        ]);
+    }
+
+    // Get user's own posts (including approval status)
+    public function getMyPosts(Request $request)
+    {
+        $userId = $request->query('user_id');
+        $page = $request->query('page', 1);
+        $limit = $request->query('limit', 10);
+        $offset = ($page - 1) * $limit;
+
+        if (!$userId) {
+            return response()->json(['error' => 'User ID is required'], 400);
+        }
+
+        $query = "
+            SELECT
+                p.*,
+                up.full_name as author_name,
+                u.user_type as author_type,
+                up.profile_photo_url as author_avatar,
+                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id) as likes_count,
+                (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) as comments_count
+            FROM posts p
+            JOIN users u ON p.author_id = u.user_id
+            LEFT JOIN user_profiles up ON u.user_id = up.user_id
+            WHERE p.author_id = ? AND p.is_deleted = 0
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
+        ";
+
+        $posts = DB::select($query, [$userId, $limit, $offset]);
+
+        $formattedPosts = array_map(function ($post) {
+            return [
+                'id' => (string)$post->post_id,
+                'content' => $post->content,
+                'images' => json_decode($post->images) ?? [],
+                'type' => $post->post_type,
+                'likes' => (int)$post->likes_count,
+                'comments' => (int)$post->comments_count,
+                'postedAt' => $post->created_at,
+                'approvalStatus' => $post->approval_status,
+                'approvedAt' => $post->approved_at
+            ];
+        }, $posts);
+
+        return response()->json($formattedPosts);
     }
 }

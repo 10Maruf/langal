@@ -49,6 +49,8 @@ export interface SocialPost {
     liked?: boolean;
     reported?: boolean;
     isOwnPost?: boolean;
+    approvalStatus?: 'pending' | 'approved' | 'rejected';
+    approvedAt?: string;
 }
 
 export interface PostComment {

@@ -25,7 +25,8 @@ import {
     AlertCircle,
     FileText,
     CheckCircle2,
-    Clock
+    Clock,
+    MessageSquare
 } from "lucide-react";
 import DataOperatorProfile from "@/components/data-operator/DataOperatorProfile";
 import DataOperatorHeader from "@/components/data-operator/DataOperatorHeader";
@@ -38,6 +39,7 @@ interface DashboardStats {
     pending_soil_tests: number;
     today_field_data: number;
     pending_reports: number;
+    pending_posts?: number;
 }
 
 const DataOperatorDashboardNew = () => {
@@ -48,7 +50,8 @@ const DataOperatorDashboardNew = () => {
         pending_profiles: 0,
         pending_soil_tests: 0,
         today_field_data: 0,
-        pending_reports: 0
+        pending_reports: 0,
+        pending_posts: 0
     });
 
     // Fetch dashboard stats from API
@@ -58,6 +61,21 @@ const DataOperatorDashboardNew = () => {
                 const response = await api.get('/data-operator/dashboard-stats');
                 if (response.data.success) {
                     setDashboardStats(response.data.data);
+                }
+                
+                // Also fetch pending posts count
+                try {
+                    const postsResponse = await api.get('/data-operator/posts/pending', {
+                        params: { status: 'pending', limit: 1 }
+                    });
+                    if (postsResponse.data.pagination) {
+                        setDashboardStats(prev => ({
+                            ...prev,
+                            pending_posts: postsResponse.data.pagination.total
+                        }));
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch pending posts count:', err);
                 }
             } catch (error) {
                 console.error('Failed to fetch dashboard stats:', error);
@@ -118,6 +136,16 @@ const DataOperatorDashboardNew = () => {
             count: null,
             countLabel: null,
             route: "/data-operator/field-data-collection"
+        },
+        {
+            id: "post-approval",
+            title: "পোস্ট অনুমোদন",
+            description: "সোশ্যাল ফিডের পোস্ট যাচাই ও অনুমোদন করুন",
+            icon: MessageSquare,
+            bgGradient: "from-indigo-500 to-indigo-600",
+            count: dashboardStats.pending_posts || 0,
+            countLabel: "অপেক্ষমান পোস্ট",
+            route: "/data-operator/post-approval"
         },
         // {
         //     id: "statistics",
