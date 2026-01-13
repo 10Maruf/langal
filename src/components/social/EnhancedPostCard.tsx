@@ -22,7 +22,10 @@ import {
     Trash2,
     Send,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Clock,
+    CheckCircle,
+    XCircle
 } from "lucide-react";
 import { cn, getAzureImageUrl } from "@/lib/utils";
 import { SocialPost, PostComment, POST_REPORT_REASONS, COMMENT_REPORT_REASONS } from "@/types/social";
@@ -36,6 +39,7 @@ interface EnhancedPostCardProps {
     onMarketplaceClick?: (post: SocialPost) => void;
     onDelete?: (postId: string) => void;
     onUpdate?: (postId: string, updates: Partial<SocialPost>) => void;
+    showApprovalStatus?: boolean; // Whether to show approval status badges
 }
 
 export const EnhancedPostCard = ({
@@ -43,7 +47,8 @@ export const EnhancedPostCard = ({
     onLike,
     onMarketplaceClick,
     onDelete,
-    onUpdate
+    onUpdate,
+    showApprovalStatus = false
 }: EnhancedPostCardProps) => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -340,6 +345,31 @@ export const EnhancedPostCard = ({
                         <Badge variant="secondary" className={typeColors[post.type] || typeColors.general}>
                             {typeLabels[post.type] || typeLabels.general}
                         </Badge>
+                        
+                        {/* Approval Status Badge - Only show when explicitly enabled (My Posts) */}
+                        {showApprovalStatus && isOwnPost && post.approvalStatus && (
+                            <>
+                                {post.approvalStatus === 'pending' && (
+                                    <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        অপেক্ষমান
+                                    </Badge>
+                                )}
+                                {post.approvalStatus === 'rejected' && (
+                                    <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200">
+                                        <XCircle className="h-3 w-3 mr-1" />
+                                        প্রত্যাখ্যাত
+                                    </Badge>
+                                )}
+                                {post.approvalStatus === 'approved' && (
+                                    <Badge variant="default" className="bg-green-50 text-green-700 border-green-200">
+                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        অনুমোদিত
+                                    </Badge>
+                                )}
+                            </>
+                        )}
+                        
                         <TTSButton
                             text={postContent}
                             authorName={postAuthor.name}

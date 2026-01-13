@@ -116,6 +116,9 @@ class MarketplaceController extends Controller
         } else {
             $query->where('status', 'active');
         }
+        
+        // Only show approved listings in public marketplace
+        $query->where('approval_status', 'approved');
 
         // Get user's location info for proximity-based sorting
         $userVillage = $request->string('user_village')->toString();
@@ -329,6 +332,7 @@ class MarketplaceController extends Controller
         $data['saves_count'] = 0;
         $data['views_count'] = 0;
         $data['contacts_count'] = 0;
+        $data['approval_status'] = 'pending'; // Require approval for new listings
 
         $listing = MarketplaceListing::create($data);
 
@@ -383,6 +387,9 @@ class MarketplaceController extends Controller
             $data['full_location_bn'] = $data['location'];
             unset($data['location']);
         }
+        
+        // Set approval_status to pending when listing is edited
+        $data['approval_status'] = 'pending';
 
         $listing->update($data);
         
@@ -599,5 +606,115 @@ class MarketplaceController extends Controller
         }
         
         return $data;
+    }
+
+    /**
+     * GET /api/marketplace/my-listings/{userId}
+     * Get all listings for a user (including pending, approved, rejected)
+     */
+    public function myListings(int $userId)
+    {
+        $listings = MarketplaceListing::with(['category', 'seller.profile'])
+            ->where('seller_id', $userId)
+            ->orderByDesc('created_at')
+            ->get();
+        
+        $transformedListings = $listings->map(function ($listing) {
+            $data = $this->transformListing($listing);
+            $data['approval_status'] = $listing->approval_status;
+            $data['approved_at'] = $listing->approved_at;
+            return $data;
+        });
+        
+        return response()->json(['success' => true, 'data' => $transformedListings]);
+    }
+
+    /**
+     * GET /api/data-operator/marketplace/pending
+     * Get marketplace listings by approval status
+     */
+    public function getPendingListings(Request $request)
+    {
+        $page = $request->query('page', 1);
+        $limit = $request->query('limit', 10);
+        $status = $request->query('status', 'pending'); // pending, approved, rejected
+        
+        $listings = MarketplaceListing::with(['category', 'seller.profile'])
+            ->where('approval_status', $status)
+            ->orderByDesc('created_at')
+            ->paginate($limit, ['*'], 'page', $page);
+        
+        $transformedListings = $listings->getCollection()->map(function ($listing) {
+            $data = $this->transformListing($listing);
+            $data['approval_status'] = $listing->approval_status;
+            $data['created_at'] = $listing->created_at;
+            $data['updated_at'] = $listing->updated_at;
+            return $data;
+        });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $transformedListings,
+            'total' => $listings->total(),
+            'current_page' => $listings->currentPage(),
+            'per_page' => $listings->perPage(),
+            'last_page' => $listings->lastPage()
+        ]);
+    }
+
+    /**
+     * POST /api/data-operator/marketplace/{id}/approve
+     * Approve a marketplace listing
+     */
+    public function approveListing(Request $request, int $id)
+    {
+        $listing = MarketplaceListing::find($id);
+        if (!$listing) {
+            return response()->json(['success' => false, 'message' => 'Listing not found'], 404);
+        }
+
+        // Get user_id from request input
+        $userId = $request->input('user_id');
+        
+        try {
+            $listing->update([
+                'approval_status' => 'approved',
+                'approved_at' => now(),
+                'approved_by' => $userId
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Listing approved successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Marketplace approval error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to approve listing'], 500);
+        }
+    }
+
+    /**
+     * POST /api/data-operator/marketplace/{id}/reject
+     * Reject a marketplace listing
+     */
+    public function rejectListing(Request $request, int $id)
+    {
+        $listing = MarketplaceListing::find($id);
+        if (!$listing) {
+            return response()->json(['success' => false, 'message' => 'Listing not found'], 404);
+        }
+
+        // Get user_id from request input
+        $userId = $request->input('user_id');
+
+        try {
+            $listing->update([
+                'approval_status' => 'rejected',
+                'approved_at' => now(),
+                'approved_by' => $userId
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Listing rejected successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Marketplace rejection error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to reject listing'], 500);
+        }
     }
 }

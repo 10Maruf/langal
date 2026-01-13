@@ -372,10 +372,10 @@ const CentralSocialFeed = ({ showHeader = true }: CentralSocialFeedProps) => {
                                     <EnhancedPostCard
                                         post={post}
                                         onLike={handleLike}
-
                                         onMarketplaceClick={handleMarketplaceClick}
                                         onDelete={handleDeletePost}
                                         onUpdate={handleUpdatePost}
+                                        showApprovalStatus={false}
                                     />
                                 </div>
                             ))}

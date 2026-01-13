@@ -3,6 +3,7 @@
 export type ListingType = "sell" | "rent" | "buy" | "service";
 export type ListingCategory = "crops" | "machinery" | "fertilizer" | "seeds" | "livestock" | "tools" | "other";
 export type ListingStatus = "active" | "sold" | "expired" | "draft";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface ListingAuthor {
     name: string;
@@ -42,6 +43,8 @@ export interface MarketplaceListing {
     contacts: number;
     isOwnListing?: boolean;
     isSaved?: boolean;
+    approvalStatus?: ApprovalStatus;
+    approvedAt?: string;
 }
 
 export interface ListingComment {

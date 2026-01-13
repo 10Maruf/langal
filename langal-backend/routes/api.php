@@ -188,6 +188,11 @@ Route::prefix('data-operator')->group(function () {
         Route::get('/notifications/unread-count', [DataOperatorNotificationController::class, 'unreadCount']);
         Route::post('/notifications/{id}/read', [DataOperatorNotificationController::class, 'markAsRead']);
         Route::post('/notifications/read-all', [DataOperatorNotificationController::class, 'markAllAsRead']);
+        
+        // Marketplace approval routes
+        Route::get('/marketplace/pending', [MarketplaceController::class, 'getPendingListings']);
+        Route::post('/marketplace/{id}/approve', [MarketplaceController::class, 'approveListing']);
+        Route::post('/marketplace/{id}/reject', [MarketplaceController::class, 'rejectListing']);
     });
 });
 
@@ -220,6 +225,7 @@ Route::prefix('marketplace')->group(function () {
     Route::get('/categories', [MarketplaceController::class, 'getCategories']);
     Route::get('/user/{userId}', [MarketplaceController::class, 'userListings']);
     Route::get('/saved/{userId}', [MarketplaceController::class, 'savedListings']);
+    Route::get('/my-listings/{userId}', [MarketplaceController::class, 'myListings']); // All user's listings with status
     Route::get('/{id}', [MarketplaceController::class, 'show']);
     Route::post('/{id}/view', [MarketplaceController::class, 'incrementView']);
     Route::post('/{id}/contact', [MarketplaceController::class, 'incrementContact']);
@@ -272,10 +278,20 @@ Route::prefix('social')->group(function () {
         Route::post('/posts/{id}/report', [PostController::class, 'reportPost']);
         Route::post('/posts/{id}/comments', [PostController::class, 'addComment']);
         Route::post('/posts/{postId}/comments/{commentId}/report', [PostController::class, 'reportComment']);
+        
+        // My posts (with approval status)
+        Route::get('/my-posts', [PostController::class, 'getMyPosts']);
 
         // Image upload for posts
         Route::post('/upload-images', [ImageUploadController::class, 'uploadPostImages']);
     // });
+});
+
+// Data Operator - Post Approval Routes
+Route::prefix('data-operator')->group(function () {
+    Route::get('/posts/pending', [PostController::class, 'getPendingPosts']);
+    Route::post('/posts/{id}/approve', [PostController::class, 'approvePost']);
+    Route::post('/posts/{id}/reject', [PostController::class, 'rejectPost']);
 });
 
 // Crop Recommendation Routes (AI-based)
