@@ -534,9 +534,11 @@ class AppointmentController extends Controller
 
             $appointment->update(['status' => ConsultationAppointment::STATUS_COMPLETED]);
 
-            // Update expert's total consultations
-            Expert::where('user_id', $appointment->expert_id)
-                ->increment('total_consultations');
+            // Update expert's total consultations by finding expert record using user_id
+            $expert = Expert::where('user_id', $appointment->expert_id)->first();
+            if ($expert) {
+                $expert->increment('total_consultations');
+            }
 
             // Send notification to farmer for feedback
             $this->notificationService->sendToUser(
@@ -721,6 +723,11 @@ class AppointmentController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
+            // Cancelled appointments
+            $cancelledAppointments = ConsultationAppointment::where('expert_id', $expertId)
+                ->where('status', 'cancelled')
+                ->count();
+
             // Average rating from feedback
             $avgRating = DB::table('consultation_feedback')
                 ->where('expert_id', $expertId)
@@ -745,6 +752,7 @@ class AppointmentController extends Controller
                     'total_appointments' => $totalAppointments,
                     'completed_appointments' => $completedAppointments,
                     'pending_appointments' => $pendingAppointments,
+                    'cancelled_appointments' => $cancelledAppointments,
                     'average_rating' => $avgRating ? round($avgRating, 1) : 0,
                     'total_reviews' => $totalReviews,
                     'specialization' => $specialization,

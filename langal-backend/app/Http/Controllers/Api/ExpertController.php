@@ -51,6 +51,7 @@ class ExpertController extends Controller
                 return [
                     'id' => $expert->id,
                     'user_id' => $expert->user_id,
+                    'expert_id' => $expert->expert_id,
                     'specialization' => $expert->specialization,
                     'specialization_bn' => $this->getSpecializationBn($expert->specialization),
                     'bio' => $expert->bio,
@@ -58,6 +59,7 @@ class ExpertController extends Controller
                     'consultation_fee' => $expert->consultation_fee,
                     'rating' => round($feedbackStats->avg_rating ?? 0, 1),
                     'total_reviews' => $feedbackStats->total_reviews ?? 0,
+                    'total_consultations' => $expert->total_consultations ?? 0,
                     'is_available' => $expert->is_available ?? true,
                     'response_time' => $expert->response_time ?? 'সাধারণত ১ ঘন্টার মধ্যে',
                     'languages' => $expert->languages ?? ['বাংলা'],

@@ -420,9 +420,9 @@ const FarmerDashboard = () => {
                 </Card>
 
                 {/* ২. কৃষক সংখ্যা ও আজকের দর */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* <div className="grid grid-cols-2 gap-3"> */}
                     {/* কৃষক সংখ্যা */}
-                    <Card className="border">
+                    {/* <Card className="border">
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
@@ -438,10 +438,10 @@ const FarmerDashboard = () => {
                                 </div>
                             </div>
                         </CardContent>
-                    </Card>
+                    </Card> */}
 
                     {/* আজকের দর */}
-                    <Card
+                    {/* <Card
                         className="border cursor-pointer hover:border-primary/50 transition-colors"
                         onClick={() => navigate("/market-prices")}
                     >
@@ -460,7 +460,7 @@ const FarmerDashboard = () => {
                             </div>
                         </CardContent>
                     </Card>
-                </div>
+                </div> */}
 
                 {/* ৩. আবহাওয়া কার্ড - Simple Design */}
                 <Card

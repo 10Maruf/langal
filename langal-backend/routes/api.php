@@ -349,23 +349,26 @@ Route::middleware('auth:sanctum')->prefix('appointments')->group(function () {
     Route::get('/today-count', [AppointmentController::class, 'todayCount']);
     Route::get('/', [AppointmentController::class, 'index']);
     Route::post('/', [AppointmentController::class, 'store']);
-    Route::get('/{id}', [AppointmentController::class, 'show'])->whereNumber('id');
+    
+    // Feedback & Prescription for appointment (specific routes before generic {id})
+    Route::post('/{id}/feedback', [FeedbackController::class, 'store'])->whereNumber('id');
+    Route::get('/{id}/feedback', [FeedbackController::class, 'show'])->whereNumber('id');
+    Route::post('/{id}/prescription', [PrescriptionController::class, 'store'])->whereNumber('id');
+    Route::get('/{id}/prescription', [PrescriptionController::class, 'getByAppointment'])->whereNumber('id');
+    
+    // Call history for appointment
+    Route::get('/{id}/calls', [CallController::class, 'getCallHistory'])->whereNumber('id');
 
     // Appointment actions
-    Route::put('/{id}/approve', [AppointmentController::class, 'approve']);
-    Route::put('/{id}/confirm', [AppointmentController::class, 'approve']); // alias for frontend
-    Route::put('/{id}/reject', [AppointmentController::class, 'reject']);
-    Route::put('/{id}/reschedule', [AppointmentController::class, 'reschedule']);
-    Route::put('/{id}/cancel', [AppointmentController::class, 'cancel']);
-    Route::put('/{id}/complete', [AppointmentController::class, 'complete']);
-
-    // Feedback & Prescription for appointment
-    Route::post('/{id}/feedback', [FeedbackController::class, 'store']);
-    Route::get('/{id}/feedback', [FeedbackController::class, 'show']);
-    Route::post('/{id}/prescription', [PrescriptionController::class, 'store']);
-
-    // Call history for appointment
-    Route::get('/{id}/calls', [CallController::class, 'getCallHistory']);
+    Route::put('/{id}/approve', [AppointmentController::class, 'approve'])->whereNumber('id');
+    Route::put('/{id}/confirm', [AppointmentController::class, 'approve'])->whereNumber('id'); // alias for frontend
+    Route::put('/{id}/reject', [AppointmentController::class, 'reject'])->whereNumber('id');
+    Route::put('/{id}/reschedule', [AppointmentController::class, 'reschedule'])->whereNumber('id');
+    Route::put('/{id}/cancel', [AppointmentController::class, 'cancel'])->whereNumber('id');
+    Route::put('/{id}/complete', [AppointmentController::class, 'complete'])->whereNumber('id');
+    
+    // Generic appointment show (must be last)
+    Route::get('/{id}', [AppointmentController::class, 'show'])->whereNumber('id');
 });
 
 // Conversation/Message Routes (Protected)

@@ -120,9 +120,11 @@ const BookAppointmentPage = () => {
         try {
             setSlotsLoading(true);
             const response = await getExpertAvailableSlots(expertId!, selectedDate);
+            console.log('Available slots response:', response);
             if (response.success) {
                 // Handle both structure formats (array directly or nested in slots property)
                 const slotsData = response.data?.slots || response.data || [];
+                console.log('Parsed slots data:', slotsData);
                 setAvailableSlots(Array.isArray(slotsData) ? slotsData : []);
             }
         } catch (err) {

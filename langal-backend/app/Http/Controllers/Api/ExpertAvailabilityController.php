@@ -317,9 +317,22 @@ class ExpertAvailabilityController extends Controller
             try {
                 $appointments = \App\Models\ConsultationAppointment::where('expert_id', $targetUserId)
                     ->where('appointment_date', $date->toDateString())
-                    ->whereIn('status', ['pending', 'confirmed', 'approved'])
+                    ->whereIn('status', ['pending', 'confirmed', 'approved', 'scheduled'])
                     ->get();
-                \Log::info('Fetched appointments for checking availability', ['count' => $appointments->count()]);
+                \Log::info('Fetched appointments for checking availability', [
+                    'count' => $appointments->count(),
+                    'date' => $date->toDateString(),
+                    'expert_id' => $targetUserId,
+                    'appointments' => $appointments->map(function($a) {
+                        return [
+                            'id' => $a->appointment_id,
+                            'date' => $a->appointment_date,
+                            'start_time' => $a->start_time,
+                            'scheduled_start_time' => $a->scheduled_start_time,
+                            'status' => $a->status
+                        ];
+                    })->toArray()
+                ]);
             } catch (\Exception $e) {
                 \Log::error('Error fetching appointments: ' . $e->getMessage());
                 // Fallback to empty collection if query fails, to at least show slots (risk of double booking but better than crash)
@@ -349,8 +362,8 @@ class ExpertAvailabilityController extends Controller
                     // Check if slot is already booked (OPTIMIZED: In-memory check)
                     $targetTime = $slotStartStr . ':00';
                     $bookedCount = $appointments->filter(function ($appt) use ($targetTime) {
-                        // Ensure we compare HH:mm:ss part only
-                        $apptTime = substr((string)$appt->scheduled_start_time, 0, 8);
+                        // Use start_time field instead of scheduled_start_time
+                        $apptTime = substr((string)$appt->start_time, 0, 8);
                         return $apptTime === $targetTime;
                     })->count();
 

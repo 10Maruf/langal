@@ -54,6 +54,8 @@ import AppointmentDetailsPage from "./pages/consultation/AppointmentDetailsPage"
 import ChatRoom from "./pages/consultation/ChatRoom";
 import VideoCallPage from "./pages/consultation/VideoCallPage";
 import FeedbackPage from "./pages/consultation/FeedbackPage";
+import PrescriptionPage from "./pages/consultation/PrescriptionPage";
+import ViewPrescriptionPage from "./pages/consultation/ViewPrescriptionPage";
 import ExpertConsultationDashboard from "./pages/consultation/ExpertConsultationDashboard";
 import ExpertAvailabilityPage from "./pages/consultation/ExpertAvailabilityPage";
 import { syncOfflineSelections } from "@/services/recommendationService";
@@ -467,6 +469,22 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedTypes={['farmer', 'expert']}>
                         <FeedbackPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/consultation/prescription/:appointmentId"
+                    element={
+                      <ProtectedRoute allowedTypes={['expert']}>
+                        <PrescriptionPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/consultation/prescription/view/:appointmentId"
+                    element={
+                      <ProtectedRoute allowedTypes={['expert', 'farmer']}>
+                        <ViewPrescriptionPage />
                       </ProtectedRoute>
                     }
                   />

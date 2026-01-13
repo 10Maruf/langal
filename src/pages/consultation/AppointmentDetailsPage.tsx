@@ -19,12 +19,14 @@ import {
     User,
     FileText,
     Star,
+    FileHeart,
 } from "lucide-react";
 import {
     getAppointmentById,
     Appointment,
     updateAppointmentStatus,
     cancelAppointment,
+    completeAppointment,
 } from "@/services/consultationService";
 import { getProfilePhotoUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -135,6 +137,28 @@ const AppointmentDetailsPage = () => {
             toast({
                 title: "ত্রুটি",
                 description: "বাতিল করতে ব্যর্থ",
+                variant: "destructive",
+            });
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleComplete = async () => {
+        try {
+            setProcessing(true);
+            const response = await completeAppointment(parseInt(appointmentId!));
+            if (response.success) {
+                toast({
+                    title: "সফল!",
+                    description: "অ্যাপয়েন্টমেন্ট সম্পন্ন করা হয়েছে",
+                });
+                fetchAppointment();
+            }
+        } catch (err) {
+            toast({
+                title: "ত্রুটি",
+                description: "সম্পন্ন করতে ব্যর্থ",
                 variant: "destructive",
             });
         } finally {
@@ -341,12 +365,35 @@ const AppointmentDetailsPage = () => {
 
                     {/* Join Call Button for Confirmed */}
                     {appointment.status === "confirmed" && (
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleJoinCall}>
-                            {consultationType.icon}
-                            <span className="ml-2">
-                                {appointment.consultation_type === "chat" ? "চ্যাট শুরু করুন" : "কলে যোগ দিন"}
-                            </span>
-                        </Button>
+                        <>
+                            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleJoinCall}>
+                                {consultationType.icon}
+                                <span className="ml-2">
+                                    {appointment.consultation_type === "chat" ? "চ্যাট শুরু করুন" : "কলে যোগ দিন"}
+                                </span>
+                            </Button>
+                            
+                            {isExpert && (
+                                <div className="flex gap-3">
+                                    <Button
+                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                        onClick={handleComplete}
+                                        disabled={processing}
+                                    >
+                                        {processing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                                        সম্পন্ন করুন
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 border-green-200 text-green-600 hover:bg-green-50"
+                                        onClick={() => navigate(`/consultation/prescription/${appointmentId}`)}
+                                    >
+                                        <FileHeart className="h-4 w-4 mr-2" />
+                                        প্রেসক্রিপশন
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* Cancel Button for Pending/Confirmed */}
@@ -363,13 +410,24 @@ const AppointmentDetailsPage = () => {
                     )}
 
                     {/* Feedback Button for Completed */}
-                    {appointment.status === "completed" && !isExpert && (
+                    {/* {appointment.status === "completed" && !isExpert && (
                         <Button
                             className="w-full"
                             onClick={() => navigate(`/consultation/feedback/${appointmentId}`)}
                         >
                             <Star className="h-4 w-4 mr-2" />
                             ফিডব্যাক দিন
+                        </Button>
+                    )} */}
+
+                    {/* View Prescription Button for Completed */}
+                    {appointment.status === "completed" && (
+                        <Button
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            onClick={() => navigate(`/consultation/prescription/view/${appointmentId}`)}
+                        >
+                            <FileHeart className="h-4 w-4 mr-2" />
+                            প্রেসক্রিপশন দেখুন
                         </Button>
                     )}
                 </div>

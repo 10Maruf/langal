@@ -37,6 +37,7 @@ interface ExpertStats {
     total_appointments: number;
     completed_appointments: number;
     pending_appointments: number;
+    cancelled_appointments: number;
     average_rating: number;
     total_reviews: number;
 }
@@ -219,20 +220,20 @@ const ExpertConsultationDashboard = () => {
                         <CardContent className="p-3 text-center">
                             <Users className="h-5 w-5 text-blue-500 mx-auto mb-1" />
                             <p className="text-lg font-bold text-gray-900">
-                                {stats?.total_appointments || 0}
+                                {stats?.completed_appointments || 0}
                             </p>
                             <p className="text-[10px] text-gray-500">মোট পরামর্শ</p>
                         </CardContent>
                     </Card>
-                    {/* <Card>
+                    <Card>
                         <CardContent className="p-3 text-center">
-                            <Star className="h-5 w-5 text-amber-500 mx-auto mb-1" />
+                            <XCircle className="h-5 w-5 text-red-500 mx-auto mb-1" />
                             <p className="text-lg font-bold text-gray-900">
-                                {stats?.average_rating?.toFixed(1) || "0.0"}
+                                {stats?.cancelled_appointments || 0}
                             </p>
-                            <p className="text-[10px] text-gray-500">গড় রেটিং</p>
+                            <p className="text-[10px] text-gray-500">বাতিল</p>
                         </CardContent>
-                    </Card> */}
+                    </Card>
                     <Card>
                         <CardContent className="p-3 text-center">
                             <Bell className="h-5 w-5 text-orange-500 mx-auto mb-1" />
@@ -339,7 +340,7 @@ const ExpertConsultationDashboard = () => {
             <div className="px-4 py-4">
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-green-600" />
-                    আজকের সময়সূচী
+                    আজকের অ্যাপয়েন্টমেন্টস
                 </h3>
                 {todayAppointments.length > 0 ? (
                     <div className="space-y-3">

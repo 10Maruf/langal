@@ -103,12 +103,10 @@ class PrescriptionController extends Controller
                 'farmer_id' => $appointment->farmer_id,
                 'diagnosis' => $request->diagnosis,
                 'diagnosis_bn' => $request->diagnosis_bn,
-                'prescription_details' => $request->prescription_details,
-                'prescription_details_bn' => $request->prescription_details_bn,
-                'medications' => $request->medications ? json_encode($request->medications) : null,
-                'preventive_measures' => $request->preventive_measures,
-                'preventive_measures_bn' => $request->preventive_measures_bn,
-                'follow_up_required' => $request->follow_up_required ?? false,
+                'prescription' => $request->prescription_details,
+                'prescription_bn' => $request->prescription_details_bn,
+                'recommended_products' => $request->medications ? json_encode($request->medications) : null,
+                'follow_up_needed' => $request->follow_up_required ?? false,
                 'follow_up_date' => $request->follow_up_date,
                 'follow_up_notes' => $request->follow_up_notes,
                 'attachments' => !empty($attachmentUrls) ? json_encode($attachmentUrls) : null,
@@ -287,6 +285,53 @@ class PrescriptionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch prescriptions',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get prescription by appointment ID
+     * GET /api/appointments/{appointmentId}/prescription
+     */
+    public function getByAppointment(int $appointmentId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            $appointment = ConsultationAppointment::findOrFail($appointmentId);
+
+            // Check access - only farmer or expert of this appointment can view
+            if ($user->user_id !== $appointment->farmer_id && $user->user_id !== $appointment->expert_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access',
+                    'message_bn' => 'আপনার এই প্রেসক্রিপশন দেখার অনুমতি নেই',
+                ], 403);
+            }
+
+            $prescription = ConsultationPrescription::with([
+                'expert.profile',
+                'farmer.profile',
+                'appointment',
+            ])->where('appointment_id', $appointmentId)->first();
+
+            if (!$prescription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prescription not found for this appointment',
+                    'message_bn' => 'এই পরামর্শের জন্য কোন প্রেসক্রিপশন নেই',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $prescription,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch prescription',
                 'error' => $e->getMessage(),
             ], 500);
         }

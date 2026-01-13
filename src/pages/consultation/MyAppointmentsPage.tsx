@@ -22,11 +22,13 @@ import {
     ChevronRight,
     X,
     ArrowLeft,
+    FileHeart,
 } from "lucide-react";
 import {
     getMyAppointments,
     Appointment,
     cancelAppointment,
+    completeAppointment,
     getStatusColor,
     getConsultationTypeIcon,
 } from "@/services/consultationService";
@@ -41,6 +43,7 @@ const MyAppointmentsPage = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("upcoming");
     const [cancellingId, setCancellingId] = useState<number | null>(null);
+    const [completingId, setCompletingId] = useState<number | null>(null);
 
     useEffect(() => {
         fetchAppointments();
@@ -50,7 +53,7 @@ const MyAppointmentsPage = () => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const status = activeTab === "upcoming" ? "confirmed,pending,scheduled" : "completed,cancelled";
+            const status = activeTab === "upcoming" ? "confirmed,pending,scheduled" : activeTab === "past" ? "completed" : "cancelled";
             const response = await getMyAppointments({ status });
             if (response.success) {
                 setAppointments(response.data || []);
@@ -87,6 +90,34 @@ const MyAppointmentsPage = () => {
             });
         } finally {
             setCancellingId(null);
+        }
+    };
+
+    const handleComplete = async (appointmentId: number) => {
+        try {
+            setCompletingId(appointmentId);
+            const response = await completeAppointment(appointmentId);
+            if (response.success) {
+                toast({
+                    title: "সফল!",
+                    description: "অ্যাপয়েন্টমেন্ট সম্পন্ন করা হয়েছে",
+                });
+                fetchAppointments();
+            } else {
+                toast({
+                    title: "ত্রুটি",
+                    description: response.message || "সম্পন্ন করতে ব্যর্থ হয়েছে",
+                    variant: "destructive",
+                });
+            }
+        } catch (err) {
+            toast({
+                title: "ত্রুটি",
+                description: "সার্ভারে সমস্যা হয়েছে",
+                variant: "destructive",
+            });
+        } finally {
+            setCompletingId(null);
         }
     };
 
@@ -296,6 +327,31 @@ const MyAppointmentsPage = () => {
                             </Button>
                         )}
 
+                        {(appointment.status === "confirmed" || appointment.status === "scheduled") && isExpert && (
+                            <>
+                                <Button
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => handleComplete(appointment.appointment_id)}
+                                    disabled={completingId === appointment.appointment_id}
+                                >
+                                    {completingId === appointment.appointment_id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    ) : (
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                    )}
+                                    সম্পন্ন করুন
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 border-green-200 text-green-600 hover:bg-green-50"
+                                    onClick={() => navigate(`/consultation/prescription/${appointment.appointment_id}`)}
+                                >
+                                    <FileHeart className="h-4 w-4 mr-2" />
+                                    প্রেসক্রিপশন
+                                </Button>
+                            </>
+                        )}
+
                         {appointment.status === "pending" && !isExpert && (
                             <Button
                                 variant="outline"
@@ -312,7 +368,7 @@ const MyAppointmentsPage = () => {
                             </Button>
                         )}
 
-                        {appointment.status === "completed" && !appointment.has_feedback && !isExpert && (
+                        {/* {appointment.status === "completed" && !appointment.has_feedback && !isExpert && (
                             <Button
                                 variant="outline"
                                 className="flex-1"
@@ -321,7 +377,7 @@ const MyAppointmentsPage = () => {
                                 <Star className="h-4 w-4 mr-2" />
                                 রেটিং দিন
                             </Button>
-                        )}
+                        )} */}
 
                         <Button
                             variant="ghost"
@@ -356,7 +412,7 @@ const MyAppointmentsPage = () => {
             {/* Tabs */}
             <div className="px-4 py-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="upcoming" className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             আসন্ন
@@ -364,6 +420,10 @@ const MyAppointmentsPage = () => {
                         <TabsTrigger value="past" className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4" />
                             সম্পন্ন
+                        </TabsTrigger>
+                        <TabsTrigger value="cancelled" className="flex items-center gap-2">
+                            <XCircle className="h-4 w-4" />
+                            বাতিল
                         </TabsTrigger>
                     </TabsList>
 
@@ -377,12 +437,12 @@ const MyAppointmentsPage = () => {
                             <div className="text-center py-12">
                                 <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                                 <p className="text-gray-500 mb-4">কোন আসন্ন অ্যাপয়েন্টমেন্ট নেই</p>
-                                <Button
+                                {/* <Button
                                     onClick={() => navigate("/consultation/experts")}
                                     className="bg-green-600 hover:bg-green-700"
                                 >
                                     বিশেষজ্ঞ খুঁজুন
-                                </Button>
+                                </Button> */}
                             </div>
                         ) : (
                             appointments.map(renderAppointmentCard)
@@ -399,6 +459,22 @@ const MyAppointmentsPage = () => {
                             <div className="text-center py-12">
                                 <CheckCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                                 <p className="text-gray-500">কোন সম্পন্ন অ্যাপয়েন্টমেন্ট নেই</p>
+                            </div>
+                        ) : (
+                            appointments.map(renderAppointmentCard)
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="cancelled" className="mt-4">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <Loader2 className="h-10 w-10 text-green-600 animate-spin mb-3" />
+                                <p className="text-gray-500">লোড হচ্ছে...</p>
+                            </div>
+                        ) : appointments.length === 0 ? (
+                            <div className="text-center py-12">
+                                <XCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                                <p className="text-gray-500">কোন বাতিল অ্যাপয়েন্টমেন্ট নেই</p>
                             </div>
                         ) : (
                             appointments.map(renderAppointmentCard)

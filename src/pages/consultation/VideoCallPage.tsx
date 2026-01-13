@@ -739,14 +739,14 @@ const VideoCallPage = () => {
           </Button>
 
           {/* Chat Button */}
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             className="h-14 w-14 rounded-full bg-gray-700 hover:bg-gray-600"
             onClick={() => navigate(`/consultation/chat/${appointmentId}`)}
           >
             <MessageCircle className="h-6 w-6 text-white" />
-          </Button>
+          </Button> */}
         </div>
 
         {/* Secondary Controls */}

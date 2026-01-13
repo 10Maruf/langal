@@ -283,7 +283,7 @@ const ExpertDashboard = () => {
                                     {statsLoading ? (
                                         <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                                     ) : (
-                                        <p className="text-lg font-semibold">{toBengaliNumber(totalConsultations)} টি</p>
+                                        <p className="text-lg font-semibold">{toBengaliNumber(completedConsultations)} টি</p>
                                     )}
                                 </div>
                             </div>
