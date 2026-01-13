@@ -386,21 +386,105 @@ class PostController extends Controller
             return response()->json(['error' => $validator->errors()], 400);
         }
 
-        $updateData = ['updated_at' => now()];
+        $updateData = [
+            'updated_at' => now(),
+            'approval_status' => 'pending' // Set to pending when post is edited
+        ];
         if ($request->has('content')) $updateData['content'] = $request->content;
         if ($request->has('type')) $updateData['post_type'] = $request->type;
         if ($request->has('images')) $updateData['images'] = json_encode($request->images);
 
         DB::table('posts')->where('post_id', $id)->update($updateData);
 
-        // Return updated post
-        $updatedPost = DB::table('posts')->where('post_id', $id)->first();
+        // Fetch updated post with all related data (similar to getMyPosts)
+        $query = "
+            SELECT
+                p.*,
+                up.full_name as author_name,
+                u.user_type as author_type,
+                up.profile_photo_url as author_avatar,
+                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id) as likes_count,
+                (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) as comments_count
+            FROM posts p
+            JOIN users u ON p.author_id = u.user_id
+            LEFT JOIN user_profiles up ON u.user_id = up.user_id
+            WHERE p.post_id = ?
+        ";
 
-        // We need to fetch the full post structure again to return it consistent with index
-        // For simplicity, we'll just return the basic updated fields and let frontend handle it
-        // Or we could reuse the query logic from index if we extracted it to a private method.
+        $post = DB::selectOne($query, [$id]);
 
-        return response()->json(['message' => 'Post updated successfully', 'post' => $updatedPost]);
+        // Format the post response
+        $avatarUrl = null;
+        if ($post->author_avatar) {
+            if (str_starts_with($post->author_avatar, 'http')) {
+                $avatarUrl = $post->author_avatar;
+            } else {
+                if (str_contains($post->author_avatar, '/')) {
+                    try {
+                        $accountName = config('filesystems.disks.azure.name');
+                        $container = config('filesystems.disks.azure.container');
+                        if ($accountName && $container) {
+                            $avatarUrl = sprintf(
+                                'https://%s.blob.core.windows.net/%s/%s',
+                                $accountName,
+                                $container,
+                                $post->author_avatar
+                            );
+                        } else {
+                            $avatarUrl = url('storage/' . $post->author_avatar);
+                        }
+                    } catch (\Exception $e) {
+                        $avatarUrl = url('storage/' . $post->author_avatar);
+                    }
+                } else {
+                    $avatarUrl = url('storage/' . $post->author_avatar);
+                }
+            }
+        }
+
+        // Process post images
+        $postImages = json_decode($post->images) ?? [];
+        $formattedImages = array_map(function ($image) {
+            if (filter_var($image, FILTER_VALIDATE_URL)) {
+                return $image;
+            }
+            try {
+                $accountName = config('filesystems.disks.azure.name');
+                $container = config('filesystems.disks.azure.container');
+                if ($accountName && $container) {
+                    return sprintf(
+                        'https://%s.blob.core.windows.net/%s/%s',
+                        $accountName,
+                        $container,
+                        $image
+                    );
+                }
+            } catch (\Exception $e) {
+                return url('storage/' . $image);
+            }
+            return url('storage/' . $image);
+        }, $postImages);
+
+        $formattedPost = [
+            'id' => (string)$post->post_id,
+            'author' => [
+                'name' => $post->author_name,
+                'avatar' => $avatarUrl,
+                'userType' => $post->author_type,
+                'isExpert' => $post->author_type === 'expert'
+            ],
+            'content' => $post->content,
+            'images' => $formattedImages,
+            'type' => $post->post_type,
+            'likes' => (int)$post->likes_count,
+            'comments' => (int)$post->comments_count,
+            'postedAt' => $post->created_at,
+            'approvalStatus' => $post->approval_status,
+            'approvedAt' => $post->approved_at,
+            'isOwnPost' => true
+        ];
+
+        return response()->json(['message' => 'Post updated successfully', 'post' => $formattedPost]);
     }
 
     // Delete a post

@@ -147,7 +147,8 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                         content: editedContent,
                         type: editedType as any,
                         images: finalImages
-                    }
+                    },
+                    user?.user_id
                 );
 
                 if (updatedPost) {
