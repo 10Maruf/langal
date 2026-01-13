@@ -193,10 +193,10 @@ const ExpertProfilePage = () => {
       {/* Tabs */}
       <div className="px-4 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="about">পরিচিতি</TabsTrigger>
             <TabsTrigger value="schedule">সময়সূচী</TabsTrigger>
-            <TabsTrigger value="reviews">রিভিউ</TabsTrigger>
+            {/* <TabsTrigger value="reviews">রিভিউ</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="about" className="mt-4 space-y-4">
@@ -298,7 +298,7 @@ const ExpertProfilePage = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reviews" className="mt-4 space-y-4">
+          {/* <TabsContent value="reviews" className="mt-4 space-y-4">
             {expert.recent_feedbacks?.length ? (
               expert.recent_feedbacks.map((feedback, index) => (
                 <Card key={index}>
@@ -344,7 +344,7 @@ const ExpertProfilePage = () => {
                 <p className="text-gray-500">এখনও কোন রিভিউ নেই</p>
               </div>
             )}
-          </TabsContent>
+          </TabsContent> */
         </Tabs>
       </div>
 

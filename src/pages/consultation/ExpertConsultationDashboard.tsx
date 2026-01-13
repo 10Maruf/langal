@@ -224,7 +224,7 @@ const ExpertConsultationDashboard = () => {
                             <p className="text-[10px] text-gray-500">মোট পরামর্শ</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    {/* <Card>
                         <CardContent className="p-3 text-center">
                             <Star className="h-5 w-5 text-amber-500 mx-auto mb-1" />
                             <p className="text-lg font-bold text-gray-900">
@@ -232,7 +232,7 @@ const ExpertConsultationDashboard = () => {
                             </p>
                             <p className="text-[10px] text-gray-500">গড় রেটিং</p>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                     <Card>
                         <CardContent className="p-3 text-center">
                             <Bell className="h-5 w-5 text-orange-500 mx-auto mb-1" />
@@ -410,14 +410,14 @@ const ExpertConsultationDashboard = () => {
                         <Calendar className="h-5 w-5 text-blue-600" />
                         <span className="text-xs">অ্যাপয়েন্টমেন্ট</span>
                     </Button>
-                    <Button
+                    {/* <Button
                         variant="outline"
                         className="h-auto py-3 flex flex-col items-center gap-1"
                         onClick={() => navigate("/consultation/prescriptions")}
                     >
                         <CheckCircle className="h-5 w-5 text-purple-600" />
                         <span className="text-xs">প্রেসক্রিপশন</span>
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
         </div>
