@@ -23,7 +23,10 @@ import {
     Plus,
     Calendar,
     BarChart3,
-    Flag
+    Flag,
+    Clock,
+    CheckCircle,
+    XCircle
 } from "lucide-react";
 import { cn, getAzureImageUrl } from "@/lib/utils";
 import { SocialPost } from "@/types/social";
@@ -389,6 +392,27 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                                 <Badge variant="secondary" className={typeColors[post.type]}>
                                                     {typeLabels[post.type]}
                                                 </Badge>
+                                                
+                                                {/* Approval Status Badge */}
+                                                {post.approvalStatus === 'pending' && (
+                                                    <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                                        <Clock className="h-3 w-3 mr-1" />
+                                                        অপেক্ষমান
+                                                    </Badge>
+                                                )}
+                                                {post.approvalStatus === 'rejected' && (
+                                                    <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200">
+                                                        <XCircle className="h-3 w-3 mr-1" />
+                                                        প্রত্যাখ্যাত
+                                                    </Badge>
+                                                )}
+                                                {post.approvalStatus === 'approved' && (
+                                                    <Badge variant="default" className="bg-green-50 text-green-700 border-green-200">
+                                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                                        অনুমোদিত
+                                                    </Badge>
+                                                )}
+                                                
                                                 <span className="text-sm text-muted-foreground">
                                                     {formatTime(post.postedAt)}
                                                 </span>
@@ -721,6 +745,7 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
                                     setSelectedPost(null);
                                 }}
                                 onUpdate={handleUpdatePost}
+                                showApprovalStatus={true}
                             />
                         </div>
                     )}

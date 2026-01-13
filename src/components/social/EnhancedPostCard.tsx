@@ -39,6 +39,7 @@ interface EnhancedPostCardProps {
     onMarketplaceClick?: (post: SocialPost) => void;
     onDelete?: (postId: string) => void;
     onUpdate?: (postId: string, updates: Partial<SocialPost>) => void;
+    showApprovalStatus?: boolean; // Whether to show approval status badges
 }
 
 export const EnhancedPostCard = ({
@@ -46,7 +47,8 @@ export const EnhancedPostCard = ({
     onLike,
     onMarketplaceClick,
     onDelete,
-    onUpdate
+    onUpdate,
+    showApprovalStatus = false
 }: EnhancedPostCardProps) => {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -344,8 +346,8 @@ export const EnhancedPostCard = ({
                             {typeLabels[post.type] || typeLabels.general}
                         </Badge>
                         
-                        {/* Approval Status Badge - Only show for own posts */}
-                        {isOwnPost && post.approvalStatus && (
+                        {/* Approval Status Badge - Only show when explicitly enabled (My Posts) */}
+                        {showApprovalStatus && isOwnPost && post.approvalStatus && (
                             <>
                                 {post.approvalStatus === 'pending' && (
                                     <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 border-yellow-200">
