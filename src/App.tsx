@@ -32,6 +32,7 @@ import DataOperatorDashboard from "./pages/DataOperatorDashboard";
 import DataOperatorHome from "./pages/DataOperatorHome";
 import DataOperatorAuth from "./pages/DataOperatorAuth";
 import DataOperatorPostApproval from "./pages/DataOperatorPostApproval";
+import DataOperatorMarketplaceApproval from "./pages/DataOperatorMarketplaceApproval";
 import DataOperatorProfileVerification from "./pages/DataOperatorProfileVerification";
 import DataOperatorCropVerification from "./pages/DataOperatorCropVerification";
 import DataOperatorRegisterFarmer from "./pages/DataOperatorRegisterFarmer";
@@ -323,6 +324,14 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedTypes={['data_operator']}>
                         <DataOperatorPostApproval />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/data-operator/marketplace-approval"
+                    element={
+                      <ProtectedRoute allowedTypes={['data_operator']}>
+                        <DataOperatorMarketplaceApproval />
                       </ProtectedRoute>
                     }
                   />

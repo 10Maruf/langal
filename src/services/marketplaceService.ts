@@ -599,11 +599,21 @@ class MarketplaceService {
 
     // Get user's listings
     async getUserListings(userIdOrName: string | number): Promise<MarketplaceListing[]> {
-        // Try backend by userId
+        // Try backend my-listings endpoint (includes approval status)
         if (typeof userIdOrName === 'number' || /^\d+$/.test(String(userIdOrName))) {
-            const res = await this.fetchJSON<ApiResponse<DbListing[]>>(`/marketplace/user/${userIdOrName}`);
-            if (res && res.success && Array.isArray(res.data)) {
-                return res.data.map((db) => ({ ...this.mapDbListingToUi(db), isOwnListing: true }));
+            try {
+                const res = await this.fetchJSON<ApiResponse<DbListing[]>>(`/marketplace/my-listings/${userIdOrName}`);
+                if (res && res.success && Array.isArray(res.data)) {
+                    return res.data.map((db) => ({ 
+                        ...this.mapDbListingToUi(db), 
+                        isOwnListing: true,
+                        approvalStatus: (db as any).approval_status,
+                        approvedAt: (db as any).approved_at
+                    }));
+                }
+            } catch (error) {
+                console.error('[MarketplaceService] Error fetching my listings:', error);
+                return [];
             }
         }
         // Fallback to local by author name
@@ -835,6 +845,74 @@ class MarketplaceService {
         } catch (error) {
             console.error('[MarketplaceService] Error fetching active user listings:', error);
             return [];
+        }
+    }
+
+    // Get user's all listings (including pending, approved, rejected)
+    async getMyListings(userId: number): Promise<MarketplaceListing[]> {
+        try {
+            const res = await this.fetchJSON<ApiResponse<DbListing[]>>(`/marketplace/my-listings/${userId}`);
+            if (res && res.success && Array.isArray(res.data)) {
+                return res.data.map((db) => ({
+                    ...this.mapDbListingToUi(db),
+                    approvalStatus: (db as any).approval_status,
+                    approvedAt: (db as any).approved_at
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.error('[MarketplaceService] Error fetching my listings:', error);
+            return [];
+        }
+    }
+
+    // Data Operator: Get pending marketplace listings
+    async getPendingListings(page = 1, limit = 10, status: 'pending' | 'approved' | 'rejected' = 'pending'): Promise<{ listings: MarketplaceListing[], total: number }> {
+        try {
+            const res = await this.fetchJSON<any>(`/data-operator/marketplace/pending?page=${page}&limit=${limit}&status=${status}`);
+            if (res && res.success) {
+                return {
+                    listings: (res.data || []).map((db: DbListing) => ({
+                        ...this.mapDbListingToUi(db),
+                        approvalStatus: (db as any).approval_status,
+                        createdAt: (db as any).created_at,
+                        updatedAt: (db as any).updated_at
+                    })),
+                    total: res.total || 0
+                };
+            }
+            return { listings: [], total: 0 };
+        } catch (error) {
+            console.error('[MarketplaceService] Error fetching pending listings:', error);
+            return { listings: [], total: 0 };
+        }
+    }
+
+    // Data Operator: Approve listing
+    async approveListing(listingId: string | number, userId: number): Promise<boolean> {
+        try {
+            const res = await this.fetchJSON<ApiResponse<any>>(`/data-operator/marketplace/${listingId}/approve`, {
+                method: 'POST',
+                body: JSON.stringify({ user_id: userId })
+            });
+            return res?.success || false;
+        } catch (error) {
+            console.error('[MarketplaceService] Error approving listing:', error);
+            return false;
+        }
+    }
+
+    // Data Operator: Reject listing
+    async rejectListing(listingId: string | number, userId: number): Promise<boolean> {
+        try {
+            const res = await this.fetchJSON<ApiResponse<any>>(`/data-operator/marketplace/${listingId}/reject`, {
+                method: 'POST',
+                body: JSON.stringify({ user_id: userId })
+            });
+            return res?.success || false;
+        } catch (error) {
+            console.error('[MarketplaceService] Error rejecting listing:', error);
+            return false;
         }
     }
 }

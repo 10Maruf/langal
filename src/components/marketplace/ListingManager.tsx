@@ -19,6 +19,7 @@ import {
     Clock,
     BarChart3,
     AlertCircle,
+    CheckCircle2,
     Bookmark,
     Package,
     TrendingUp,
@@ -541,6 +542,25 @@ export const ListingManager = ({ onClose }: ListingManagerProps) => {
                                         {typeIcons[listing.type]}
                                         {listing.listingTypeBn || typeLabels[listing.type]}
                                     </Badge>
+                                    {/* Approval Status Badge */}
+                                    {listing.approvalStatus && listing.approvalStatus === 'pending' && (
+                                        <Badge className="bg-yellow-500 text-xs flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            অপেক্ষমাণ
+                                        </Badge>
+                                    )}
+                                    {listing.approvalStatus && listing.approvalStatus === 'approved' && (
+                                        <Badge className="bg-green-500 text-xs flex items-center gap-1">
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            অনুমোদিত
+                                        </Badge>
+                                    )}
+                                    {listing.approvalStatus && listing.approvalStatus === 'rejected' && (
+                                        <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                                            <AlertCircle className="h-3 w-3" />
+                                            প্রত্যাখ্যাত
+                                        </Badge>
+                                    )}
                                 </div>
                                 <h3 className="font-medium text-sm truncate">{listing.title}</h3>
                                 <p className="text-xs text-muted-foreground line-clamp-1">{listing.description}</p>

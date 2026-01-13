@@ -40,6 +40,9 @@ class MarketplaceListing extends Model
         'saves_count',
         'contacts_count',
         'expires_at',
+        'approval_status', // pending / approved / rejected
+        'approved_at',
+        'approved_by',
     ];
 
     protected $casts = [

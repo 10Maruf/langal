@@ -26,7 +26,8 @@ import {
     FileText,
     CheckCircle2,
     Clock,
-    MessageSquare
+    MessageSquare,
+    ShoppingBag
 } from "lucide-react";
 import DataOperatorProfile from "@/components/data-operator/DataOperatorProfile";
 import DataOperatorHeader from "@/components/data-operator/DataOperatorHeader";
@@ -146,6 +147,16 @@ const DataOperatorDashboardNew = () => {
             count: dashboardStats.pending_posts || 0,
             countLabel: "অপেক্ষমান পোস্ট",
             route: "/data-operator/post-approval"
+        },
+        {
+            id: "marketplace-approval",
+            title: "মার্কেটপ্লেস অনুমোদন",
+            description: "মার্কেটপ্লেস বিজ্ঞাপন যাচাই ও অনুমোদন করুন",
+            icon: ShoppingBag,
+            bgGradient: "from-purple-500 to-purple-600",
+            count: null,
+            countLabel: "বিজ্ঞাপন",
+            route: "/data-operator/marketplace-approval"
         },
         // {
         //     id: "statistics",
