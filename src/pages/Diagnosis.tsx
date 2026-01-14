@@ -17,6 +17,7 @@ const Diagnosis = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [crop, setCrop] = useState("");
+  const [customCropName, setCustomCropName] = useState("");
   const [symptoms, setSymptoms] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [area, setArea] = useState("");
@@ -33,7 +34,8 @@ const Diagnosis = () => {
     { value: "potato", label: "আলু" },
     { value: "eggplant", label: "বেগুন" },
     { value: "cucumber", label: "শসা" },
-    { value: "cabbage", label: "বাঁধাকপি" }
+    { value: "cabbage", label: "বাঁধাকপি" },
+    { value: "others", label: "অন্যান্য" }
   ];
 
   // Removed mockDiseases; now using Gemini API response
@@ -77,11 +79,48 @@ const Diagnosis = () => {
     }
   };
 
+  const handleCropNameVoiceInput = () => {
+    type ISpeechRecognitionEvent = { results: ArrayLike<{ 0: { transcript: string } }> };
+    interface ISpeechRecognition {
+      lang: string;
+      onresult: (event: ISpeechRecognitionEvent) => void;
+      start: () => void;
+    }
+
+    const w = window as unknown as {
+      webkitSpeechRecognition?: new () => ISpeechRecognition;
+      SpeechRecognition?: new () => ISpeechRecognition;
+    };
+
+    if (w.webkitSpeechRecognition || w.SpeechRecognition) {
+      const SRCtor = (w.webkitSpeechRecognition || w.SpeechRecognition)!;
+      const recognition = new SRCtor();
+
+      recognition.lang = 'bn-BD';
+      recognition.onresult = (event: ISpeechRecognitionEvent) => {
+        const transcript = event.results[0][0].transcript;
+        setCustomCropName(prev => prev ? `${prev} ${transcript}` : transcript);
+      };
+
+      recognition.start();
+    } else {
+      toast({
+        title: "সাপোর্ট নেই",
+        description: "আপনার ব্রাউজার ভয়েস ইনপুট সাপোর্ট করে না।",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDiagnosis = async () => {
-    if (!crop || (!symptoms && !image)) {
+    const finalCropName = crop === "others" ? customCropName : crop;
+
+    if (!finalCropName || (!symptoms && !image)) {
       toast({
         title: "তথ্য প্রয়োজন",
-        description: "ফসল নির্বাচন করুন এবং লক্ষণ বা ছবি দিন।",
+        description: crop === "others"
+          ? "ফসলের নাম লিখুন এবং লক্ষণ বা ছবি দিন।"
+          : "ফসল নির্বাচন করুন এবং লক্ষণ বা ছবি দিন।",
         variant: "destructive"
       });
       return;
@@ -89,7 +128,7 @@ const Diagnosis = () => {
     setError(null);
     setIsAnalyzing(true);
     try {
-      const diseases = await diagnose({ crop, symptoms, imageFile: image });
+      const diseases = await diagnose({ crop: finalCropName, symptoms, imageFile: image });
       setResults(diseases);
       toast({
         title: "বিশ্লেষণ সম্পূর্ণ",
@@ -167,6 +206,28 @@ const Diagnosis = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Custom Crop Name Input - shown only when "Others" is selected */}
+            {crop === "others" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">ফসলের নাম লিখুন</label>
+                <Input
+                  placeholder="ফসলের নাম লিখুন..."
+                  value={customCropName}
+                  onChange={(e) => setCustomCropName(e.target.value)}
+                  className="mb-2"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCropNameVoiceInput}
+                  className="w-full"
+                >
+                  <Mic className="h-4 w-4 mr-2" />
+                  ভয়েস দিয়ে বলুন
+                </Button>
+              </div>
+            )}
 
             {/* Symptoms Input */}
             <div className="space-y-2">

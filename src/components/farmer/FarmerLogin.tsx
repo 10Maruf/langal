@@ -298,7 +298,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
             <Alert className="border-amber-300 bg-amber-50">
                 <AlertDescription className="text-amber-800">
                     <div className="text-center">
-                        <span className="font-bold text-amber-700">🎯 ডেমো অ্যাক্সেস</span>
+                        <span className="font-bold text-amber-700">ডেমো অ্যাক্সেস</span>
                         <br />
                         <span className="text-sm">ডেমো দেখতে নিচের নম্বর ব্যবহার করুন:</span>
                         <br />
@@ -308,7 +308,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
                             onClick={handleDemoLogin}
                             className="mt-2 bg-amber-100 hover:bg-amber-200 border-amber-400 text-amber-800 font-bold"
                         >
-                            📱 01997900840
+                             01997900840
                         </Button>
                     </div>
                 </AlertDescription>
@@ -372,7 +372,7 @@ const FarmerLogin = ({ onBackToMainLogin }: FarmerLoginProps) => {
             {generatedOtp && (
                 <Alert className="border-orange-300 bg-orange-50">
                     <AlertDescription className="text-orange-800 text-center">
-                        <span className="font-medium">🔐 ডেমো OTP কোড:</span>
+                        <span className="font-medium"> ডেমো OTP কোড:</span>
                         <br />
                         <span className="text-2xl font-bold tracking-widest text-orange-600">{generatedOtp}</span>
                         <br />
