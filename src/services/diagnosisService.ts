@@ -328,8 +328,9 @@ async function tryGeminiAPI(
 
   // Updated with working model names (2026)
   const staticPreferred = [
-    "gemini-2.0-flash-exp",
-    "gemini-1.5-flash",
+    "gemini-2.5-flash",    // Newest model seen in user dashboard
+    "gemini-1.5-flash",    // Stable & Fast
+    "gemini-2.0-flash-exp", 
     "gemini-1.5-pro",
     "gemini-1.5-flash-8b",
     "gemini-pro"
@@ -337,8 +338,8 @@ async function tryGeminiAPI(
 
   const parts: ContentPart[] = [{ text: prompt }];
   if (imageFile) {
-    const base64 = await fileToBase64(imageFile);
-    parts.push({ inlineData: { mimeType: imageFile.type || "image/jpeg", data: base64 } });
+    const { base64, mimeType } = await processImageForApi(imageFile);
+    parts.push({ inlineData: { mimeType: mimeType || imageFile.type || "image/jpeg", data: base64 } });
   }
 
   let result: GenerateContentResult | null = null;
