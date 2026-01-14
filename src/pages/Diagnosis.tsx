@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Mic, Camera, Upload, Stethoscope, ArrowLeft } from "lucide-react";
-import { diagnose, Disease } from "@/services/diagnosisService";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Mic, Camera, Upload, Stethoscope, ArrowLeft, Info } from "lucide-react";
+import { diagnose, Disease, Chemical } from "@/services/diagnosisService";
 import { useToast } from "@/hooks/use-toast";
 
 // Types now sourced from diagnosisService
@@ -18,6 +19,8 @@ const Diagnosis = () => {
   const navigate = useNavigate();
   const [crop, setCrop] = useState("");
   const [customCropName, setCustomCropName] = useState("");
+  // State for showing chemical details in popup
+  const [selectedChemical, setSelectedChemical] = useState<Chemical | null>(null);
   const [symptoms, setSymptoms] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [area, setArea] = useState("");
@@ -396,14 +399,17 @@ const Diagnosis = () => {
 
                     {disease.chemicals && area && (
                       <div className="space-y-2">
-                        <strong className="text-sm">প্রস্তাবিত ঔষধ:</strong>
+                        <strong className="text-sm">ঔষধ ও খরচের হিসাব:</strong>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs border-collapse border border-border">
                             <thead>
                               <tr className="bg-muted">
                                 <th className="border border-border p-2 text-left">ঔষধ</th>
-                                <th className="border border-border p-2 text-left">পরিমাণ</th>
-                                <th className="border border-border p-2 text-left">খরচ</th>
+                                <th className="border border-border p-2 text-left">নির্দেশনা</th>
+                                <th className="border border-border p-2 text-left">প্রতি একরে মাত্রা</th>
+                                <th className="border border-border p-2 text-left">আপনার জমির জন্য</th>
+                                <th className="border border-border p-2 text-left">একক মূল্য</th>
+                                <th className="border border-border p-2 text-left">মোট খরচ</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -416,15 +422,43 @@ const Diagnosis = () => {
 
                                 return (
                                   <tr key={idx}>
-                                    <td className="border border-border p-2">{chem.name}</td>
-                                    <td className="border border-border p-2">{qty.toFixed(2)} {chem.unit}</td>
-                                    <td className="border border-border p-2">৳{cost.toLocaleString('bn-BD')}</td>
+                                    <td className="border border-border p-2 font-medium">{chem.name}</td>
+                                    <td className="border border-border p-2 text-center">
+                                      <Button
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6"
+                                        onClick={() => setSelectedChemical(chem)}
+                                        title="ব্যবহার বিধি দেখুন"
+                                      >
+                                        <Info className="h-4 w-4 text-primary" />
+                                      </Button>
+                                    </td>
+                                    <td className="border border-border p-2">{chem.dosePerAcre} {chem.unit}</td>
+                                    <td className="border border-border p-2 font-bold text-blue-600">{qty.toFixed(2)} {chem.unit}</td>
+                                    <td className="border border-border p-2">৳{chem.pricePerUnit}</td>
+                                    <td className="border border-border p-2 font-bold">৳{Math.ceil(cost).toLocaleString('bn-BD')}</td>
                                   </tr>
                                 );
                               })}
+                              {/* Total Row - Highlighted (Subtle) */}
+                              <tr className="bg-green-50/60 dark:bg-green-900/10 border-t border-green-200">
+                                <td className="border border-border p-2 text-right font-bold text-green-700 dark:text-green-300" colSpan={5}>
+                                  সর্বমোট আনুমানিক খরচ:
+                                </td>
+                                <td className="border border-border p-2 font-bold text-green-700 dark:text-green-400 text-base">
+                                  ৳{Math.ceil(disease.chemicals.reduce((sum, chem) => {
+                                    const areaInAcre = unit === "acre" ? parseFloat(area) :
+                                      unit === "bigha" ? parseFloat(area) * 0.33 :
+                                        parseFloat(area) / 100;
+                                    return sum + (chem.dosePerAcre * areaInAcre * chem.pricePerUnit);
+                                  }, 0)).toLocaleString('bn-BD')}
+                                </td>
+                              </tr>
                             </tbody>
                           </table>
                         </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">* বাজার দর পরিবর্তনশীল। এটি শুধুমাত্র একটি ধারণা।</p>
                       </div>
                     )}
 
@@ -444,29 +478,7 @@ const Diagnosis = () => {
               </CardContent>
             </Card>
 
-            {/* Cost Calculation */}
-            {area && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">আনুমানিক খরচ</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {area} {unit === "acre" ? "একর" : unit === "bigha" ? "বিঘা" : "ডেসিমেল"} জমির জন্য
-                      </p>
-                      <p className="text-2xl font-bold text-primary">
-                        ৳{calculateTotalCost().toLocaleString('bn-BD')}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        প্রাথমিক চিকিৎসার জন্য
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Cost Calculation Removed (Integrated into Disease Card) */}
 
             {/* Expert Contact */}
             <Card>
@@ -490,6 +502,37 @@ const Diagnosis = () => {
           </>
         )}
       </div>
+      
+      {/* Chemical Instructions Dialog */}
+      <Dialog open={!!selectedChemical} onOpenChange={(open) => !open && setSelectedChemical(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedChemical?.name} - ব্যবহার বিধি</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-md">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {selectedChemical?.note || "কোন বিশেষ নির্দেশনা পাওয়া যায়নি। অনুগ্রহ করে প্যাকেটের গায়ের নিয়মাবলী অনুসরণ করুন।"}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-semibold block">ধরণ:</span>
+                <span className="text-muted-foreground capitalize">{selectedChemical?.type || "N/A"}</span>
+              </div>
+              <div>
+                <span className="font-semibold block">স্ট্যান্ডার্ড মাত্রা:</span>
+                <span className="text-muted-foreground">{selectedChemical?.dosePerAcre} {selectedChemical?.unit} per Acre</span>
+              </div>
+            </div>
+
+            <DialogDescription className="text-xs text-muted-foreground mt-2">
+              সতর্কতা: বালাইনাশক ব্যবহারের সময় অবশ্যই সুরক্ষা সামগ্রী (মাস্ক, গ্লাভস) ব্যবহার করবেন। বাতাসের বিপরীতে স্প্রে করবেন না।
+            </DialogDescription>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
