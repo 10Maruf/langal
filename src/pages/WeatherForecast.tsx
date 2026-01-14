@@ -632,7 +632,10 @@ const WeatherForecast = ({ embedded = false }: WeatherForecastProps) => {
 
                             {/* AI আবহাওয়া সহায়ক */}
                             <TabsContent value="সহায়ক" className="mt-3">
-                                <WeatherAssistant initialLocation={weatherData?.অবস্থান || location} />
+                                <WeatherAssistant
+                                    initialLocation={weatherData?.অবস্থান || location}
+                                    weatherData={weatherData}
+                                />
                             </TabsContent>
                         </Tabs>
 

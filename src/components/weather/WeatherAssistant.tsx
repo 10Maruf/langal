@@ -16,7 +16,15 @@ import {
     Bot,
     User,
     Loader2,
-    RefreshCw
+    RefreshCw,
+    Sun,
+    CloudRain,
+    Sprout,
+    Droplets,
+    MicOff,
+    Wind,
+    Leaf,
+    ThermometerSun
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -24,32 +32,40 @@ import {
     continueWeatherAssistantSession,
     WeatherAssistantMessage
 } from "@/services/weatherAssistant";
+import { CompleteWeatherData } from "@/services/weatherService";
 
 interface WeatherAssistantProps {
     initialLocation?: string;
+    weatherData?: CompleteWeatherData | null;
 }
 
-const WeatherAssistant = ({ initialLocation }: WeatherAssistantProps) => {
+const WeatherAssistant = ({ initialLocation, weatherData }: WeatherAssistantProps) => {
     const { toast } = useToast();
     const [messages, setMessages] = useState<WeatherAssistantMessage[]>([]);
     const [inputText, setInputText] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | null>(null);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    // স্ক্রলিংয়ের জন্য
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    // অটো স্ক্রল
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isLoading]);
 
     // স্বাগত বার্তা
     useEffect(() => {
         const welcomeMessage: WeatherAssistantMessage = {
             id: 'welcome',
             role: 'assistant',
-            content: `👋 আসসালামু আলাইকুম! আমি আপনার **কৃষি আবহাওয়া সহায়ক**।
+            content: `আসসালামু আলাইকুম! আমি আপনার **কৃষি আবহাওয়া সহায়ক**।
 
 আমাকে বাংলায় বা ইংরেজিতে জিজ্ঞেস করতে পারেন:
 
-🌤️ "ঢাকার আবহাওয়া কেমন?"
-🌧️ "আগামীকাল কি বৃষ্টি হবে?"
-🌾 "ধান চাষের জন্য আবহাওয়া উপযুক্ত?"
-🥬 "সবজি চাষে কি সমস্যা হবে?"
+"ঢাকার আবহাওয়া কেমন?"
+"আগামীকাল কি বৃষ্টি হবে?"
+"ধান চাষের জন্য আবহাওয়া উপযুক্ত?"
+"সবজি চাষে কি সমস্যা হবে?"
 
 ${initialLocation ? `আপনি **${initialLocation}** থেকে আছেন। এই এলাকার আবহাওয়া জানতে চাইলে বলুন!` : 'আপনার জেলার নাম বলুন, আমি সেখানের আবহাওয়া ও কৃষি পরামর্শ দেব!'}`,
             timestamp: new Date()
@@ -58,11 +74,11 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
     }, [initialLocation]);
 
     // স্ক্রল করা
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages]);
+    // useEffect(() => {
+    //     if (scrollRef.current) {
+    //         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    //     }
+    // }, [messages]);
 
     // মেসেজ পাঠানো
     const sendMessage = async () => {
@@ -83,10 +99,15 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
         try {
             let response;
 
+            // লোকেশন প্যারামিটার পাঠানো হচ্ছে (যদি GPS বা সিলেক্ট করা লোকেশন থাকে)
+            const userLocation = initialLocation;
+            // প্রি-ফেচ ক্রিত ওয়েদার ডেটা পাঠানো হচ্ছে (যাতে ইনস্ট্যান্ট রিপ্লাই পাওয়া যায়)
+            const preFetched = weatherData;
+
             if (sessionId) {
-                response = await continueWeatherAssistantSession(sessionId, currentInput);
+                response = await continueWeatherAssistantSession(sessionId, currentInput, userLocation, preFetched);
             } else {
-                response = await startWeatherAssistantSession(currentInput);
+                response = await startWeatherAssistantSession(currentInput, userLocation, preFetched);
             }
 
             setSessionId(response.sessionId);
@@ -111,48 +132,62 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
         }
     };
 
-    // ভয়েস ইনপুট
+    const [isListening, setIsListening] = useState(false);
+
+    // ভয়েস ইনপুট (সর্বশেষ এবং সবচেয়ে কার্যকর সংস্করণ)
     const handleVoiceInput = () => {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-            const recognition = new SpeechRecognition();
-
-            recognition.lang = 'bn-BD';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                toast({
-                    title: "🎤 শুনছি...",
-                    description: "আপনার প্রশ্ন বলুন"
-                });
-            };
-
-            recognition.onresult = (event: any) => {
-                const transcript = event.results[0][0].transcript;
-                setInputText(transcript);
-                toast({
-                    title: "শোনা হয়েছে",
-                    description: `"${transcript}"`
-                });
-            };
-
-            recognition.onerror = () => {
-                toast({
-                    title: "ভয়েস ত্রুটি",
-                    description: "আবার চেষ্টা করুন",
-                    variant: "destructive"
-                });
-            };
-
-            recognition.start();
-        } else {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             toast({
-                title: "সাপোর্ট নেই",
-                description: "আপনার ব্রাউজার ভয়েস সাপোর্ট করে না",
+                title: "দুঃখিত",
+                description: "আপনার ব্রাউজারে ভয়েস ইনপুট সাপোর্ট নেই। Chrome ব্যবহার করুন।",
                 variant: "destructive"
             });
+            return;
         }
+
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        recognition.lang = 'bn-BD';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            toast({
+                title: "শুনছি...",
+                description: "আপনার প্রশ্ন বলুন",
+                className: "bg-green-600 text-white"
+            });
+        };
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            if (transcript) {
+                setInputText((prev) => (prev ? prev + " " + transcript : transcript));
+            }
+            setIsListening(false);
+        };
+
+        recognition.onerror = (event: any) => {
+            console.error("Speech interaction error", event.error);
+            setIsListening(false);
+
+            // সাধারণ এররগুলো ইউজারকে না জানানোই ভালো যদি না সেটা ক্রিটিকাল হয়
+            if (event.error === 'not-allowed') {
+                toast({
+                    title: "মাইক্রোফোন ব্লকড",
+                    description: "ব্রাউজার সেটিংসে গিয়ে মাইক্রোফোন পারমিশন দিন।",
+                    variant: "destructive"
+                });
+            }
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.start();
     };
 
     // নতুন চ্যাট শুরু
@@ -161,42 +196,45 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
         setMessages([{
             id: 'welcome_new',
             role: 'assistant',
-            content: '🔄 নতুন কথোপকথন শুরু হয়েছে। আপনার প্রশ্ন জিজ্ঞেস করুন!',
+            content: 'নতুন কথোপকথন শুরু হয়েছে। আপনার প্রশ্ন জিজ্ঞেস করুন!',
             timestamp: new Date()
         }]);
     };
 
     // দ্রুত প্রশ্ন
     const quickQuestions = [
-        { text: "আজকের আবহাওয়া", icon: "☀️" },
-        { text: "বৃষ্টি হবে কি?", icon: "🌧️" },
-        { text: "ধান চাষে পরামর্শ", icon: "🌾" },
-        { text: "সেচ দেওয়া উচিত?", icon: "💧" }
+        { text: "আজকের আবহাওয়া", icon: Sun },
+        { text: "পূর্ণাঙ্গ আবহাওয়া বিবরণ", icon: ThermometerSun },
+        { text: "বৃষ্টির সম্ভাবনা?", icon: CloudRain },
+        { text: "ধান চাষে পরামর্শ", icon: Sprout },
+        { text: "সেচ কি প্রয়োজন?", icon: Droplets },
+        { text: "বাতাসের গতিবেগ", icon: Wind },
+        { text: "সবজি চাষের টিপস", icon: Leaf }
     ];
 
     return (
-        <Card className="h-[600px] flex flex-col border-green-200 dark:border-green-800">
-            <CardHeader className="pb-3 border-b bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
+        <Card className="h-[600px] flex flex-col border border-green-100 dark:border-green-800 shadow-lg bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm">
+            <CardHeader className="pb-3 border-b border-green-100 dark:border-green-800 bg-green-50/80 dark:bg-green-900/20 backdrop-blur-md text-green-800 dark:text-green-100 rounded-t-lg">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <Bot className="h-6 w-6" />
+                    <CardTitle className="text-lg flex items-center gap-2 font-bold">
+                        <Bot className="h-6 w-6 text-green-600 dark:text-green-400" />
                         কৃষি আবহাওয়া সহায়ক
                     </CardTitle>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={resetChat}
-                        className="text-white hover:bg-white/20"
+                        className="text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50"
                     >
                         <RefreshCw className="h-4 w-4" />
                     </Button>
                 </div>
-                <p className="text-sm text-white/80">বাংলায় আবহাওয়া জিজ্ঞেস করুন</p>
+                <p className="text-sm text-green-600/80 dark:text-green-300/80 font-medium">আপনার ব্যক্তিগত কৃষি পরামর্শদাতা</p>
             </CardHeader>
 
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
                 {/* মেসেজ লিস্ট */}
-                <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                <ScrollArea className="flex-1 p-4">
                     <div className="space-y-4">
                         {messages.map((message) => (
                             <div
@@ -240,6 +278,9 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
                                 </div>
                             </div>
                         )}
+
+                        {/* স্ক্রলিং অ্যাঙ্কর */}
+                        <div ref={bottomRef} />
                     </div>
                 </ScrollArea>
 
@@ -250,12 +291,13 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
                             <Badge
                                 key={i}
                                 variant="outline"
-                                className="cursor-pointer hover:bg-green-100 dark:hover:bg-green-900 whitespace-nowrap"
+                                className="cursor-pointer hover:bg-green-100 dark:hover:bg-green-900 whitespace-nowrap flex items-center gap-1"
                                 onClick={() => {
                                     setInputText(q.text);
                                 }}
                             >
-                                {q.icon} {q.text}
+                                <q.icon className="h-3 w-3" />
+                                {q.text}
                             </Badge>
                         ))}
                     </div>
@@ -265,13 +307,19 @@ ${initialLocation ? `আপনি **${initialLocation}** থেকে আছে�
                 <div className="p-4 border-t bg-white dark:bg-slate-950">
                     <div className="flex gap-2">
                         <Button
-                            variant="outline"
+                            variant={isListening ? "default" : "outline"}
                             size="icon"
                             onClick={handleVoiceInput}
-                            disabled={isLoading}
-                            className="flex-shrink-0 bg-purple-50 hover:bg-purple-100 border-purple-200"
+                            disabled={isLoading || isListening}
+                            className={`flex-shrink-0 ${isListening
+                                ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                                : 'bg-purple-50 hover:bg-purple-100 border-purple-200'}`}
                         >
-                            <Mic className="h-4 w-4 text-purple-600" />
+                            {isListening ? (
+                                <MicOff className="h-4 w-4" />
+                            ) : (
+                                <Mic className="h-4 w-4 text-purple-600" />
+                            )}
                         </Button>
                         <Input
                             placeholder="আপনার প্রশ্ন লিখুন বা বলুন..."
