@@ -5,6 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { TTSButton } from "@/components/ui/tts-button";
 import { Header } from "@/components/layout/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import api from "@/services/api";
@@ -26,7 +39,9 @@ import {
     Bell,
     Sprout,
     Clock,
-    CheckCircle
+    CheckCircle,
+    DollarSign,
+    CalendarClock
 } from "lucide-react";
 import {
     fetchWeatherOneCall,
@@ -58,12 +73,50 @@ const FarmerDashboard = () => {
     const [cropsLoading, setCropsLoading] = useState(true);
     const [selectedCropId, setSelectedCropId] = useState<number | null>(null);
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [filterStatus, setFilterStatus] = useState<string>("active");
+
+    // Quick view dialogs state
+    const [costDialogOpen, setCostDialogOpen] = useState(false);
+    const [fertilizerDialogOpen, setFertilizerDialogOpen] = useState(false);
+    const [quickViewCrop, setQuickViewCrop] = useState<any>(null);
+
+    // Helper for crop filtering
+    const getSecondaryCrops = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (filterStatus === 'planned') return selectedCrops.filter((c: any) => c.status === 'planned');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (filterStatus === 'completed') return selectedCrops.filter((c: any) => c.status === 'completed');
+        return [];
+    };
+
+    const getSecondaryTitle = () => {
+        if (filterStatus === 'completed') return 'সম্পন্ন ফসল';
+        return 'পরিকল্পিত ফসল';
+    };
+
+    const getSecondaryColorClass = () => {
+         if (filterStatus === 'completed') return 'bg-gray-400';
+         return 'bg-blue-400';
+    };
+
+    const getSecondaryBgClass = () => {
+         if (filterStatus === 'completed') return 'bg-gray-100/80 text-gray-900';
+         return 'bg-blue-100/80 text-blue-900';
+    };
 
     // Weather state
     const [weatherData, setWeatherData] = useState<CompleteWeatherData | null>(null);
     const [weatherLocation, setWeatherLocation] = useState<string>("");
     const [weatherLoading, setWeatherLoading] = useState(true);
     const [weatherError, setWeatherError] = useState<string | null>(null);
+
+    const LAND_UNITS = [
+        { value: 'bigha', label: 'বিঘা', factor: 1 },
+        { value: 'acre', label: 'একর', factor: 3.03 },
+        { value: 'hectare', label: 'হেক্টর', factor: 7.47 },
+        { value: 'katha', label: 'কাঠা', factor: 0.05 },
+        { value: 'decimal', label: 'শতাংশ', factor: 0.0303 }
+    ];
 
     // Farmer count from database
     const [totalFarmers, setTotalFarmers] = useState<number>(0);
@@ -366,6 +419,18 @@ const FarmerDashboard = () => {
         fetchSelectedCrops();
     };
 
+    const handleCostClick = (e: React.MouseEvent, crop: any) => {
+        e.stopPropagation(); // Prevent card click
+        setQuickViewCrop(crop);
+        setCostDialogOpen(true);
+    };
+
+    const handleFertilizerClick = (e: React.MouseEvent, crop: any) => {
+        e.stopPropagation(); // Prevent card click
+        setQuickViewCrop(crop);
+        setFertilizerDialogOpen(true);
+    };
+
     return (
         <div className="min-h-screen bg-background">
             <Header />
@@ -539,65 +604,186 @@ const FarmerDashboard = () => {
                     <div className="relative z-10 space-y-2">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="font-semibold text-lg">আমার ফসল</h3>
-                            {/* {selectedCrops.length > 0 && (
-                                <Button variant="link" size="sm" onClick={() => navigate('/recommendation')}>
-                                    আরও দেখুন
-                                </Button>
-                            )} */}
+                             <Select value={filterStatus} onValueChange={setFilterStatus}>
+                                <SelectTrigger className="w-[170px] h-8 bg-white/60 backdrop-blur-sm border-white/40 text-xs font-medium">
+                                    <SelectValue placeholder="ফিল্টার করুন" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">চলমান (Active)</SelectItem>
+                                    <SelectItem value="planned">পরিকল্পিত (Planned)</SelectItem>
+                                    <SelectItem value="completed">সম্পন্ন (Completed)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
+
 
                         {cropsLoading ? (
                             <div className="flex justify-center py-4">
                                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : selectedCrops.length > 0 ? (
-                            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {selectedCrops.map((crop: any) => (
-                                    <Card
-                                        key={crop.selection_id}
-                                        className="min-w-[160px] w-[160px] flex-shrink-0 cursor-pointer hover:border-primary transition-all backdrop-blur-md bg-background/70 border-white/20 shadow-lg hover:shadow-xl"
-                                        onClick={() => handleCropClick(crop.selection_id)}
-                                    >
-                                        <CardContent className="p-3">
-                                            <div className="aspect-video rounded-md overflow-hidden mb-2 bg-muted">
-                                                {crop.image_url ? (
-                                                    <img src={crop.image_url} alt={crop.crop_name_bn} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-green-100">
-                                                        <Sprout className="h-8 w-8 text-green-600" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <h4 className="font-medium text-sm truncate">{crop.crop_name_bn}</h4>
-                                            {crop.description_bn && (
-                                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                                    {crop.description_bn}
-                                                </p>
-                                            )}
-                                            <div className="mt-2 space-y-1">
-                                                {crop.duration_days && (
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Clock className="h-3 w-3" />
-                                                        <span>{toBengaliNumber(crop.duration_days)} দিন</span>
-                                                    </div>
-                                                )}
-                                                {crop.yield_per_bigha && (
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Sprout className="h-3 w-3" />
-                                                        <span>{crop.yield_per_bigha}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <Badge variant="outline" className={`mt-2 text-[10px] w-full justify-center ${crop.is_offline ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : ''}`}>
-                                                {crop.is_offline ? 'অফলাইন (সিঙ্ক বাকি)' :
-                                                    crop.status === 'planned' ? 'পরিকল্পিত' :
-                                                        crop.status === 'active' ? 'চলমান' :
-                                                            crop.status === 'completed' ? 'সম্পন্ন' : 'বাতিল'}
-                                            </Badge>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                            <div className="space-y-4">
+                                {/* Active Crops Section */}
+                                {filterStatus === 'active' && selectedCrops.some((c: any) => c.status === 'active') && (
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-2 mb-2 px-1">
+                                            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                                            <h4 className="font-medium text-sm text-green-800 bg-green-100/80 px-2 py-0.5 rounded-full backdrop-blur-sm shadow-sm inline-block">চলমান চাষাবাদ</h4>
+                                            <span className="text-xs text-muted-foreground ml-auto bg-white/50 px-2 rounded-full hidden sm:block">নিয়মিত পর্যবেক্ষণ করুন</span>
+                                        </div>
+                                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                            {selectedCrops.filter((c: any) => c.status === 'active').map((crop: any) => (
+                                                <Card
+                                                    key={crop.selection_id}
+                                                    className="min-w-[170px] w-[170px] flex-shrink-0 cursor-pointer hover:border-green-500 transition-all backdrop-blur-md bg-white/90 border-green-200/50 shadow-lg hover:shadow-xl ring-2 ring-green-400/20"
+                                                    onClick={() => handleCropClick(crop.selection_id)}
+                                                >
+                                                    <CardContent className="p-3">
+                                                        <div className="aspect-video rounded-md overflow-hidden mb-2 bg-muted relative">
+                                                            {crop.image_url ? (
+                                                                <img src={crop.image_url} alt={crop.crop_name_bn} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-green-100">
+                                                                    <Sprout className="h-8 w-8 text-green-600" />
+                                                                </div>
+                                                            )}
+                                                            {crop.progress_percentage > 0 && (
+                                                                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
+                                                                    <div 
+                                                                        className="h-full bg-green-500" 
+                                                                        style={{ width: `${crop.progress_percentage}%` }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <h4 className="font-bold text-sm truncate text-green-900">{crop.crop_name_bn}</h4>
+                                                        
+                                                        {/* Quick Action Icons */}
+                                                        <div className="flex items-center gap-1.5 mt-2">
+                                                            <button 
+                                                                onClick={(e) => handleCostClick(e, crop)}
+                                                                className="flex items-center gap-1 px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200"
+                                                            >
+                                                                <DollarSign className="h-3 w-3" />
+                                                                <span>খরচ</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => handleFertilizerClick(e, crop)}
+                                                                className="flex items-center gap-1 px-2 py-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors border border-green-200"
+                                                            >
+                                                                <CalendarClock className="h-3 w-3" />
+                                                                <span>সার</span>
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="mt-2 space-y-1">
+                                                            <div className="flex items-center justify-between text-xs">
+                                                                <span className="text-muted-foreground">অগ্রগতি</span>
+                                                                <span className="font-semibold text-green-600">{Math.round(crop.progress_percentage || 0)}%</span>
+                                                            </div>
+                                                            {crop.next_action_description && (
+                                                                <div className="text-[10px] bg-blue-50 text-blue-700 p-1.5 rounded border border-blue-100 mt-1 line-clamp-2 leading-tight">
+                                                                    পরবর্তী: {crop.next_action_description}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <Badge variant="outline" className={`mt-2 text-[10px] w-full justify-center bg-green-100 text-green-800 border-green-200`}>
+                                                            চলমান
+                                                        </Badge>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Planned & Other Crops Section */}
+                                {getSecondaryCrops().length > 0 && (
+                                    <div className="relative z-10 pt-2">
+                                        <div className="flex items-center gap-2 mb-2 px-1">
+                                            <div className={`h-2 w-2 rounded-full ${getSecondaryColorClass()}`}></div>
+                                            <h4 className={`font-medium text-sm px-2 py-0.5 rounded-full backdrop-blur-sm shadow-sm inline-block ${getSecondaryBgClass()}`}>{getSecondaryTitle()}</h4>
+                                        </div>
+                                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                            {getSecondaryCrops().map((crop: any) => (
+                                                <Card
+                                                    key={crop.selection_id}
+                                                    className="min-w-[160px] w-[160px] flex-shrink-0 cursor-pointer hover:border-primary transition-all backdrop-blur-md bg-background/80 border-white/20 shadow-md hover:shadow-lg opacity-90 hover:opacity-100"
+                                                    onClick={() => handleCropClick(crop.selection_id)}
+                                                >
+                                                    <CardContent className="p-3">
+                                                        <div className="aspect-video rounded-md overflow-hidden mb-2 bg-muted grayscale hover:grayscale-0 transition-all duration-300">
+                                                            {crop.image_url ? (
+                                                                <img src={crop.image_url} alt={crop.crop_name_bn} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-green-100">
+                                                                    <Sprout className="h-8 w-8 text-green-600" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <h4 className="font-medium text-sm truncate">{crop.crop_name_bn}</h4>
+                                                        
+                                                        {/* Quick Action Icons */}
+                                                        <div className="flex items-center gap-1.5 mt-2">
+                                                            <button 
+                                                                onClick={(e) => handleCostClick(e, crop)}
+                                                                className="flex items-center gap-1 px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200"
+                                                            >
+                                                                <DollarSign className="h-3 w-3" />
+                                                                <span>খরচ</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => handleFertilizerClick(e, crop)}
+                                                                className="flex items-center gap-1 px-2 py-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors border border-green-200"
+                                                            >
+                                                                <CalendarClock className="h-3 w-3" />
+                                                                <span>সার</span>
+                                                            </button>
+                                                        </div>
+                                                        
+                                                        {crop.description_bn && (
+                                                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                                                {crop.description_bn}
+                                                            </p>
+                                                        )}
+                                                        <div className="mt-2 space-y-1">
+                                                            {crop.duration_days && (
+                                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    <span>{toBengaliNumber(crop.duration_days)} দিন</span>
+                                                                </div>
+                                                            )}
+                                                            {crop.yield_per_bigha && (
+                                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                                    <Sprout className="h-3 w-3" />
+                                                                    <span>
+                                                                        {(() => {
+                                                                            const unit = LAND_UNITS.find(u => u.value === crop.land_unit);
+                                                                            const factor = unit?.factor || 1;
+                                                                            const scaledYield = crop.yield_per_bigha.replace(/(\d+(\.\d+)?)/g, (m: string) => {
+                                                                                const val = parseFloat(m) * factor;
+                                                                                return toBengaliNumber(parseFloat(val.toFixed(1)));
+                                                                            });
+                                                                            // Extract unit label first word
+                                                                            const unitName = (unit?.label || 'বিঘা').split(' ')[0];
+                                                                            return `${scaledYield} / ${unitName}`;
+                                                                        })()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <Badge variant="outline" className={`mt-2 text-[10px] w-full justify-center ${crop.is_offline ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : ''}`}>
+                                                            {crop.is_offline ? 'অফলাইন (সিঙ্ক বাকি)' :
+                                                                crop.status === 'planned' ? 'পরিকল্পিত' :
+                                                                    crop.status === 'completed' ? 'সম্পন্ন' : 'বাতিল'}
+                                                        </Badge>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <Card className="border-dashed backdrop-blur-md bg-background/70 border-white/20 shadow-lg">
@@ -712,6 +898,138 @@ const FarmerDashboard = () => {
                 onClose={() => setIsCropModalOpen(false)}
                 onCropUpdated={handleCropUpdated}
             />
+
+            {/* Cost Breakdown Quick View Dialog */}
+            <Dialog open={costDialogOpen} onOpenChange={setCostDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-blue-600" />
+                            খরচের বিবরণ - {quickViewCrop?.crop_name_bn}
+                        </DialogTitle>
+                    </DialogHeader>
+                    {quickViewCrop?.cost_breakdown && (
+                        <div className="space-y-2 text-sm">
+                            {Object.entries(typeof quickViewCrop.cost_breakdown === 'string' ? JSON.parse(quickViewCrop.cost_breakdown) : quickViewCrop.cost_breakdown).map(([key, value]) => {
+                                const unit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
+                                const multiplier = parseFloat(quickViewCrop.land_size) * (unit?.factor || 1);
+                                const totalAmount = (value as number) * multiplier;
+                                const perUnitAmount = (value as number) * (unit?.factor || 1);
+                                
+                                return (
+                                    <div key={key} className="border-b pb-2 last:border-0 border-dashed border-gray-200">
+                                        <div className="flex justify-between items-center">
+                                            <span className="capitalize text-muted-foreground">
+                                                {key === 'seed' ? 'বীজ' : 
+                                                 key === 'fertilizer' ? 'সার' : 
+                                                 key === 'pesticide' ? 'কীটনাশক' : 
+                                                 key === 'irrigation' ? 'সেচ' : 
+                                                 key === 'labor' ? 'শ্রমিক' : 
+                                                 key === 'other' ? 'অন্যান্য' : key}
+                                            </span>
+                                            <span className="font-medium">৳{toBengaliNumber(Math.round(totalAmount))}</span>
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                                            প্রতি {unit?.label.split(' ')[0]}: ৳{toBengaliNumber(Math.round(perUnitAmount))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div className="pt-2 border-t-2 border-green-500 flex justify-between items-center font-bold text-base">
+                                <span>মোট খরচ</span>
+                                <span className="text-green-700">
+                                    ৳{toBengaliNumber((() => {
+                                        const costData = typeof quickViewCrop.cost_breakdown === 'string' ? JSON.parse(quickViewCrop.cost_breakdown) : quickViewCrop.cost_breakdown;
+                                        const unit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
+                                        const multiplier = parseFloat(quickViewCrop.land_size) * (unit?.factor || 1);
+                                        const total: number = Object.values(costData).reduce((sum: number, val: any) => sum + ((val as number) * multiplier), 0) as number;
+                                        return Math.round(total);
+                                    })())}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Fertilizer Schedule Quick View Dialog */}
+            <Dialog open={fertilizerDialogOpen} onOpenChange={setFertilizerDialogOpen}>
+                <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CalendarClock className="h-5 w-5 text-green-600" />
+                            সার প্রয়োগের সময়সূচী - {quickViewCrop?.crop_name_bn}
+                        </DialogTitle>
+                    </DialogHeader>
+                    {quickViewCrop?.fertilizer_schedule && (
+                        <div className="space-y-4">
+                            {(Array.isArray(quickViewCrop.fertilizer_schedule) ? quickViewCrop.fertilizer_schedule : 
+                              typeof quickViewCrop.fertilizer_schedule === 'string' ? JSON.parse(quickViewCrop.fertilizer_schedule) : []).map((schedule: any, idx: number) => {
+                                const toEnglishNumber = (str: string) => {
+                                    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                                    return str.replace(/[০-৯]/g, (digit) => bengaliDigits.indexOf(digit).toString());
+                                };
+                                
+                                return (
+                                    <div key={idx} className="bg-muted/30 p-3 rounded-md">
+                                        <p className="font-bold text-sm mb-2 text-primary">{schedule.timing}</p>
+                                        <div className="grid grid-cols-1 gap-2 text-sm">
+                                            {schedule.fertilizers?.map((fert: any, fIdx: number) => {
+                                                // Convert Bengali numbers to English first
+                                                const baseAmountEnglish = toEnglishNumber(fert.amount);
+                                                
+                                                // Calculate total for the user's land
+                                                let multiplier = parseFloat(quickViewCrop.land_size) || 1;
+                                                const unit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
+                                                if (unit) {
+                                                    multiplier = multiplier * unit.factor;
+                                                }
+                                                
+                                                const totalAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
+                                                    const num = parseFloat(match);
+                                                    if (!isNaN(num)) {
+                                                        const val = num * multiplier;
+                                                        return parseFloat(val.toFixed(1)).toString();
+                                                    }
+                                                    return match;
+                                                });
+                                                
+                                                // Convert base amount to user's selected unit
+                                                const userUnit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
+                                                const perUnitAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
+                                                    const num = parseFloat(match);
+                                                    if (!isNaN(num) && userUnit) {
+                                                        const val = num * userUnit.factor;
+                                                        return parseFloat(val.toFixed(1)).toString();
+                                                    }
+                                                    return match;
+                                                });
+                                                
+                                                return (
+                                                    <div key={fIdx} className="bg-background p-2 rounded border space-y-1">
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-muted-foreground">{fert.name}</span>
+                                                            <span className="font-bold text-green-700">{toBengaliNumber(totalAmount)}</span>
+                                                        </div>
+                                                        <div className="text-[10px] text-muted-foreground">
+                                                            প্রতি {userUnit?.label.split(' ')[0]}: {toBengaliNumber(perUnitAmount)}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                    {(!quickViewCrop?.fertilizer_schedule || 
+                      (Array.isArray(quickViewCrop.fertilizer_schedule) && quickViewCrop.fertilizer_schedule.length === 0) ||
+                      (typeof quickViewCrop.fertilizer_schedule === 'string' && JSON.parse(quickViewCrop.fertilizer_schedule).length === 0)) && (
+                        <p className="text-sm text-muted-foreground text-center py-4">সার প্রয়োগের সময়সূচী পাওয়া যায়নি</p>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

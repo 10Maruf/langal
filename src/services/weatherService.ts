@@ -96,8 +96,9 @@ const getDateBangla = (date: Date): string => {
 };
 
 // সংখ্যা বাংলায়
-export const toBengaliNumber = (num: number): string => {
+export const toBengaliNumber = (num: number | string): string => {
   const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  if (num === undefined || num === null) return "";
   return num.toString().split('').map(d => {
     if (d === '.') return '.';
     if (d === '-') return '-';

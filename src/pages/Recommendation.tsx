@@ -95,6 +95,43 @@ const Recommendation = () => {
     const [season, setSeason] = useState("");
     const [cropType, setCropType] = useState("all");
     const [otherCropType, setOtherCropType] = useState("");
+    
+    // Land data
+    const [landSize, setLandSize] = useState<string>("1");
+    const [landUnit, setLandUnit] = useState<string>("bigha");
+
+    const LAND_UNITS = [
+        { value: 'bigha', label: 'বিঘা (Bigha)', factor: 1 },
+        { value: 'acre', label: 'একর (Acre)', factor: 3.03 },
+        { value: 'hectare', label: 'হেক্টর (Hectare)', factor: 7.47 },
+        { value: 'katha', label: 'কাঠা (Katha)', factor: 0.05 },
+        { value: 'decimal', label: 'শতাংশ (Decimal)', factor: 0.0303 }
+    ];
+
+    const calculateStats = (value: number) => {
+        const factor = LAND_UNITS.find(u => u.value === landUnit)?.factor || 1;
+        const sizeNum = parseFloat(landSize) || 0;
+        return Math.round(value * sizeNum * factor);
+    };
+
+    const scaleStringValue = (strVal: string) => {
+        const factor = LAND_UNITS.find(u => u.value === landUnit)?.factor || 1;
+        const sizeNum = parseFloat(landSize) || 0;
+        const multiplier = sizeNum * factor;
+
+        // Regex to find numbers in the string and multiply them
+        return strVal.replace(/(\d+(\.\d+)?)/g, (match) => {
+            const num = parseFloat(match);
+            // Check if it's a valid number
+            if (!isNaN(num)) {
+                // Keep 1 decimal place if needed, or round
+                const val = num * multiplier;
+                // Avoid .00
+                return parseFloat(val.toFixed(1)).toString();
+            }
+            return match;
+        });
+    };
 
     // Data from API
     const [seasons, setSeasons] = useState<Season[]>([]);
@@ -105,6 +142,9 @@ const Recommendation = () => {
     const [seasonTips, setSeasonTips] = useState("");
     const [weatherAdvisory, setWeatherAdvisory] = useState("");
     const [recommendationId, setRecommendationId] = useState<number | null>(null);
+
+    // Timeline State
+    const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
     // UI State
     const [step, setStep] = useState(1);
@@ -423,7 +463,13 @@ const Recommendation = () => {
                 throw new Error('Failed to get recommendations');
             }
         } catch (error) {
-            console.error('Recommendation error:', error);
+            console.error('❌ Recommendation API call failed:', error);
+            console.error('Error details:', {
+                message: error instanceof Error ? error.message : 'Unknown error',
+                response: (error as any)?.response?.data,
+                status: (error as any)?.response?.status,
+                formData: { season, landSize, landUnit, soilType, district, upazila }
+            });
             toast({
                 title: "ত্রুটি",
                 description: "সুপারিশ পেতে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
@@ -478,27 +524,50 @@ const Recommendation = () => {
             return;
         }
 
-        // Check if user is logged in
+        // Just move to step 3 for confirmation
+        setStep(3);
+    };
+
+    const handleConfirmAndStart = async () => {
+        const selectedCropData = crops.filter(c => selectedCrops.has(c.name));
         const token = localStorage.getItem('auth_token');
 
         if (token) {
             try {
+                // Convert unit if necessary (since DB only supports acre, bigha, katha)
+                let finalLandSize = parseFloat(landSize);
+                let finalLandUnit = landUnit;
+
+                // Simple conversion to bigha if unit is not supported by DB ENUM
+                if (['hectare', 'decimal'].includes(landUnit)) {
+                    finalLandUnit = 'bigha';
+                    const unitInfo = LAND_UNITS.find(u => u.value === landUnit);
+                    if (unitInfo) {
+                        finalLandSize = finalLandSize * unitInfo.factor;
+                    }
+                }
+
                 await selectCrops({
                     recommendation_id: recommendationId || undefined,
                     crops: selectedCropData,
+                    land_size: finalLandSize,
+                    land_unit: finalLandUnit,
+                    start_date: startDate
                 });
 
                 toast({
                     title: "সফল!",
-                    description: "ফসল আপনার তালিকায় যোগ হয়েছে। নোটিফিকেশন চালু আছে।",
+                    description: "ফসল চাষ শুরু হয়েছে। ড্যাশবোর্ডে বিস্তারিত দেখুন।",
                 });
+                navigate('/');
             } catch (error: any) {
                 if (error.message === 'OFFLINE_SAVED') {
                     toast({
                         title: "অফলাইনে সংরক্ষিত",
                         description: "সার্ভার সংযোগ নেই। সংযোগ ফিরে আসলে এটি স্বয়ংক্রিয়ভাবে সেভ হবে।",
-                        variant: "default", // or a warning color if available
+                        variant: "default",
                     });
+                    navigate('/');
                 } else {
                     console.error('Failed to save selection:', error);
                     toast({
@@ -508,9 +577,15 @@ const Recommendation = () => {
                     });
                 }
             }
+        } else {
+            // Guest mode
+             toast({
+                title: "লগইন প্রয়োজন",
+                description: "ফসল সংরক্ষণ করতে লগইন করুন।",
+                variant: "destructive"
+            });
+            navigate('/login');
         }
-
-        setStep(3);
     };
 
     const getSeasonInfo = (seasonKey: string) => {
@@ -598,6 +673,37 @@ const Recommendation = () => {
                         )}
                     </div>
                 )}
+
+                {/* Land Size Selection */}
+                <div className="space-y-3">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-emerald-600" />
+                        জমির পরিমাণ
+                    </label>
+                    <div className="flex gap-2">
+                        <input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={landSize}
+                            onChange={(e) => setLandSize(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="জমির পরিমাণ"
+                        />
+                        <Select value={landUnit} onValueChange={setLandUnit}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="একক" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {LAND_UNITS.map((unit) => (
+                                    <SelectItem key={unit.value} value={unit.value}>
+                                        {unit.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
 
                 {/* Season Selection */}
                 <div className="space-y-3">
@@ -830,16 +936,16 @@ const Recommendation = () => {
                                             <div className="flex items-center justify-between">
                                                 <span className="flex items-center gap-1.5">
                                                     <DollarSign className="h-4 w-4 text-green-600" />
-                                                    <span>খরচ:</span>
+                                                    <span>মোট খরচ:</span>
                                                 </span>
-                                                <span className="font-medium">{formatTaka(crop.cost_per_bigha)}/বিঘা</span>
+                                                <span className="font-medium">{formatTaka(calculateStats(crop.cost_per_bigha))}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="flex items-center gap-1.5">
                                                     <Wheat className="h-4 w-4 text-amber-600" />
-                                                    <span>ফলন:</span>
+                                                    <span>মোট ফলন:</span>
                                                 </span>
-                                                <span className="font-medium">{crop.yield_per_bigha}</span>
+                                                <span className="font-medium">{scaleStringValue(crop.yield_per_bigha)}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="flex items-center gap-1.5">
@@ -863,10 +969,10 @@ const Recommendation = () => {
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-sm text-muted-foreground flex items-center gap-1">
                                                     <TrendingUp className="h-4 w-4" />
-                                                    প্রত্যাশিত লাভ:
+                                                    সম্ভাব্য লাভ:
                                                 </span>
                                                 <span className="text-lg font-bold text-green-600">
-                                                    {formatTaka(crop.profit_per_bigha)}
+                                                    {formatTaka(calculateStats(crop.profit_per_bigha))}
                                                 </span>
                                             </div>
                                             <Button
@@ -927,23 +1033,64 @@ const Recommendation = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {/* Summary Stats */}
+                            {/* Summary Stats with Per Unit Calculation */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm bg-muted/30 p-3 rounded-lg">
-                                <div className="flex items-center gap-1.5">
-                                    <DollarSign className="h-4 w-4 text-green-600" />
-                                    <span>খরচ: {formatTaka(crop.cost_per_bigha)}</span>
+                                <div className="flex flex-col p-2 bg-white rounded shadow-sm border border-slate-100">
+                                    <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
+                                        <DollarSign className="h-3 w-3 text-green-600" />
+                                        <span>মোট খরচ</span>
+                                    </div>
+                                    <span className="font-bold text-green-700 text-lg">
+                                        {formatTaka(calculateStats(crop.cost_per_bigha))}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground border-t mt-1 pt-1">
+                                        প্রতি {LAND_UNITS.find(u => u.value === landUnit)?.label.split(' ')[0]}: {formatTaka(Math.round(crop.cost_per_bigha * (LAND_UNITS.find(u => u.value === landUnit)?.factor || 1)))}
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Wheat className="h-4 w-4 text-amber-600" />
-                                    <span>ফলন: {crop.yield_per_bigha}</span>
+                                
+                                <div className="flex flex-col p-2 bg-white rounded shadow-sm border border-slate-100">
+                                    <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
+                                        <Wheat className="h-3 w-3 text-amber-600" />
+                                        <span>মোট ফলন</span>
+                                    </div>
+                                    <span className="font-bold text-amber-700 text-lg">
+                                        {scaleStringValue(crop.yield_per_bigha)}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground border-t mt-1 pt-1">
+                                         প্রতি {LAND_UNITS.find(u => u.value === landUnit)?.label.split(' ')[0]}: {(() => {
+                                             const factor = LAND_UNITS.find(u => u.value === landUnit)?.factor || 1;
+                                             return crop.yield_per_bigha.replace(/(\d+(\.\d+)?)/g, (match) => {
+                                                    const num = parseFloat(match);
+                                                    return !isNaN(num) ? parseFloat((num * factor).toFixed(1)).toString() : match;
+                                             });
+                                         })()}
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Banknote className="h-4 w-4 text-blue-600" />
-                                    <span>দাম: {crop.market_price}</span>
+
+                                <div className="flex flex-col p-2 bg-white rounded shadow-sm border border-slate-100">
+                                    <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
+                                        <Banknote className="h-3 w-3 text-blue-600" />
+                                        <span>বাজার মূল্য</span>
+                                    </div>
+                                    <span className="font-bold text-blue-700 text-lg">
+                                        {crop.market_price}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground border-t mt-1 pt-1">
+                                        বর্তমান বাজার দর
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Clock className="h-4 w-4 text-purple-600" />
-                                    <span>সময়কাল: {crop.duration_days} দিন</span>
+
+                                <div className="flex flex-col p-2 bg-white rounded shadow-sm border border-slate-100">
+                                    <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
+                                        <Clock className="h-3 w-3 text-purple-600" />
+                                        <span>সময়কাল</span>
+                                    </div>
+                                    <span className="font-bold text-purple-700 text-lg">
+                                        {crop.duration_days} দিন
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground border-t mt-1 pt-1">
+                                        বীজ থেকে সংগ্রহ
+                                    </span>
                                 </div>
                             </div>
 
@@ -952,7 +1099,7 @@ const Recommendation = () => {
                                 <div className="space-y-2">
                                     <h4 className="font-semibold flex items-center gap-2">
                                         <DollarSign className="h-5 w-5 text-green-600" />
-                                        খরচের বিবরণ (প্রতি বিঘা):
+                                        খরচের বিবরণ (মোট):
                                     </h4>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                                         {Object.entries(crop.cost_breakdown).map(([key, value]) => (
@@ -964,36 +1111,88 @@ const Recommendation = () => {
                                                                 key === 'irrigation' ? 'সেচ' :
                                                                     key === 'labor' ? 'শ্রমিক' : 'অন্যান্য'}:
                                                 </span>
-                                                <span className="font-medium">{formatTaka(value as number)}</span>
+                                                <span className="font-medium">{formatTaka(calculateStats(value as number))}</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Cultivation Plan */}
+                            {/* Cultivation Plan (Timeline) */}
                             {crop.cultivation_plan && crop.cultivation_plan.length > 0 && (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <h4 className="font-semibold flex items-center gap-2">
-                                        <ClipboardList className="h-5 w-5 text-indigo-600" />
-                                        চাষাবাদ পরিকল্পনা:
+                                        <Calendar className="h-5 w-5 text-indigo-600" />
+                                        চাষাবাদ সময়রেখা:
                                     </h4>
-                                    {crop.cultivation_plan.map((phase, idx) => (
-                                        <div key={idx} className="border-l-4 border-primary pl-4 py-2">
-                                            <div className="font-medium">{phase.phase}</div>
-                                            <div className="text-sm text-muted-foreground mb-2">{phase.days}</div>
-                                            <ul className="text-sm space-y-1">
-                                                {phase.tasks.map((task, taskIdx) => (
-                                                    <li key={taskIdx}>• {task}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ))}
+                                    <div className="relative pl-4 border-l-2 border-indigo-200 space-y-8 ml-1">
+                                        {crop.cultivation_plan.map((phase, idx) => {
+                                            // Calculate expected dates based on start date
+                                            const daysMatch = phase.days.match(/(\d+)/);
+                                            const dayOffset = daysMatch ? parseInt(daysMatch[0]) : 0;
+                                            const phaseDate = new Date(startDate);
+                                            phaseDate.setDate(phaseDate.getDate() + dayOffset - 1);
+                                            
+                                            // Determine Icon
+                                            let PhaseIcon = Sprout;
+                                            if (phase.phase.includes('রোপণ') || phase.phase.includes('Bona')) PhaseIcon = Leaf;
+                                            if (phase.phase.includes('সার') || phase.phase.includes('Fertilizer')) PhaseIcon = Zap;
+                                            if (phase.phase.includes('সেচ') || phase.phase.includes('Irrigation')) PhaseIcon = Droplets;
+                                            if (phase.phase.includes('সংগ্রহ') || phase.phase.includes('Harvest')) PhaseIcon = Wheat;
+
+                                            return (
+                                                <div key={idx} className="relative">
+                                                     {/* Timeline Dot */}
+                                                    <div className="absolute -left-[21px] bg-background p-1 border border-indigo-200 rounded-full">
+                                                        <PhaseIcon className="h-4 w-4 text-indigo-600" />
+                                                    </div>
+
+                                                    <div className="bg-muted/10 p-3 rounded-lg border border-indigo-100 hover:border-indigo-300 transition-colors">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h5 className="font-semibold text-indigo-900">{phase.phase}</h5>
+                                                                <p className="text-xs text-muted-foreground">{phase.days} • আনুমানিক: {phaseDate.toLocaleDateString('bn-BD')}</p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {/* Tasks */}
+                                                        <ul className="text-sm space-y-1.5 mt-2">
+                                                            {phase.tasks.map((task, taskIdx) => (
+                                                                <li key={taskIdx} className="flex items-start gap-2">
+                                                                    <Check className="h-3.5 w-3.5 text-green-600 mt-1 shrink-0" />
+                                                                    <span className="text-gray-700">{task}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                        
+                                                        {/* Mapping Fertilizer to Phase if matches (Basic heuristic) */}
+                                                        {crop.fertilizer_schedule?.find(f => f.timing.includes(phase.phase)) && (
+                                                            <div className="mt-3 bg-white p-2 rounded border border-orange-100 text-xs">
+                                                                <div className="font-semibold text-orange-700 flex items-center gap-1 mb-1">
+                                                                    <Zap className="h-3 w-3" /> সার প্রয়োগ:
+                                                                </div>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                     {crop.fertilizer_schedule.find(f => f.timing.includes(phase.phase))?.fertilizers.map((fert, fIdx) => (
+                                                                        <span key={fIdx} className="bg-orange-50 px-1.5 py-0.5 rounded text-orange-800 border border-orange-100">
+                                                                            {fert.name}: {scaleStringValue(fert.amount)}
+                                                                        </span>
+                                                                     ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Fertilizer Schedule */}
-                            {crop.fertilizer_schedule && crop.fertilizer_schedule.length > 0 && (
+                            {/* Fertilizer Schedule (Remaining/Unmapped) - Simplified */}
+                            {/* ... kept previous list if needed, but Timeline integration is better ... */}
+
+                            {/* Fertilizer Schedule (Remaining/Unmapped) */}
+                            {crop.fertilizer_schedule && crop.fertilizer_schedule.length > 0 && !crop.cultivation_plan?.length && (
                                 <div className="space-y-3">
                                     <h4 className="font-semibold flex items-center gap-2">
                                         <Sprout className="h-5 w-5 text-green-600" />
@@ -1005,7 +1204,7 @@ const Recommendation = () => {
                                             <div className="flex flex-wrap gap-2">
                                                 {schedule.fertilizers.map((fert, fIdx) => (
                                                     <Badge key={fIdx} variant="outline" className="bg-white">
-                                                        {fert.name}: {fert.amount}
+                                                        {fert.name}: {scaleStringValue(fert.amount)}
                                                     </Badge>
                                                 ))}
                                             </div>
@@ -1053,10 +1252,10 @@ const Recommendation = () => {
                                         <Heart className="h-8 w-8 text-green-600" />
                                     </div>
                                     <p className="text-2xl font-bold text-green-600">
-                                        {formatTaka(crop.profit_per_bigha)}
+                                        {formatTaka(calculateStats(crop.profit_per_bigha))}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        প্রত্যাশিত লাভ (প্রতি বিঘা)
+                                        সম্ভাব্য মোট লাভ
                                     </p>
                                 </div>
                             </div>
@@ -1065,14 +1264,15 @@ const Recommendation = () => {
                 ))}
 
                 <Card>
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-6 space-y-4">
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={() => setStep(2)}>
                                 <ArrowLeft className="h-4 w-4 mr-2" />
-                                ফেরত যান
+                                পরিবর্তন করুন
                             </Button>
-                            <Button onClick={() => navigate('/')} className="flex-1">
-                                হোম এ যান
+                            <Button onClick={handleConfirmAndStart} className="flex-1 bg-green-600 hover:bg-green-700">
+                                <Check className="h-4 w-4 mr-2" />
+                                তালিকায় যোগ করুন
                             </Button>
                         </div>
                     </CardContent>

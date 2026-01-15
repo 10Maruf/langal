@@ -10,12 +10,25 @@ class OpenAIService
 {
     protected string $apiKey;
     protected string $model;
-    protected string $baseUrl = 'https://api.openai.com/v1';
+    protected string $baseUrl;
+    protected string $provider;
 
     public function __construct()
     {
-        $this->apiKey = config('services.openai.api_key');
-        $this->model = config('services.openai.model', 'gpt-4o-mini');
+        // 🛠️ AI Provider Selection: 'openai' OR 'groq'
+        // Change this to switch between providers manually or use .env
+        $this->provider = env('AI_PROVIDER', 'openai'); 
+
+        if ($this->provider === 'groq') {
+            $this->apiKey = config('services.groq.api_key');
+            $this->baseUrl = 'https://api.groq.com/openai/v1';
+            // Groq Models: llama3-8b-8192 (Fast), llama3-70b-8192 (Powerful), mixtral-8x7b-32768
+            $this->model = 'llama3-70b-8192'; 
+        } else {
+            $this->apiKey = config('services.openai.api_key');
+            $this->baseUrl = 'https://api.openai.com/v1';
+            $this->model = config('services.openai.model', 'gpt-4o-mini');
+        }
     }
 
     /**
@@ -59,13 +72,30 @@ class OpenAIService
             'weather_data' => $weatherData,
         ]);
 
+        Log::info('🌾 AI Provider API Call Starting', [
+            'provider' => $this->provider,
+            'location' => $locationStr,
+            'season' => $season,
+            'crop_type' => $cropType,
+            'land_size' => $landSize,
+            'soil_type' => $soilType,
+            'model' => $this->model,
+            'api_key_exists' => !empty($this->apiKey),
+            'api_key_prefix' => substr($this->apiKey, 0, 10) . '...'
+        ]);
+
         try {
+            Log::info('📤 Sending request to AI Provider', [
+                'url' => $this->baseUrl . '/chat/completions',
+                'prompt_length' => strlen($prompt)
+            ]);
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])->withOptions([
                 'verify' => false, // Skip SSL verification for local development
-            ])->timeout(60)->post($this->baseUrl . '/chat/completions', [
+            ])->timeout(120)->post($this->baseUrl . '/chat/completions', [
                 'model' => $this->model,
                 'messages' => [
                     [
@@ -83,15 +113,32 @@ class OpenAIService
             ]);
 
             if ($response->successful()) {
+                Log::info('✅ OpenAI API Response Success', [
+                    'status' => $response->status(),
+                    'response_length' => strlen($response->body())
+                ]);
+
                 $data = $response->json();
                 $content = $data['choices'][0]['message']['content'] ?? '';
+                
+                Log::info('📥 Parsing OpenAI response', [
+                    'content_length' => strlen($content),
+                    'content_preview' => substr($content, 0, 200)
+                ]);
                 
                 $recommendations = json_decode($content, true);
                 
                 if (json_last_error() !== JSON_ERROR_NONE) {
-                    Log::error('OpenAI response JSON parse error', ['content' => $content]);
+                    Log::error('❌ OpenAI response JSON parse error', [
+                        'error' => json_last_error_msg(),
+                        'content' => $content
+                    ]);
                     return $this->getFallbackRecommendations($season, $cropType);
                 }
+
+                Log::info('✅ Recommendations parsed successfully', [
+                    'crops_count' => count($recommendations['crops'] ?? [])
+                ]);
 
                 return [
                     'success' => true,
@@ -102,19 +149,25 @@ class OpenAIService
                 ];
             }
 
-            Log::error('OpenAI API error', [
+            Log::error('❌ OpenAI API error', [
                 'status' => $response->status(),
-                'body' => $response->body()
+                'body' => $response->body(),
+                'headers' => $response->headers()
             ]);
 
+            Log::warning('⚠️ Using fallback recommendations due to API error');
             return $this->getFallbackRecommendations($season, $cropType);
 
         } catch (\Exception $e) {
-            Log::error('OpenAI service exception', [
+            Log::error('❌ OpenAI service exception', [
+                'error_type' => get_class($e),
                 'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
+            Log::warning('⚠️ Using fallback recommendations due to exception');
             return $this->getFallbackRecommendations($season, $cropType);
         }
     }
@@ -210,7 +263,10 @@ class OpenAIService
         {
           "phase": "পর্যায়ের নাম",
           "days": "Day X-Y",
-          "tasks": ["কাজ ১", "কাজ ২"]
+          "tasks": ["কাজ ১", "কাজ ২"],
+          "details": "এই পর্যায়ে বিস্তারিত নির্দেশনা",
+          "medicines": ["ঔষধ ১ (ব্যবহার)", "ঔষধ ২ (ব্যবহার)"],
+          "advice": ["পরামর্শ ১", "পরামর্শ ২"]
         }
       ],
       "fertilizer_schedule": [
@@ -236,6 +292,10 @@ class OpenAIService
 4. স্থানীয় জাত ও পদ্ধতি প্রাধান্য দিতে হবে
 5. বাস্তবসম্মত তথ্য দিতে হবে
 6. profit_per_bigha = (yield × market_price) - cost_per_bigha
+7. cultivation_plan এ ৩-৫টি প্রধান পর্যায় দিতে হবে (সংক্ষেপে)। খুব বেশি বিস্তারিত করার প্রয়োজন নেই, যাতে দ্রুত উত্তর দেওয়া যায়।
+8. প্রতিটি পর্যায়ে details, medicines (শুধুমাত্র যদি খুব প্রয়োজন হয়), এবং advice সংক্ষেপে দিতে হবে
+9. উত্তর সংক্ষেপে এবং পয়েন্ট আকারে দিবে
+10. JSON structure ঠিক রাখতে হবে, অন্য কোন অতিরিক্ত তথ্য যোগ করা যাবে না।
 PROMPT;
     }
 

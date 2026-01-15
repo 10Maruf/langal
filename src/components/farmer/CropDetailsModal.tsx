@@ -25,6 +25,7 @@ import {
     Sprout,
     PlayCircle,
     XCircle,
+    MapPin,
 } from "lucide-react";
 import api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
@@ -72,11 +73,68 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
         return `${day} ${month}, ${year}`;
     };
 
+    // Convert Bengali numbers to English
+    const toEnglishNumber = (str: string) => {
+        const bengaliToEnglish: { [key: string]: string } = {
+            '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+            '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+        };
+        return str.replace(/[০-৯]/g, (match) => bengaliToEnglish[match] || match);
+    };
+
+    // Calculate scaled stats based on land size
+    const LAND_UNITS = [
+        { value: 'bigha', label: 'বিঘা', factor: 1 },
+        { value: 'acre', label: 'একর', factor: 3.03 },
+        { value: 'hectare', label: 'হেক্টর', factor: 7.47 },
+        { value: 'katha', label: 'কাঠা', factor: 0.05 },
+        { value: 'decimal', label: 'শতাংশ', factor: 0.0303 }
+    ];
+
+    const getScaledValue = (baseValue: number) => {
+        if (!crop?.land_size) return baseValue;
+        
+        let multiplier = parseFloat(crop.land_size);
+        
+        // Adjust multiplier based on unit if needed
+        // The DB stores land_size as user input, and land_unit.
+        // Assuming baseValue is PER BIGHA.
+        // We need to convert user's land_unit to bigha to get the total multiplier
+        
+        const unit = LAND_UNITS.find(u => u.value === crop.land_unit);
+        if (unit) {
+            multiplier = multiplier * unit.factor;
+        }
+
+        return Math.round(baseValue * multiplier);
+    };
+
+    const getScaledString = (baseString: string) => {
+        if (!crop?.land_size || !baseString) return baseString;
+        
+        let multiplier = parseFloat(crop.land_size);
+        const unit = LAND_UNITS.find(u => u.value === crop.land_unit);
+        if (unit) {
+            multiplier = multiplier * unit.factor;
+        }
+
+        return baseString.replace(/(\d+(\.\d+)?)/g, (match) => {
+            const num = parseFloat(match);
+            if (!isNaN(num)) {
+                const val = num * multiplier;
+                return parseFloat(val.toFixed(1)).toString();
+            }
+            return match;
+        });
+    };
+
     const fetchCropDetails = async () => {
         setIsLoading(true);
         try {
             const response = await api.get(`/recommendations/selected/${cropId}/details`);
             if (response.data.success) {
+                console.log('Crop details received:', response.data.crop);
+                console.log('Land size:', response.data.crop?.land_size, 'Unit:', response.data.crop?.land_unit);
                 setCrop(response.data.crop);
                 setProgress(response.data.progress);
                 setNextAction(response.data.next_action);
@@ -275,6 +333,15 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
                             <Card>
                                 <CardContent className="pt-6 space-y-3">
                                     <div className="grid grid-cols-2 gap-3 text-sm">
+                                         <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                                            <div>
+                                                <p className="text-muted-foreground">জমির পরিমাণ</p>
+                                                <p className="font-medium">
+                                                    {toBengaliNumber(crop.land_size)} {LAND_UNITS.find(u => u.value === crop.land_unit)?.label || crop.land_unit}
+                                                </p>
+                                            </div>
+                                        </div>
                                         <div className="flex items-center gap-2">
                                             <Calendar className="h-4 w-4 text-muted-foreground" />
                                             <div>
@@ -293,7 +360,7 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
                                             <div className="flex items-center gap-2">
                                                 <Clock className="h-4 w-4 text-purple-600" />
                                                 <div>
-                                                    <p className="text-muted-foreground">সময়কাল</p>
+                                                    <p className="text-muted-foreground">সময়কাল</p>
                                                     <p className="font-medium">{toBengaliNumber(crop.duration_days)} দিন</p>
                                                 </div>
                                             </div>
@@ -302,23 +369,36 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
                                             <div className="flex items-center gap-2">
                                                 <Wheat className="h-4 w-4 text-amber-600" />
                                                 <div>
-                                                    <p className="text-muted-foreground">ফলন</p>
-                                                    <p className="font-medium">{crop.yield_per_bigha}</p>
+                                                    <p className="text-muted-foreground">প্রত্যাশিত ফলন</p>
+                                                    <p className="font-medium">{toBengaliNumber(getScaledString(crop.yield_per_bigha))}</p>
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        (প্রতি {LAND_UNITS.find(u => u.value === crop.land_unit)?.label}: {toBengaliNumber(crop.yield_per_bigha.replace(/(\d+(\.\d+)?)/g, (match) => {
+                                                            const num = parseFloat(match);
+                                                            const factor = LAND_UNITS.find(u => u.value === crop.land_unit)?.factor || 1;
+                                                            return !isNaN(num) ? parseFloat((num * factor).toFixed(1)).toString() : match;
+                                                        }))})
+                                                    </p>
                                                 </div>
                                             </div>
                                         )}
                                         <div className="flex items-center gap-2">
                                             <DollarSign className="h-4 w-4 text-green-600" />
                                             <div>
-                                                <p className="text-muted-foreground">আনুমানিক খরচ</p>
-                                                <p className="font-medium">৳{crop.estimated_cost}</p>
+                                                <p className="text-muted-foreground">মোট খরচ</p>
+                                                <p className="font-medium">৳{toBengaliNumber(getScaledValue(parseFloat(crop.estimated_cost)))}</p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    (প্রতি {LAND_UNITS.find(u => u.value === crop.land_unit)?.label}: ৳{toBengaliNumber(Math.round(parseFloat(crop.estimated_cost) * (LAND_UNITS.find(u => u.value === crop.land_unit)?.factor || 1)))})
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <TrendingUp className="h-4 w-4 text-green-600" />
                                             <div>
-                                                <p className="text-muted-foreground">আনুমানিক লাভ</p>
-                                                <p className="font-medium text-green-600">৳{crop.estimated_profit}</p>
+                                                <p className="text-muted-foreground">সম্ভাব্য লাভ</p>
+                                                <p className="font-medium text-green-600">৳{toBengaliNumber(getScaledValue(parseFloat(crop.estimated_profit)))}</p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    (প্রতি {LAND_UNITS.find(u => u.value === crop.land_unit)?.label}: ৳{toBengaliNumber(Math.round(parseFloat(crop.estimated_profit) * (LAND_UNITS.find(u => u.value === crop.land_unit)?.factor || 1)))})
+                                                </p>
                                             </div>
                                         </div>
                                         {crop.market_price && (
@@ -360,6 +440,97 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
                                 </CardContent>
                             </Card>
 
+                            {/* Cost Breakdown */}
+                            {crop.cost_breakdown && (
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <h3 className="font-semibold mb-3">খরচের বিবরণ</h3>
+                                        <div className="space-y-2 text-sm">
+                                            {Object.entries(typeof crop.cost_breakdown === 'string' ? JSON.parse(crop.cost_breakdown) : crop.cost_breakdown).map(([key, value]) => (
+                                                <div key={key} className="border-b pb-2 last:border-0 border-dashed border-gray-200">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="capitalize text-muted-foreground">
+                                                            {key === 'seed' ? 'বীজ' : 
+                                                             key === 'fertilizer' ? 'সার' : 
+                                                             key === 'pesticide' ? 'কীটনাশক' : 
+                                                             key === 'irrigation' ? 'সেচ' : 
+                                                             key === 'labor' ? 'শ্রমিক' : 
+                                                             key === 'other' ? 'অন্যান্য' : key}
+                                                        </span>
+                                                        <span className="font-medium">৳{toBengaliNumber(getScaledValue(value as number))}</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                                                        প্রতি {LAND_UNITS.find(u => u.value === crop.land_unit)?.label}: ৳{toBengaliNumber(Math.round((value as number) * (LAND_UNITS.find(u => u.value === crop.land_unit)?.factor || 1)))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Fertilizer Schedule */}
+                            {(crop.fertilizer_schedule || crop.fertilizers) && (
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <h3 className="font-semibold mb-3">সার প্রয়োগের সময়সূচী</h3>
+                                        <div className="space-y-4">
+                                            {(Array.isArray(crop.fertilizer_schedule) ? crop.fertilizer_schedule : 
+                                              typeof crop.fertilizer_schedule === 'string' ? JSON.parse(crop.fertilizer_schedule) : []).map((schedule: any, idx: number) => (
+                                                <div key={idx} className="bg-muted/30 p-3 rounded-md">
+                                                    <p className="font-bold text-sm mb-2 text-primary">{schedule.timing}</p>
+                                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                                        {schedule.fertilizers?.map((fert: any, fIdx: number) => {
+                                                            // Convert Bengali numbers to English first
+                                                            const baseAmountEnglish = toEnglishNumber(fert.amount);
+                                                            
+                                                            // Calculate total for the user's land
+                                                            let multiplier = parseFloat(crop.land_size) || 1;
+                                                            const unit = LAND_UNITS.find(u => u.value === crop.land_unit);
+                                                            if (unit) {
+                                                                multiplier = multiplier * unit.factor;
+                                                            }
+                                                            
+                                                            const totalAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
+                                                                const num = parseFloat(match);
+                                                                if (!isNaN(num)) {
+                                                                    const val = num * multiplier;
+                                                                    return parseFloat(val.toFixed(1)).toString();
+                                                                }
+                                                                return match;
+                                                            });
+                                                            
+                                                            // Convert base amount to user's selected unit
+                                                            const userUnit = LAND_UNITS.find(u => u.value === crop.land_unit);
+                                                            const perUnitAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
+                                                                const num = parseFloat(match);
+                                                                if (!isNaN(num) && userUnit) {
+                                                                    const val = num * userUnit.factor;
+                                                                    return parseFloat(val.toFixed(1)).toString();
+                                                                }
+                                                                return match;
+                                                            });
+                                                            
+                                                            return (
+                                                                <div key={fIdx} className="bg-background p-2 rounded border space-y-1">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-muted-foreground">{fert.name}</span>
+                                                                        <span className="font-bold text-green-700">{toBengaliNumber(totalAmount)}</span>
+                                                                    </div>
+                                                                    <div className="text-[10px] text-muted-foreground">
+                                                                        প্রতি {userUnit?.label.split(' ')[0] || 'বিঘা'}: {toBengaliNumber(perUnitAmount)}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
                             {/* Status Actions */}
                             <Card>
                                 <CardContent className="pt-6">
@@ -377,15 +548,23 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
                                             </Button>
                                         )}
                                         {crop.status === "active" && (
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleStatusUpdate("completed")}
-                                                disabled={isUpdating}
-                                                className="bg-blue-600 hover:bg-blue-700"
-                                            >
-                                                <CheckCircle className="h-4 w-4 mr-2" />
-                                                সংগ্রহ সম্পন্ন
-                                            </Button>
+                                            <div className="flex flex-col gap-1">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleStatusUpdate("completed")}
+                                                    disabled={isUpdating || (progress?.elapsed_days < progress?.total_days)}
+                                                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title={progress?.elapsed_days < progress?.total_days ? "এখনও সংগ্রহের সময় হয়নি" : "ফসল সংগ্রহ করুন"}
+                                                >
+                                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                                    সংগ্রহ সম্পন্ন
+                                                </Button>
+                                                {progress?.elapsed_days < progress?.total_days && (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {toBengaliNumber(progress.total_days - progress.elapsed_days)} দিন বাকি
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                         <Button
                                             size="sm"

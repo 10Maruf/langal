@@ -72,6 +72,8 @@ class SendCropReminders extends Command
     private function processCropNotification(FarmerSelectedCrop $crop)
     {
         $startDate = new \DateTime($crop->start_date);
+        $startDate->setTime(0, 0, 0); // Normalize to start of day to ensure correct day difference calculation
+
         $today = new \DateTime();
         $today->setTime(0, 0, 0); // Normalize to start of day
 
@@ -146,7 +148,11 @@ class SendCropReminders extends Command
     private function initializeNextNotificationDate(FarmerSelectedCrop $crop): bool
     {
         $startDate = new \DateTime($crop->start_date);
+        $startDate->setTime(0, 0, 0); // Normalize
+
         $today = new \DateTime();
+        $today->setTime(0, 0, 0); // Normalize
+
         $elapsedDays = $startDate->diff($today)->days;
         
         $nextDate = null;

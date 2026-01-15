@@ -1,11 +1,27 @@
-import { CheckCircle, Circle, Clock } from "lucide-react";
+import { CheckCircle, Circle, Clock, Info, Pill, Lightbulb, Sprout } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toBengaliNumber } from "@/services/weatherService";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 
 interface TimelinePhase {
     phase: string;
     days: string;
     tasks: string[];
+    details?: string;
+    medicines?: string[];
+    advice?: string[];
+    fertilizers?: Array<{
+        name: string;
+        amount: string;
+    }>;
 }
 
 interface CropTimelineProps {
@@ -14,6 +30,14 @@ interface CropTimelineProps {
 }
 
 const CropTimeline = ({ cultivationPlan, elapsedDays }: CropTimelineProps) => {
+    const [selectedPhase, setSelectedPhase] = useState<TimelinePhase | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleViewDetails = (phase: TimelinePhase) => {
+        setSelectedPhase(phase);
+        setIsDialogOpen(true);
+    };
+
     const parsePhaseDay = (daysString: string): number | null => {
         const match = daysString.match(/Day (\d+)/);
         return match ? parseInt(match[1]) : null;
@@ -135,6 +159,15 @@ const CropTimeline = ({ cultivationPlan, elapsedDays }: CropTimelineProps) => {
                                                     ))}
                                                 </ul>
                                             </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className={`ml-2 shrink-0 ${!isCurrent ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-100'}`}
+                                                onClick={() => isCurrent && handleViewDetails(phase)}
+                                                disabled={!isCurrent}
+                                            >
+                                                <Info className={`h-5 w-5 ${isCurrent ? 'text-blue-600' : 'text-gray-400'}`} />
+                                            </Button>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -143,6 +176,99 @@ const CropTimeline = ({ cultivationPlan, elapsedDays }: CropTimelineProps) => {
                     })}
                 </div>
             </div>
+
+            {/* Details Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{selectedPhase?.phase}</DialogTitle>
+                        <DialogDescription>
+                            {selectedPhase?.days}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4 mt-4">
+                        {/* Tasks */}
+                        {selectedPhase?.tasks && selectedPhase.tasks.length > 0 && (
+                            <div>
+                                <h4 className="font-semibold mb-2 text-sm">করণীয় কাজসমূহ:</h4>
+                                <ul className="text-sm space-y-1.5 bg-muted/30 p-3 rounded-md">
+                                    {selectedPhase.tasks.map((task, idx) => (
+                                        <li key={idx} className="flex items-start gap-2">
+                                            <span className="text-primary mt-0.5">•</span>
+                                            <span>{task}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Fertilizers */}
+                        {selectedPhase?.fertilizers && selectedPhase.fertilizers.length > 0 && (
+                            <div>
+                                <h4 className="font-semibold mb-2 text-sm text-green-700 flex items-center gap-1.5">
+                                    <Sprout className="h-4 w-4" />
+                                    প্রয়োজনীয় সার:
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {selectedPhase.fertilizers.map((fert, idx) => (
+                                        <div key={idx} className="bg-green-50 p-2 rounded border border-green-100">
+                                            <div className="font-medium text-green-900 text-sm">{fert.name}</div>
+                                            <div className="text-xs text-green-700">{fert.amount}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Details */}
+                        {selectedPhase?.details && (
+                            <div>
+                                <h4 className="font-semibold mb-2 text-sm">বিস্তারিত নির্দেশনা:</h4>
+                                <p className="text-sm bg-blue-50 p-3 rounded-md text-muted-foreground">
+                                    {selectedPhase.details}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Medicines */}
+                        {selectedPhase?.medicines && selectedPhase.medicines.length > 0 && (
+                            <div>
+                                <h4 className="font-semibold mb-2 text-sm text-orange-700 flex items-center gap-1.5">
+                                    <Pill className="h-4 w-4" />
+                                    প্রয়োজনীয় ঔষধ/কীটনাশক:
+                                </h4>
+                                <ul className="text-sm space-y-1.5 bg-orange-50 p-3 rounded-md border border-orange-100">
+                                    {selectedPhase.medicines.map((medicine, idx) => (
+                                        <li key={idx} className="flex items-start gap-2">
+                                            <Pill className="h-3.5 w-3.5 text-orange-600 mt-0.5 shrink-0" />
+                                            <span className="text-orange-900">{medicine}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Advice */}
+                        {selectedPhase?.advice && selectedPhase.advice.length > 0 && (
+                            <div>
+                                <h4 className="font-semibold mb-2 text-sm text-green-700 flex items-center gap-1.5">
+                                    <Lightbulb className="h-4 w-4" />
+                                    বিশেষ পরামর্শ:
+                                </h4>
+                                <ul className="text-sm space-y-1.5 bg-green-50 p-3 rounded-md border border-green-100">
+                                    {selectedPhase.advice.map((tip, idx) => (
+                                        <li key={idx} className="flex items-start gap-2">
+                                            <Lightbulb className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
+                                            <span className="text-green-900">{tip}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -303,24 +303,32 @@ class CropRecommendationController extends Controller
             DB::beginTransaction();
 
             $selectedCrops = [];
-            $startDate = $request->input('start_date') ? new \DateTime($request->input('start_date')) : new \DateTime();
+            
+            // Only set start date if explicitly provided. Otherwise null for 'planned' status.
+            $inputStartDate = $request->input('start_date');
+            $startDate = $inputStartDate ? new \DateTime($inputStartDate) : null;
 
             foreach ($request->input('crops') as $cropData) {
                 // Calculate expected harvest date based on duration
                 $duration = $cropData['duration_days'] ?? 90;
-                $harvestDate = (clone $startDate)->modify("+{$duration} days");
-
-                // Calculate next notification date from cultivation plan
+                
+                $harvestDate = null;
                 $nextNotificationDate = null;
-                if (!empty($cropData['cultivation_plan']) && is_array($cropData['cultivation_plan'])) {
-                    foreach ($cropData['cultivation_plan'] as $phase) {
-                        if (isset($phase['days'])) {
-                            // Extract day number (e.g., "Day 1" or "Day 1-3")
-                            if (preg_match('/Day (\d+)/i', $phase['days'], $matches)) {
-                                $dayOffset = (int)$matches[1];
-                                // If day is 0 or 1, set for start date, else add offset
-                                $nextNotificationDate = (clone $startDate)->modify("+" . max(0, $dayOffset - 1) . " days");
-                                break; // Found the first phase
+                
+                if ($startDate) {
+                    $harvestDate = (clone $startDate)->modify("+{$duration} days");
+
+                    // Calculate next notification date from cultivation plan
+                    if (!empty($cropData['cultivation_plan']) && is_array($cropData['cultivation_plan'])) {
+                        foreach ($cropData['cultivation_plan'] as $phase) {
+                            if (isset($phase['days'])) {
+                                // Extract day number (e.g., "Day 1" or "Day 1-3")
+                                if (preg_match('/Day (\d+)/i', $phase['days'], $matches)) {
+                                    $dayOffset = (int)$matches[1];
+                                    // If day is 0 or 1, set for start date, else add offset
+                                    $nextNotificationDate = (clone $startDate)->modify("+" . max(0, $dayOffset - 1) . " days");
+                                    break; // Found the first phase
+                                }
                             }
                         }
                     }
@@ -448,6 +456,41 @@ class CropRecommendationController extends Controller
         $oldStatus = $crop->status;
         $crop->status = $request->input('status');
         
+        // If starting cultivation (becoming active), reset start date to now
+        if ($crop->status === 'active' && $oldStatus === 'planned') {
+            $startDate = now();
+            $crop->start_date = $startDate->format('Y-m-d H:i:s');
+            
+            // Recalculate expected harvest date based on duration
+            if ($crop->duration_days) {
+                $harvestDate = (clone $startDate)->modify("+{$crop->duration_days} days");
+                $crop->expected_harvest_date = $harvestDate->format('Y-m-d H:i:s');
+            }
+            
+            // Recalculate next notifications based on new start date
+             if ($crop->cultivation_plan && is_array($crop->cultivation_plan)) {
+                $nextNotificationDate = null;
+                $nextActionDescription = null;
+                
+                foreach ($crop->cultivation_plan as $phase) {
+                    if (isset($phase['days'])) {
+                        if (preg_match('/Day (\d+)/i', $phase['days'], $matches)) {
+                            $dayOffset = (int)$matches[1];
+                            $nextNotificationDate = (clone $startDate)->modify("+" . max(0, $dayOffset - 1) . " days");
+                            $nextActionDescription = $phase['phase'];
+                            break; 
+                        }
+                    }
+                }
+                
+                $crop->next_notification_date = $nextNotificationDate;
+                $crop->next_action_description = $nextActionDescription;
+                
+                // Set initial progress
+                $crop->progress_percentage = 0;
+            }
+        }
+
         // If completed, save actual harvest date
         if ($crop->status === 'completed' && !$crop->actual_harvest_date) {
             $crop->actual_harvest_date = now()->format('Y-m-d');
@@ -539,16 +582,39 @@ class CropRecommendationController extends Controller
         }
 
         // Calculate progress
-        $startDate = new \DateTime($crop->start_date);
-        $harvestDate = new \DateTime($crop->expected_harvest_date);
         $today = new \DateTime();
+        $today->setTime(0, 0, 0);
+        
+        $startDate = null;
+        $harvestDate = null;
 
-        $totalDays = $startDate->diff($harvestDate)->days;
-        $elapsedDays = $startDate->diff($today)->days;
-        $remainingDays = $today->diff($harvestDate)->days;
+        if ($crop->start_date && $crop->expected_harvest_date) {
+            $startDate = new \DateTime($crop->start_date);
+            $startDate->setTime(0, 0, 0);
+            
+            $harvestDate = new \DateTime($crop->expected_harvest_date);
+            $harvestDate->setTime(0, 0, 0);
 
-        // Progress percentage
-        $progressPercentage = $totalDays > 0 ? min(100, max(0, ($elapsedDays / $totalDays) * 100)) : 0;
+            $totalDays = $startDate->diff($harvestDate)->days;
+            
+            if ($today < $startDate) {
+                // Future start date
+                $elapsedDays = 0;
+            } else {
+                $elapsedDays = $startDate->diff($today)->days;
+            }
+            
+            $remainingDays = $today->diff($harvestDate)->days; // Absolute diff
+            
+            // Progress percentage
+            $progressPercentage = $totalDays > 0 ? min(100, max(0, ($elapsedDays / $totalDays) * 100)) : 0;
+        } else {
+            // Not started yet
+            $totalDays = $crop->duration_days;
+            $elapsedDays = 0;
+            $remainingDays = $totalDays;
+            $progressPercentage = 0;
+        }
 
         // Find next action from cultivation plan
         $nextAction = null;
@@ -568,7 +634,9 @@ class CropRecommendationController extends Controller
                             'tasks' => $phase['tasks'] ?? [],
                         ];
                         // Calculate next action date
-                        $nextActionDate = (clone $startDate)->modify("+{$phaseDay} days")->format('Y-m-d');
+                        if ($startDate) {
+                            $nextActionDate = (clone $startDate)->modify("+{$phaseDay} days")->format('Y-m-d');
+                        }
                         $nextActionDescription = $phase['phase'];
                         break;
                     }
@@ -582,18 +650,154 @@ class CropRecommendationController extends Controller
         $crop->next_action_description = $nextActionDescription;
         $crop->save();
 
+        // Enrich cultivation_plan with fertilizer data
+        $enrichedCultivationPlan = $this->enrichCultivationPlanWithFertilizers($crop);
+
         return response()->json([
             'success' => true,
-            'crop' => $crop,
+            'crop' => array_merge($crop->toArray(), [
+                'cultivation_plan' => $enrichedCultivationPlan
+            ]),
             'progress' => [
                 'percentage' => round($progressPercentage, 1),
                 'elapsed_days' => $elapsedDays,
                 'remaining_days' => $remainingDays > 0 ? $remainingDays : 0,
                 'total_days' => $totalDays,
-                'is_overdue' => $today > $harvestDate,
+                'is_overdue' => $harvestDate ? ($today > $harvestDate) : false,
             ],
             'next_action' => $nextAction,
         ]);
+    }
+
+    /**
+     * Enrich cultivation plan with fertilizer schedule data
+     */
+    private function enrichCultivationPlanWithFertilizers($crop): array
+    {
+        $cultivationPlan = $crop->cultivation_plan ?? [];
+        $fertilizerSchedule = $crop->fertilizer_schedule ?? [];
+
+        if (empty($cultivationPlan) || empty($fertilizerSchedule)) {
+            return $cultivationPlan;
+        }
+
+        // Match fertilizers to cultivation phases based on timing keywords
+        foreach ($cultivationPlan as &$phase) {
+            $phaseName = $phase['phase'] ?? '';
+            $matchedFertilizers = [];
+
+            foreach ($fertilizerSchedule as $schedule) {
+                $timing = $schedule['timing'] ?? '';
+                
+                // Check if timing mentions this phase (simple keyword matching)
+                if (
+                    stripos($timing, $phaseName) !== false ||
+                    stripos($phaseName, 'বপন') !== false && stripos($timing, 'বপন') !== false ||
+                    stripos($phaseName, 'সার') !== false && stripos($timing, 'সার') !== false ||
+                    stripos($phaseName, 'Growth') !== false && stripos($timing, 'Growth') !== false
+                ) {
+                    $matchedFertilizers = $schedule['fertilizers'] ?? [];
+                    break;
+                }
+            }
+
+            // Add fertilizers and extended info to phase
+            $phase['fertilizers'] = $matchedFertilizers;
+            
+            // Add detailed info based on phase type
+            $phase['details'] = $this->getPhaseDetails($phaseName);
+            $phase['medicines'] = $this->getPhaseMedicines($phaseName);
+            $phase['advice'] = $this->getPhaseAdvice($phaseName);
+        }
+
+        return $cultivationPlan;
+    }
+
+    /**
+     * Get detailed instructions for a phase
+     */
+    private function getPhaseDetails(string $phaseName): string
+    {
+        $details = [
+            'বপন' => 'জমি ভালোভাবে চাষ দিয়ে মাটি ঝুরঝুরে করে নিন। সারি থেকে সারির দূরত্ব ২৫-৩০ সেমি এবং গাছ থেকে গাছের দূরত্ব ১৫-২০ সেমি রাখুন। বীজ ২-৩ সেমি গভীরে বপন করুন।',
+            'Growth' => 'নিয়মিত সেচ দিন এবং আগাছা পরিষ্কার করুন। গাছের গোড়ায় মাটি তুলে দিন। রোগ ও পোকামাকড়ের আক্রমণ লক্ষ্য করুন এবং প্রয়োজনে ব্যবস্থা নিন।',
+            'পরিচর্যা' => 'নিয়মিত পরিদর্শন করুন এবং প্রয়োজনীয় যত্ন নিন। সেচ, আগাছা পরিষ্কার এবং মালচিং করুন।',
+            'কাটা' => 'ফসল পরিপক্ক হলে সকালে বা বিকেলে সংগ্রহ করুন। রোদের তাপ এড়িয়ে সংগ্রহ করা ভালো। পরিচ্ছন্ন যন্ত্র ব্যবহার করুন।',
+            'সংগ্রহ' => 'ফসল সাবধানে সংগ্রহ করুন এবং পরিষ্কার স্থানে রাখুন। দ্রুত বাজারজাত করুন বা সংরক্ষণের ব্যবস্থা করুন।',
+        ];
+
+        foreach ($details as $key => $value) {
+            if (stripos($phaseName, $key) !== false) {
+                return $value;
+            }
+        }
+
+        return 'এই পর্যায়ে নিয়মিত পরিচর্যা করুন এবং ফসলের অবস্থা পর্যবেক্ষণ করুন।';
+    }
+
+    /**
+     * Get medicines/pesticides for a phase
+     */
+    private function getPhaseMedicines(string $phaseName): array
+    {
+        $medicines = [
+            'বপন' => ['ব্যাভিস্টিন (বীজ শোধন)', 'ফুরাডান ৫জি (মাটি শোধন)'],
+            'Growth' => ['ইমিডাক্লোপ্রিড ২০ এসএল (পোকা দমন)', 'ম্যানকোজেব ৮০ ডব্লিউপি (রোগ প্রতিরোধ)'],
+            'পরিচর্যা' => ['সাইপারমেথ্রিন (পোকা নিয়ন্ত্রণ)', 'কার্বেন্ডাজিম (ছত্রাকনাশক)'],
+        ];
+
+        foreach ($medicines as $key => $value) {
+            if (stripos($phaseName, $key) !== false) {
+                return $value;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Get advice/tips for a phase
+     */
+    private function getPhaseAdvice(string $phaseName): array
+    {
+        $advice = [
+            'বপন' => [
+                'মাটিতে পর্যাপ্ত রস থাকলে বপন করুন',
+                'বীজের হার সঠিক রাখুন - অতিরিক্ত ঘন বপন করবেন না',
+                'সকাল বা বিকেলে বপন করা ভালো',
+            ],
+            'Growth' => [
+                'প্রতি ৭-১০ দিন পর পর গাছ পরীক্ষা করুন',
+                'পানি জমতে দেবেন না, নিষ্কাশনের ব্যবস্থা রাখুন',
+                'হলুদ বা রোগাক্রান্ত পাতা সরিয়ে ফেলুন',
+            ],
+            'পরিচর্যা' => [
+                'আগাছা নিয়মিত পরিষ্কার করুন',
+                'অতিরিক্ত সার প্রয়োগ করবেন না',
+                'রোগবালাই দেখা দিলে দ্রুত ব্যবস্থা নিন',
+            ],
+            'কাটা' => [
+                'সঠিক সময়ে সংগ্রহ করুন - কাঁচা বা অতিরিক্ত পাকা হলে মূল্য কমে যায়',
+                'পরিষ্কার এবং ধারালো যন্ত্র ব্যবহার করুন',
+                'ভাঙা বা ক্ষতিগ্রস্ত ফসল আলাদা করুন',
+            ],
+            'সংগ্রহ' => [
+                'ছায়ায় রাখুন এবং দ্রুত বাজারে নিয়ে যান',
+                'পরিচ্ছন্ন ঝুড়ি বা পাত্র ব্যবহার করুন',
+                'ফসল মাটিতে ফেলে রাখবেন না',
+            ],
+        ];
+
+        foreach ($advice as $key => $value) {
+            if (stripos($phaseName, $key) !== false) {
+                return $value;
+            }
+        }
+
+        return [
+            'নিয়মিত পর্যবেক্ষণ করুন',
+            'প্রয়োজনে বিশেষজ্ঞের পরামর্শ নিন',
+        ];
     }
     /**
      * Get crop image from Unsplash
