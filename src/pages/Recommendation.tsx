@@ -95,7 +95,7 @@ const Recommendation = () => {
     const [season, setSeason] = useState("");
     const [cropType, setCropType] = useState("all");
     const [otherCropType, setOtherCropType] = useState("");
-    
+
     // Land data
     const [landSize, setLandSize] = useState<string>("1");
     const [landUnit, setLandUnit] = useState<string>("bigha");
@@ -284,10 +284,10 @@ const Recommendation = () => {
                 // Try to get precise location using API
                 try {
                     const geoData = await getReverseGeocoding(latitude, longitude);
-                    
+
                     if (geoData) {
                         // Map Division
-                        const divisionMap: {[key: string]: {en: string, bn: string}} = {
+                        const divisionMap: { [key: string]: { en: string, bn: string } } = {
                             "Dhaka": { en: "Dhaka", bn: "ঢাকা" },
                             "Chittagong": { en: "Chattogram", bn: "চট্টগ্রাম" },
                             "Chattogram": { en: "Chattogram", bn: "চট্টগ্রাম" },
@@ -312,12 +312,12 @@ const Recommendation = () => {
                         // Map District
                         detectedDistrict = geoData.name;
                         detectedDistrictBn = geoData.local_names?.bn || geoData.name;
-                        
+
                         // Fallcheck if not found in Division Map but coordinates hint elsewhere
                         // If API returns successfully, we trust it over the hardcoded boxes.
                     } else {
                         // Fallback logic if API fails
-                         if (latitude >= 22.0 && latitude <= 22.5 && longitude >= 91.0 && longitude <= 92.5) {
+                        if (latitude >= 22.0 && latitude <= 22.5 && longitude >= 91.0 && longitude <= 92.5) {
                             detectedDivision = "চট্টগ্রাম";
                             detectedDivisionEn = "Chattogram";
                         } else if (latitude >= 23.4 && latitude <= 24.0 && longitude >= 90.0 && longitude <= 91.0) {
@@ -350,8 +350,8 @@ const Recommendation = () => {
                         }
                     }
                 } catch (err) {
-                     console.error("GPS Reverse Geocoding failed", err);
-                     // Fallback here same as above... or just keep previous defaults
+                    console.error("GPS Reverse Geocoding failed", err);
+                    // Fallback here same as above... or just keep previous defaults
                 }
 
                 // Set location data
@@ -367,7 +367,7 @@ const Recommendation = () => {
                     postal_code: 0,
                     village: ""
                 });
-                
+
                 const addressStr = detectedDistrictBn ? `${detectedDistrictBn}, ${detectedDivision}` : detectedDivision;
                 setFullAddress(addressStr);
                 setIsLoadingLocation(false);
@@ -579,7 +579,7 @@ const Recommendation = () => {
             }
         } else {
             // Guest mode
-             toast({
+            toast({
                 title: "লগইন প্রয়োজন",
                 description: "ফসল সংরক্ষণ করতে লগইন করুন।",
                 variant: "destructive"
@@ -754,16 +754,16 @@ const Recommendation = () => {
                             ))}
                         </SelectContent>
                     </Select>
-                    
+
                     {cropType === "others" && (
                         <div className="mt-2">
-                             <input 
+                            <input
                                 type="text"
                                 placeholder="ফসলের ধরন লিখুন..."
                                 value={otherCropType}
                                 onChange={(e) => setOtherCropType(e.target.value)}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                             />
+                            />
                         </div>
                     )}
                 </div>
@@ -782,7 +782,7 @@ const Recommendation = () => {
                             </>
                         ) : (
                             <>
-                                {weatherData ? <span className="flex items-center gap-2"><Cloud className="h-4 w-4"/> আবহাওয়াসহ সেরা ফসল দেখুন</span> : 'সেরা ফসল দেখুন'}
+                                {weatherData ? <span className="flex items-center gap-2"><Cloud className="h-4 w-4" /> আবহাওয়াসহ সেরা ফসল দেখুন</span> : 'সেরা ফসল দেখুন'}
                             </>
                         )}
                     </Button>
@@ -1023,9 +1023,9 @@ const Recommendation = () => {
                                     {/* Using helper to get icon instead of type.icon which might be emoji/string */}
                                     {(() => {
                                         const typeKey = cropTypes.find(t => t.key === crop.type)?.key || 'all';
-                                         // Reuse inline logic or ideally the component instance if available.
-                                         // Since getFieldIcon is inside Render component scope, we can use it.
-                                         // But wait, renderStep3 is inside Component scope? Yes.
+                                        // Reuse inline logic or ideally the component instance if available.
+                                        // Since getFieldIcon is inside Render component scope, we can use it.
+                                        // But wait, renderStep3 is inside Component scope? Yes.
                                         return getFieldIcon(typeKey);
                                     })()}
                                 </span>
@@ -1047,7 +1047,7 @@ const Recommendation = () => {
                                         প্রতি {LAND_UNITS.find(u => u.value === landUnit)?.label.split(' ')[0]}: {formatTaka(Math.round(crop.cost_per_bigha * (LAND_UNITS.find(u => u.value === landUnit)?.factor || 1)))}
                                     </span>
                                 </div>
-                                
+
                                 <div className="flex flex-col p-2 bg-white rounded shadow-sm border border-slate-100">
                                     <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
                                         <Wheat className="h-3 w-3 text-amber-600" />
@@ -1057,13 +1057,13 @@ const Recommendation = () => {
                                         {scaleStringValue(crop.yield_per_bigha)}
                                     </span>
                                     <span className="text-[10px] text-muted-foreground border-t mt-1 pt-1">
-                                         প্রতি {LAND_UNITS.find(u => u.value === landUnit)?.label.split(' ')[0]}: {(() => {
-                                             const factor = LAND_UNITS.find(u => u.value === landUnit)?.factor || 1;
-                                             return crop.yield_per_bigha.replace(/(\d+(\.\d+)?)/g, (match) => {
-                                                    const num = parseFloat(match);
-                                                    return !isNaN(num) ? parseFloat((num * factor).toFixed(1)).toString() : match;
-                                             });
-                                         })()}
+                                        প্রতি {LAND_UNITS.find(u => u.value === landUnit)?.label.split(' ')[0]}: {(() => {
+                                            const factor = LAND_UNITS.find(u => u.value === landUnit)?.factor || 1;
+                                            return crop.yield_per_bigha.replace(/(\d+(\.\d+)?)/g, (match) => {
+                                                const num = parseFloat(match);
+                                                return !isNaN(num) ? parseFloat((num * factor).toFixed(1)).toString() : match;
+                                            });
+                                        })()}
                                     </span>
                                 </div>
 
@@ -1132,7 +1132,7 @@ const Recommendation = () => {
                                             const dayOffset = daysMatch ? parseInt(daysMatch[0]) : 0;
                                             const phaseDate = new Date(startDate);
                                             phaseDate.setDate(phaseDate.getDate() + dayOffset - 1);
-                                            
+
                                             // Determine Icon
                                             let PhaseIcon = Sprout;
                                             if (phase.phase.includes('রোপণ') || phase.phase.includes('Bona')) PhaseIcon = Leaf;
@@ -1142,7 +1142,7 @@ const Recommendation = () => {
 
                                             return (
                                                 <div key={idx} className="relative">
-                                                     {/* Timeline Dot */}
+                                                    {/* Timeline Dot */}
                                                     <div className="absolute -left-[21px] bg-background p-1 border border-indigo-200 rounded-full">
                                                         <PhaseIcon className="h-4 w-4 text-indigo-600" />
                                                     </div>
@@ -1154,7 +1154,7 @@ const Recommendation = () => {
                                                                 <p className="text-xs text-muted-foreground">{phase.days} • আনুমানিক: {phaseDate.toLocaleDateString('bn-BD')}</p>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* Tasks */}
                                                         <ul className="text-sm space-y-1.5 mt-2">
                                                             {phase.tasks.map((task, taskIdx) => (
@@ -1164,7 +1164,7 @@ const Recommendation = () => {
                                                                 </li>
                                                             ))}
                                                         </ul>
-                                                        
+
                                                         {/* Mapping Fertilizer to Phase if matches (Basic heuristic) */}
                                                         {crop.fertilizer_schedule?.find(f => f.timing.includes(phase.phase)) && (
                                                             <div className="mt-3 bg-white p-2 rounded border border-orange-100 text-xs">
@@ -1172,11 +1172,11 @@ const Recommendation = () => {
                                                                     <Zap className="h-3 w-3" /> সার প্রয়োগ:
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-1">
-                                                                     {crop.fertilizer_schedule.find(f => f.timing.includes(phase.phase))?.fertilizers.map((fert, fIdx) => (
+                                                                    {crop.fertilizer_schedule.find(f => f.timing.includes(phase.phase))?.fertilizers.map((fert, fIdx) => (
                                                                         <span key={fIdx} className="bg-orange-50 px-1.5 py-0.5 rounded text-orange-800 border border-orange-100">
                                                                             {fert.name}: {scaleStringValue(fert.amount)}
                                                                         </span>
-                                                                     ))}
+                                                                    ))}
                                                                 </div>
                                                             </div>
                                                         )}

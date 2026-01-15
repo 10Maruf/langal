@@ -95,13 +95,13 @@ const FarmerDashboard = () => {
     };
 
     const getSecondaryColorClass = () => {
-         if (filterStatus === 'completed') return 'bg-gray-400';
-         return 'bg-blue-400';
+        if (filterStatus === 'completed') return 'bg-gray-400';
+        return 'bg-blue-400';
     };
 
     const getSecondaryBgClass = () => {
-         if (filterStatus === 'completed') return 'bg-gray-100/80 text-gray-900';
-         return 'bg-blue-100/80 text-blue-900';
+        if (filterStatus === 'completed') return 'bg-gray-100/80 text-gray-900';
+        return 'bg-blue-100/80 text-blue-900';
     };
 
     // Weather state
@@ -486,8 +486,8 @@ const FarmerDashboard = () => {
 
                 {/* ২. কৃষক সংখ্যা ও আজকের দর */}
                 {/* <div className="grid grid-cols-2 gap-3"> */}
-                    {/* কৃষক সংখ্যা */}
-                    {/* <Card className="border">
+                {/* কৃষক সংখ্যা */}
+                {/* <Card className="border">
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
@@ -505,8 +505,8 @@ const FarmerDashboard = () => {
                         </CardContent>
                     </Card> */}
 
-                    {/* আজকের দর */}
-                    {/* <Card
+                {/* আজকের দর */}
+                {/* <Card
                         className="border cursor-pointer hover:border-primary/50 transition-colors"
                         onClick={() => navigate("/market-prices")}
                     >
@@ -604,7 +604,7 @@ const FarmerDashboard = () => {
                     <div className="relative z-10 space-y-2">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="font-semibold text-lg">আমার ফসল</h3>
-                             <Select value={filterStatus} onValueChange={setFilterStatus}>
+                            <Select value={filterStatus} onValueChange={setFilterStatus}>
                                 <SelectTrigger className="w-[170px] h-8 bg-white/60 backdrop-blur-sm border-white/40 text-xs font-medium">
                                     <SelectValue placeholder="ফিল্টার করুন" />
                                 </SelectTrigger>
@@ -650,25 +650,25 @@ const FarmerDashboard = () => {
                                                             )}
                                                             {crop.progress_percentage > 0 && (
                                                                 <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
-                                                                    <div 
-                                                                        className="h-full bg-green-500" 
+                                                                    <div
+                                                                        className="h-full bg-green-500"
                                                                         style={{ width: `${crop.progress_percentage}%` }}
                                                                     />
                                                                 </div>
                                                             )}
                                                         </div>
                                                         <h4 className="font-bold text-sm truncate text-green-900">{crop.crop_name_bn}</h4>
-                                                        
+
                                                         {/* Quick Action Icons */}
                                                         <div className="flex items-center gap-1.5 mt-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => handleCostClick(e, crop)}
                                                                 className="flex items-center gap-1 px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200"
                                                             >
                                                                 <DollarSign className="h-3 w-3" />
                                                                 <span>খরচ</span>
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => handleFertilizerClick(e, crop)}
                                                                 className="flex items-center gap-1 px-2 py-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors border border-green-200"
                                                             >
@@ -723,17 +723,17 @@ const FarmerDashboard = () => {
                                                             )}
                                                         </div>
                                                         <h4 className="font-medium text-sm truncate">{crop.crop_name_bn}</h4>
-                                                        
+
                                                         {/* Quick Action Icons */}
                                                         <div className="flex items-center gap-1.5 mt-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => handleCostClick(e, crop)}
                                                                 className="flex items-center gap-1 px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200"
                                                             >
                                                                 <DollarSign className="h-3 w-3" />
                                                                 <span>খরচ</span>
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => handleFertilizerClick(e, crop)}
                                                                 className="flex items-center gap-1 px-2 py-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors border border-green-200"
                                                             >
@@ -741,7 +741,7 @@ const FarmerDashboard = () => {
                                                                 <span>সার</span>
                                                             </button>
                                                         </div>
-                                                        
+
                                                         {crop.description_bn && (
                                                             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                                                                 {crop.description_bn}
@@ -915,17 +915,17 @@ const FarmerDashboard = () => {
                                 const multiplier = parseFloat(quickViewCrop.land_size) * (unit?.factor || 1);
                                 const totalAmount = (value as number) * multiplier;
                                 const perUnitAmount = (value as number) * (unit?.factor || 1);
-                                
+
                                 return (
                                     <div key={key} className="border-b pb-2 last:border-0 border-dashed border-gray-200">
                                         <div className="flex justify-between items-center">
                                             <span className="capitalize text-muted-foreground">
-                                                {key === 'seed' ? 'বীজ' : 
-                                                 key === 'fertilizer' ? 'সার' : 
-                                                 key === 'pesticide' ? 'কীটনাশক' : 
-                                                 key === 'irrigation' ? 'সেচ' : 
-                                                 key === 'labor' ? 'শ্রমিক' : 
-                                                 key === 'other' ? 'অন্যান্য' : key}
+                                                {key === 'seed' ? 'বীজ' :
+                                                    key === 'fertilizer' ? 'সার' :
+                                                        key === 'pesticide' ? 'কীটনাশক' :
+                                                            key === 'irrigation' ? 'সেচ' :
+                                                                key === 'labor' ? 'শ্রমিক' :
+                                                                    key === 'other' ? 'অন্যান্য' : key}
                                             </span>
                                             <span className="font-medium">৳{toBengaliNumber(Math.round(totalAmount))}</span>
                                         </div>
@@ -963,71 +963,71 @@ const FarmerDashboard = () => {
                     </DialogHeader>
                     {quickViewCrop?.fertilizer_schedule && (
                         <div className="space-y-4">
-                            {(Array.isArray(quickViewCrop.fertilizer_schedule) ? quickViewCrop.fertilizer_schedule : 
-                              typeof quickViewCrop.fertilizer_schedule === 'string' ? JSON.parse(quickViewCrop.fertilizer_schedule) : []).map((schedule: any, idx: number) => {
-                                const toEnglishNumber = (str: string) => {
-                                    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-                                    return str.replace(/[০-৯]/g, (digit) => bengaliDigits.indexOf(digit).toString());
-                                };
-                                
-                                return (
-                                    <div key={idx} className="bg-muted/30 p-3 rounded-md">
-                                        <p className="font-bold text-sm mb-2 text-primary">{schedule.timing}</p>
-                                        <div className="grid grid-cols-1 gap-2 text-sm">
-                                            {schedule.fertilizers?.map((fert: any, fIdx: number) => {
-                                                // Convert Bengali numbers to English first
-                                                const baseAmountEnglish = toEnglishNumber(fert.amount);
-                                                
-                                                // Calculate total for the user's land
-                                                let multiplier = parseFloat(quickViewCrop.land_size) || 1;
-                                                const unit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
-                                                if (unit) {
-                                                    multiplier = multiplier * unit.factor;
-                                                }
-                                                
-                                                const totalAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
-                                                    const num = parseFloat(match);
-                                                    if (!isNaN(num)) {
-                                                        const val = num * multiplier;
-                                                        return parseFloat(val.toFixed(1)).toString();
+                            {(Array.isArray(quickViewCrop.fertilizer_schedule) ? quickViewCrop.fertilizer_schedule :
+                                typeof quickViewCrop.fertilizer_schedule === 'string' ? JSON.parse(quickViewCrop.fertilizer_schedule) : []).map((schedule: any, idx: number) => {
+                                    const toEnglishNumber = (str: string) => {
+                                        const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                                        return str.replace(/[০-৯]/g, (digit) => bengaliDigits.indexOf(digit).toString());
+                                    };
+
+                                    return (
+                                        <div key={idx} className="bg-muted/30 p-3 rounded-md">
+                                            <p className="font-bold text-sm mb-2 text-primary">{schedule.timing}</p>
+                                            <div className="grid grid-cols-1 gap-2 text-sm">
+                                                {schedule.fertilizers?.map((fert: any, fIdx: number) => {
+                                                    // Convert Bengali numbers to English first
+                                                    const baseAmountEnglish = toEnglishNumber(fert.amount);
+
+                                                    // Calculate total for the user's land
+                                                    let multiplier = parseFloat(quickViewCrop.land_size) || 1;
+                                                    const unit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
+                                                    if (unit) {
+                                                        multiplier = multiplier * unit.factor;
                                                     }
-                                                    return match;
-                                                });
-                                                
-                                                // Convert base amount to user's selected unit
-                                                const userUnit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
-                                                const perUnitAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
-                                                    const num = parseFloat(match);
-                                                    if (!isNaN(num) && userUnit) {
-                                                        const val = num * userUnit.factor;
-                                                        return parseFloat(val.toFixed(1)).toString();
-                                                    }
-                                                    return match;
-                                                });
-                                                
-                                                return (
-                                                    <div key={fIdx} className="bg-background p-2 rounded border space-y-1">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-muted-foreground">{fert.name}</span>
-                                                            <span className="font-bold text-green-700">{toBengaliNumber(totalAmount)}</span>
+
+                                                    const totalAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
+                                                        const num = parseFloat(match);
+                                                        if (!isNaN(num)) {
+                                                            const val = num * multiplier;
+                                                            return parseFloat(val.toFixed(1)).toString();
+                                                        }
+                                                        return match;
+                                                    });
+
+                                                    // Convert base amount to user's selected unit
+                                                    const userUnit = LAND_UNITS.find(u => u.value === quickViewCrop.land_unit);
+                                                    const perUnitAmount = baseAmountEnglish.replace(/(\d+(\.\d+)?)/g, (match: string) => {
+                                                        const num = parseFloat(match);
+                                                        if (!isNaN(num) && userUnit) {
+                                                            const val = num * userUnit.factor;
+                                                            return parseFloat(val.toFixed(1)).toString();
+                                                        }
+                                                        return match;
+                                                    });
+
+                                                    return (
+                                                        <div key={fIdx} className="bg-background p-2 rounded border space-y-1">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-muted-foreground">{fert.name}</span>
+                                                                <span className="font-bold text-green-700">{toBengaliNumber(totalAmount)}</span>
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                প্রতি {userUnit?.label.split(' ')[0]}: {toBengaliNumber(perUnitAmount)}
+                                                            </div>
                                                         </div>
-                                                        <div className="text-[10px] text-muted-foreground">
-                                                            প্রতি {userUnit?.label.split(' ')[0]}: {toBengaliNumber(perUnitAmount)}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
                         </div>
                     )}
-                    {(!quickViewCrop?.fertilizer_schedule || 
-                      (Array.isArray(quickViewCrop.fertilizer_schedule) && quickViewCrop.fertilizer_schedule.length === 0) ||
-                      (typeof quickViewCrop.fertilizer_schedule === 'string' && JSON.parse(quickViewCrop.fertilizer_schedule).length === 0)) && (
-                        <p className="text-sm text-muted-foreground text-center py-4">সার প্রয়োগের সময়সূচী পাওয়া যায়নি</p>
-                    )}
+                    {(!quickViewCrop?.fertilizer_schedule ||
+                        (Array.isArray(quickViewCrop.fertilizer_schedule) && quickViewCrop.fertilizer_schedule.length === 0) ||
+                        (typeof quickViewCrop.fertilizer_schedule === 'string' && JSON.parse(quickViewCrop.fertilizer_schedule).length === 0)) && (
+                            <p className="text-sm text-muted-foreground text-center py-4">সার প্রয়োগের সময়সূচী পাওয়া যায়নি</p>
+                        )}
                 </DialogContent>
             </Dialog>
         </div>

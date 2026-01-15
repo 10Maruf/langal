@@ -186,7 +186,7 @@ const CropTimeline = ({ cultivationPlan, elapsedDays }: CropTimelineProps) => {
                             {selectedPhase?.days}
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="space-y-4 mt-4">
                         {/* Tasks */}
                         {selectedPhase?.tasks && selectedPhase.tasks.length > 0 && (
