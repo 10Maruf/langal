@@ -539,11 +539,11 @@ const FarmerDashboard = () => {
                     <div className="relative z-10 space-y-2">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="font-semibold text-lg">আমার ফসল</h3>
-                            {selectedCrops.length > 0 && (
+                            {/* {selectedCrops.length > 0 && (
                                 <Button variant="link" size="sm" onClick={() => navigate('/recommendation')}>
                                     আরও দেখুন
                                 </Button>
-                            )}
+                            )} */}
                         </div>
 
                         {cropsLoading ? (

@@ -170,6 +170,20 @@ const formatTime = (timestamp: number): string => {
   return `${period} ${toBengaliNumber(hour12)}:${toBengaliNumber(parseInt(minutes))}`;
 };
 
+// Reverse Geocoding API
+export const getReverseGeocoding = async (lat: number, lon: number): Promise<{ name: string; local_names?: { [key: string]: string }; state?: string } | null> => {
+  const url = `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data && data.length > 0 ? data[0] : null;
+  } catch (error) {
+    console.error("Geocoding error:", error);
+    return null;
+  }
+};
+
 // OpenWeatherMap One Call API 3.0 কল করা
 export const fetchWeatherOneCall = async (lat: number, lon: number): Promise<any> => {
   const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely&units=metric&lang=bn&appid=${OPENWEATHER_API_KEY}`;

@@ -27,7 +27,12 @@ import {
     Sprout,
     Check,
     Cloud,
-    Thermometer
+    Thermometer,
+    Carrot,
+    Apple,
+    Flame,
+    Bean,
+    Flower
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,7 +49,7 @@ import {
     getCurrentSeason
 } from "@/services/recommendationService";
 import LocationSelector from "@/components/farmer/LocationSelector";
-import { fetchWeatherOneCall, bangladeshDistricts, toBengaliNumber } from "@/services/weatherService";
+import { fetchWeatherOneCall, bangladeshDistricts, toBengaliNumber, getReverseGeocoding } from "@/services/weatherService";
 import api from "@/services/api";
 
 // Location data interface
@@ -89,6 +94,7 @@ const Recommendation = () => {
     // Season and crop type
     const [season, setSeason] = useState("");
     const [cropType, setCropType] = useState("all");
+    const [otherCropType, setOtherCropType] = useState("");
 
     // Data from API
     const [seasons, setSeasons] = useState<Season[]>([]);
@@ -154,14 +160,15 @@ const Recommendation = () => {
                 { key: 'kharif2', name_bn: 'খরিফ-২ মৌসুম', period: '১৬ জুলাই - ১৫ অক্টোবর', name_en: 'Kharif-2', period_en: '', description_bn: '', color: '#87CEEB' },
             ]);
             setCropTypes([
-                { key: 'all', name_bn: 'সব ধরন', name_en: 'All', icon: '🌱' },
-                { key: 'rice', name_bn: 'ধান', name_en: 'Rice', icon: '🌾' },
-                { key: 'vegetables', name_bn: 'সবজি', name_en: 'Vegetables', icon: '🥬' },
-                { key: 'fruits', name_bn: 'ফল', name_en: 'Fruits', icon: '🍎' },
-                { key: 'spices', name_bn: 'মসলা', name_en: 'Spices', icon: '🌶️' },
-                { key: 'pulses', name_bn: 'ডাল', name_en: 'Pulses', icon: '🫘' },
-                { key: 'oilseeds', name_bn: 'তৈলবীজ', name_en: 'Oilseeds', icon: '🌻' },
-                { key: 'tubers', name_bn: 'কন্দ ফসল', name_en: 'Tubers', icon: '🥔' },
+                { key: 'all', name_bn: 'সব ধরন', name_en: 'All', icon: 'sprout' },
+                { key: 'rice', name_bn: 'ধান', name_en: 'Rice', icon: 'wheat' },
+                { key: 'vegetables', name_bn: 'সবজি', name_en: 'Vegetables', icon: 'leaf' },
+                { key: 'fruits', name_bn: 'ফল', name_en: 'Fruits', icon: 'apple' },
+                { key: 'spices', name_bn: 'মসলা', name_en: 'Spices', icon: 'leaf' },
+                { key: 'pulses', name_bn: 'ডাল', name_en: 'Pulses', icon: 'bean' },
+                { key: 'oilseeds', name_bn: 'তৈলবীজ', name_en: 'Oilseeds', icon: 'flower' },
+                { key: 'tubers', name_bn: 'কন্দ ফসল', name_en: 'Tubers', icon: 'potato' },
+                { key: 'others', name_bn: 'অন্যান্য', name_en: 'Others', icon: 'lightbulb' },
             ]);
             setSeason(getCurrentSeason());
         }
@@ -229,42 +236,90 @@ const Recommendation = () => {
                 // Set coordinates for weather
                 setCoordinates({ lat: latitude, lon: longitude });
 
-                // Detect division based on coordinates
                 let detectedDivision = "ঢাকা";
                 let detectedDivisionEn = "Dhaka";
+                let detectedDistrict = "";
+                let detectedDistrictBn = "";
 
-                if (latitude >= 22.0 && latitude <= 22.5 && longitude >= 91.0 && longitude <= 92.5) {
-                    detectedDivision = "চট্টগ্রাম";
-                    detectedDivisionEn = "Chattogram";
-                } else if (latitude >= 23.4 && latitude <= 24.0 && longitude >= 90.0 && longitude <= 91.0) {
-                    detectedDivision = "ঢাকা";
-                    detectedDivisionEn = "Dhaka";
-                } else if (latitude >= 24.0 && latitude <= 25.5 && longitude >= 88.0 && longitude <= 90.0) {
-                    detectedDivision = "রাজশাহী";
-                    detectedDivisionEn = "Rajshahi";
-                } else if (latitude >= 22.0 && latitude <= 23.0 && longitude >= 89.0 && longitude <= 90.5) {
-                    detectedDivision = "খুলনা";
-                    detectedDivisionEn = "Khulna";
-                } else if (latitude >= 22.0 && latitude <= 23.0 && longitude >= 90.0 && longitude <= 91.0) {
-                    detectedDivision = "বরিশাল";
-                    detectedDivisionEn = "Barishal";
-                } else if (latitude >= 24.0 && latitude <= 25.5 && longitude >= 90.5 && longitude <= 92.5) {
-                    detectedDivision = "সিলেট";
-                    detectedDivisionEn = "Sylhet";
-                } else if (latitude >= 25.0 && latitude <= 26.5 && longitude >= 88.5 && longitude <= 90.0) {
-                    detectedDivision = "রংপুর";
-                    detectedDivisionEn = "Rangpur";
-                } else if (latitude >= 24.5 && latitude <= 25.5 && longitude >= 89.5 && longitude <= 90.5) {
-                    detectedDivision = "ময়মনসিংহ";
-                    detectedDivisionEn = "Mymensingh";
+                // Try to get precise location using API
+                try {
+                    const geoData = await getReverseGeocoding(latitude, longitude);
+                    
+                    if (geoData) {
+                        // Map Division
+                        const divisionMap: {[key: string]: {en: string, bn: string}} = {
+                            "Dhaka": { en: "Dhaka", bn: "ঢাকা" },
+                            "Chittagong": { en: "Chattogram", bn: "চট্টগ্রাম" },
+                            "Chattogram": { en: "Chattogram", bn: "চট্টগ্রাম" },
+                            "Rajshahi": { en: "Rajshahi", bn: "রাজশাহী" },
+                            "Khulna": { en: "Khulna", bn: "খুলনা" },
+                            "Barishal": { en: "Barishal", bn: "বরিশাল" },
+                            "Barisal": { en: "Barishal", bn: "বরিশাল" },
+                            "Sylhet": { en: "Sylhet", bn: "সিলেট" },
+                            "Rangpur": { en: "Rangpur", bn: "রংপুর" },
+                            "Mymensingh": { en: "Mymensingh", bn: "ময়মনসিংহ" }
+                        };
+
+                        if (geoData.state) {
+                            const cleanDiv = geoData.state.replace(" Division", "").trim();
+                            const match = Object.keys(divisionMap).find(k => k.toLowerCase() === cleanDiv.toLowerCase());
+                            if (match) {
+                                detectedDivision = divisionMap[match].bn;
+                                detectedDivisionEn = divisionMap[match].en;
+                            }
+                        }
+
+                        // Map District
+                        detectedDistrict = geoData.name;
+                        detectedDistrictBn = geoData.local_names?.bn || geoData.name;
+                        
+                        // Fallcheck if not found in Division Map but coordinates hint elsewhere
+                        // If API returns successfully, we trust it over the hardcoded boxes.
+                    } else {
+                        // Fallback logic if API fails
+                         if (latitude >= 22.0 && latitude <= 22.5 && longitude >= 91.0 && longitude <= 92.5) {
+                            detectedDivision = "চট্টগ্রাম";
+                            detectedDivisionEn = "Chattogram";
+                        } else if (latitude >= 23.4 && latitude <= 24.0 && longitude >= 90.0 && longitude <= 91.0) {
+                            detectedDivision = "ঢাকা";
+                            detectedDivisionEn = "Dhaka";
+                        } else if (latitude >= 24.0 && latitude <= 25.5 && longitude >= 88.0 && longitude <= 90.0) {
+                            detectedDivision = "রাজশাহী";
+                            detectedDivisionEn = "Rajshahi";
+                        } else if (latitude >= 22.0 && latitude <= 23.0 && longitude >= 89.0 && longitude <= 90.5) {
+                            detectedDivision = "খুলনা";
+                            detectedDivisionEn = "Khulna";
+                        } else if (latitude >= 22.0 && latitude <= 23.0 && longitude >= 90.0 && longitude <= 91.0) {
+                            // Correction for Lakshmipur vs Barisal
+                            if (longitude > 90.6) {
+                                detectedDivision = "চট্টগ্রাম";
+                                detectedDivisionEn = "Chattogram";
+                            } else {
+                                detectedDivision = "বরিশাল";
+                                detectedDivisionEn = "Barishal";
+                            }
+                        } else if (latitude >= 24.0 && latitude <= 25.5 && longitude >= 90.5 && longitude <= 92.5) {
+                            detectedDivision = "সিলেট";
+                            detectedDivisionEn = "Sylhet";
+                        } else if (latitude >= 25.0 && latitude <= 26.5 && longitude >= 88.5 && longitude <= 90.0) {
+                            detectedDivision = "রংপুর";
+                            detectedDivisionEn = "Rangpur";
+                        } else if (latitude >= 24.5 && latitude <= 25.5 && longitude >= 89.5 && longitude <= 90.5) {
+                            detectedDivision = "ময়মনসিংহ";
+                            detectedDivisionEn = "Mymensingh";
+                        }
+                    }
+                } catch (err) {
+                     console.error("GPS Reverse Geocoding failed", err);
+                     // Fallback here same as above... or just keep previous defaults
                 }
 
                 // Set location data
                 setLocationData({
                     division: detectedDivisionEn,
                     division_bn: detectedDivision,
-                    district: "",
-                    district_bn: "",
+                    district: detectedDistrict || "",
+                    district_bn: detectedDistrictBn || "",
                     upazila: "",
                     upazila_bn: "",
                     post_office: "",
@@ -272,12 +327,14 @@ const Recommendation = () => {
                     postal_code: 0,
                     village: ""
                 });
-                setFullAddress(detectedDivision);
+                
+                const addressStr = detectedDistrictBn ? `${detectedDistrictBn}, ${detectedDivision}` : detectedDivision;
+                setFullAddress(addressStr);
                 setIsLoadingLocation(false);
 
                 toast({
                     title: "লোকেশন পাওয়া গেছে",
-                    description: `আপনার বিভাগ: ${detectedDivision}`,
+                    description: `আপনার অবস্থান: ${addressStr}`,
                 });
             },
             (error) => {
@@ -304,6 +361,21 @@ const Recommendation = () => {
         );
     };
 
+    const getFieldIcon = (key: string) => {
+        switch (key) {
+            case 'all': return <Sprout className="h-4 w-4 text-green-600" />;
+            case 'rice': return <Wheat className="h-4 w-4 text-amber-500" />;
+            case 'vegetables': return <Carrot className="h-4 w-4 text-orange-500" />;
+            case 'fruits': return <Apple className="h-4 w-4 text-red-500" />;
+            case 'spices': return <Flame className="h-4 w-4 text-rose-600" />;
+            case 'pulses': return <Bean className="h-4 w-4 text-emerald-700" />;
+            case 'oilseeds': return <Flower className="h-4 w-4 text-yellow-500" />;
+            case 'tubers': return <Leaf className="h-4 w-4 text-stone-600" />;
+            case 'others': return <Lightbulb className="h-4 w-4 text-blue-500" />;
+            default: return <Sprout className="h-4 w-4 text-gray-500" />;
+        }
+    };
+
     const handleRecommend = async () => {
         if (!locationData?.division_bn || !season || !cropType) {
             toast({
@@ -325,7 +397,7 @@ const Recommendation = () => {
                 district: locationData.district_bn,
                 upazila: locationData.upazila_bn,
                 season,
-                crop_type: cropType,
+                crop_type: cropType === 'others' && otherCropType ? otherCropType : cropType,
                 // Include weather data for more accurate recommendations
                 weather_data: weatherData ? {
                     temperature: weatherData.temp,
@@ -534,27 +606,24 @@ const Recommendation = () => {
                         মৌসুম নির্বাচন করুন
                     </label>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {seasons.map((s) => (
-                            <button
-                                key={s.key}
-                                onClick={() => setSeason(s.key)}
-                                className={`p-4 rounded-lg border-2 text-left transition-all ${season === s.key
-                                    ? 'border-primary bg-primary/10'
-                                    : 'border-border hover:border-primary/50'
-                                    }`}
-                                style={{ backgroundColor: season === s.key ? `${s.color}40` : undefined }}
-                            >
-                                <div className="font-semibold text-sm">{s.name_bn}</div>
-                                <div className="text-xs text-muted-foreground">{s.period}</div>
-                                {season === s.key && (
-                                    <Badge variant="secondary" className="mt-2 text-xs">
-                                        {s.key === getCurrentSeason() ? 'বর্তমান মৌসুম' : 'নির্বাচিত'}
-                                    </Badge>
-                                )}
-                            </button>
-                        ))}
-                    </div>
+                    <Select value={season} onValueChange={setSeason}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="মৌসুম নির্বাচন করুন" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {seasons.map((s) => (
+                                <SelectItem key={s.key} value={s.key}>
+                                    {s.name_bn} ({s.period})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {season && season === getCurrentSeason() && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                            এটি বর্তমান মৌসুম
+                        </p>
+                    )}
                 </div>
 
                 {/* Crop Type Selection */}
@@ -564,21 +633,33 @@ const Recommendation = () => {
                         ফসলের ধরন
                     </label>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {cropTypes.map((type) => (
-                            <button
-                                key={type.key}
-                                onClick={() => setCropType(type.key)}
-                                className={`p-3 rounded-lg border text-center transition-all ${cropType === type.key
-                                    ? 'border-primary bg-primary/10'
-                                    : 'border-border hover:border-primary/50'
-                                    }`}
-                            >
-                                <span className="text-xl">{type.icon}</span>
-                                <div className="text-sm font-medium mt-1">{type.name_bn}</div>
-                            </button>
-                        ))}
-                    </div>
+                    <Select value={cropType} onValueChange={setCropType}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="ফসলের ধরন নির্বাচন করুন" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {cropTypes.map((type) => (
+                                <SelectItem key={type.key} value={type.key}>
+                                    <div className="flex items-center gap-2">
+                                        {getFieldIcon(type.key)}
+                                        <span>{type.name_bn}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    
+                    {cropType === "others" && (
+                        <div className="mt-2">
+                             <input 
+                                type="text"
+                                placeholder="ফসলের ধরন লিখুন..."
+                                value={otherCropType}
+                                onChange={(e) => setOtherCropType(e.target.value)}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                             />
+                        </div>
+                    )}
                 </div>
 
                 {/* Action Buttons */}
@@ -595,7 +676,7 @@ const Recommendation = () => {
                             </>
                         ) : (
                             <>
-                                {weatherData ? '🌤️ আবহাওয়াসহ সেরা ফসল দেখুন' : 'সেরা ফসল দেখুন'}
+                                {weatherData ? <span className="flex items-center gap-2"><Cloud className="h-4 w-4"/> আবহাওয়াসহ সেরা ফসল দেখুন</span> : 'সেরা ফসল দেখুন'}
                             </>
                         )}
                     </Button>
@@ -833,7 +914,14 @@ const Recommendation = () => {
                         <CardHeader>
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <span className="text-2xl">
-                                    {cropTypes.find(t => t.key === crop.type)?.icon || '🌱'}
+                                    {/* Using helper to get icon instead of type.icon which might be emoji/string */}
+                                    {(() => {
+                                        const typeKey = cropTypes.find(t => t.key === crop.type)?.key || 'all';
+                                         // Reuse inline logic or ideally the component instance if available.
+                                         // Since getFieldIcon is inside Render component scope, we can use it.
+                                         // But wait, renderStep3 is inside Component scope? Yes.
+                                        return getFieldIcon(typeKey);
+                                    })()}
                                 </span>
                                 {crop.name_bn} - বিস্তারিত পরিকল্পনা
                             </CardTitle>
