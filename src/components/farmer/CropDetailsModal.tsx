@@ -26,6 +26,7 @@ import {
     PlayCircle,
     XCircle,
     MapPin,
+    AlertTriangle,
 } from "lucide-react";
 import api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
@@ -71,6 +72,16 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
         const month = banglaMonths[date.getMonth()];
         const year = toBengaliNumber(date.getFullYear());
         return `${day} ${month}, ${year}`;
+    };
+
+    const getDaysRemaining = (createdAt: string) => {
+        if (!createdAt) return 7;
+        const created = new Date(createdAt);
+        const now = new Date();
+        const expirationDate = new Date(created.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const diffTime = expirationDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
     };
 
     // Convert Bengali numbers to English
@@ -263,6 +274,27 @@ const CropDetailsModal = ({ cropId, isOpen, onClose, onCropUpdated }: CropDetail
                         </div>
                     ) : crop ? (
                         <div className="space-y-4">
+                            {/* Planned Crop Warning */}
+                            {crop.status === 'planned' && (
+                                <div className="mb-4">
+                                    {getDaysRemaining(crop.created_at) <= 7 && getDaysRemaining(crop.created_at) > 0 ? (
+                                        <div className="flex items-center gap-2 text-sm text-orange-800 bg-orange-100 p-3 rounded-md border border-orange-200">
+                                            <AlertTriangle className="h-5 w-5 text-orange-600" />
+                                            <span className="font-medium">
+                                                সতর্কবার্তা: চাষ শুরু করার জন্য আর {toBengaliNumber(getDaysRemaining(crop.created_at))} দিন বাকি আছে। এর মধ্যে শুরু না করলে এটি বাতিল হয়ে যাবে।
+                                            </span>
+                                        </div>
+                                    ) : getDaysRemaining(crop.created_at) <= 0 ? (
+                                        <div className="flex items-center gap-2 text-sm text-red-800 bg-red-100 p-3 rounded-md border border-red-200">
+                                            <AlertTriangle className="h-5 w-5 text-red-600" />
+                                            <span className="font-medium">
+                                                মেয়াদ উত্তীর্ণ: এই ফসলটি চাষ করার সময়সীমা শেষ হয়ে গেছে।
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+
                             {/* Progress Section */}
                             {progress && crop.status !== "cancelled" && (
                                 <Card>

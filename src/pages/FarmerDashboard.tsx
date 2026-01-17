@@ -783,22 +783,6 @@ const FarmerDashboard = () => {
                                                             </div>
                                                         </div>
 
-                                                        {crop.status === 'planned' && (
-                                                            <div className="mt-2">
-                                                                {getDaysRemaining(crop.created_at) <= 7 && getDaysRemaining(crop.created_at) > 0 ? (
-                                                                    <div className="flex items-center gap-1 text-[10px] text-orange-600 bg-orange-50 px-1.5 py-1 rounded border border-orange-100">
-                                                                        <AlertTriangle className="h-3 w-3" />
-                                                                        <span>সময় বাকি: {toBengaliNumber(getDaysRemaining(crop.created_at))} দিন</span>
-                                                                    </div>
-                                                                ) : getDaysRemaining(crop.created_at) <= 0 ? (
-                                                                    <div className="flex items-center gap-1 text-[10px] text-red-600 bg-red-50 px-1.5 py-1 rounded border border-red-100">
-                                                                        <AlertTriangle className="h-3 w-3" />
-                                                                        <span>মেয়াদ উত্তীর্ণ</span>
-                                                                    </div>
-                                                                ) : null}
-                                                            </div>
-                                                        )}
-
                                                         {crop.description_bn && (
                                                             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                                                                 {crop.description_bn}
