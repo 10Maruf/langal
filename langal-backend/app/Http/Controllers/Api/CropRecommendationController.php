@@ -417,7 +417,12 @@ class CropRecommendationController extends Controller
             $query->where('status', $status);
         }
 
-        $selectedCrops = $query->get();
+        $selectedCrops = $query->get()->map(function ($crop) {
+            if ($crop->status === 'planned') {
+                $crop->progress_percentage = 0;
+            }
+            return $crop;
+        });
 
         return response()->json([
             'success' => true,
@@ -588,7 +593,7 @@ class CropRecommendationController extends Controller
         $startDate = null;
         $harvestDate = null;
 
-        if ($crop->start_date && $crop->expected_harvest_date) {
+        if ($crop->status === 'active' && $crop->start_date && $crop->expected_harvest_date) {
             $startDate = new \DateTime($crop->start_date);
             $startDate->setTime(0, 0, 0);
             
@@ -609,7 +614,7 @@ class CropRecommendationController extends Controller
             // Progress percentage
             $progressPercentage = $totalDays > 0 ? min(100, max(0, ($elapsedDays / $totalDays) * 100)) : 0;
         } else {
-            // Not started yet
+            // Not started yet or planned or cancelled
             $totalDays = $crop->duration_days;
             $elapsedDays = 0;
             $remainingDays = $totalDays;

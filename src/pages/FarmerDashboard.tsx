@@ -41,7 +41,9 @@ import {
     Clock,
     CheckCircle,
     DollarSign,
-    CalendarClock
+    CalendarClock,
+    AlertTriangle,
+    Play
 } from "lucide-react";
 import {
     fetchWeatherOneCall,
@@ -431,6 +433,33 @@ const FarmerDashboard = () => {
         setFertilizerDialogOpen(true);
     };
 
+    const handleStartCultivation = async (e: React.MouseEvent, crop: any) => {
+        e.stopPropagation();
+        try {
+            await api.put(`/recommendations/selected/${crop.selection_id}/status`, {
+                status: 'active'
+            }); // Backend will reset start_date to now()
+
+            // Refresh list
+            const response = await api.get('/recommendations/selected');
+            if (response.data?.selected_crops) {
+                setSelectedCrops(response.data.selected_crops);
+            }
+        } catch (error) {
+            console.error("Failed to start cultivation:", error);
+        }
+    };
+
+    const getDaysRemaining = (createdAt: string) => {
+        if (!createdAt) return 7;
+        const created = new Date(createdAt);
+        const now = new Date();
+        const expirationDate = new Date(created.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const diffTime = expirationDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
+
     return (
         <div className="min-h-screen bg-background">
             <Header />
@@ -725,22 +754,50 @@ const FarmerDashboard = () => {
                                                         <h4 className="font-medium text-sm truncate">{crop.crop_name_bn}</h4>
 
                                                         {/* Quick Action Icons */}
-                                                        <div className="flex items-center gap-1.5 mt-2">
-                                                            <button
-                                                                onClick={(e) => handleCostClick(e, crop)}
-                                                                className="flex items-center gap-1 px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200"
-                                                            >
-                                                                <DollarSign className="h-3 w-3" />
-                                                                <span>খরচ</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => handleFertilizerClick(e, crop)}
-                                                                className="flex items-center gap-1 px-2 py-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors border border-green-200"
-                                                            >
-                                                                <CalendarClock className="h-3 w-3" />
-                                                                <span>সার</span>
-                                                            </button>
+                                                        <div className="flex flex-col gap-2 mt-2">
+                                                            {crop.status === 'planned' && (
+                                                                <button
+                                                                    onClick={(e) => handleStartCultivation(e, crop)}
+                                                                    className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors w-full shadow-sm font-medium"
+                                                                >
+                                                                    <Play className="h-3 w-3 fill-white" />
+                                                                    <span>চাষ শুরু করুন</span>
+                                                                </button>
+                                                            )}
+
+                                                            <div className="flex items-center gap-1.5 w-full">
+                                                                <button
+                                                                    onClick={(e) => handleCostClick(e, crop)}
+                                                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200"
+                                                                >
+                                                                    <DollarSign className="h-3 w-3" />
+                                                                    <span>খরচ</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => handleFertilizerClick(e, crop)}
+                                                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700 rounded-md transition-colors border border-green-200"
+                                                                >
+                                                                    <CalendarClock className="h-3 w-3" />
+                                                                    <span>সার</span>
+                                                                </button>
+                                                            </div>
                                                         </div>
+
+                                                        {crop.status === 'planned' && (
+                                                            <div className="mt-2">
+                                                                {getDaysRemaining(crop.created_at) <= 7 && getDaysRemaining(crop.created_at) > 0 ? (
+                                                                    <div className="flex items-center gap-1 text-[10px] text-orange-600 bg-orange-50 px-1.5 py-1 rounded border border-orange-100">
+                                                                        <AlertTriangle className="h-3 w-3" />
+                                                                        <span>সময় বাকি: {toBengaliNumber(getDaysRemaining(crop.created_at))} দিন</span>
+                                                                    </div>
+                                                                ) : getDaysRemaining(crop.created_at) <= 0 ? (
+                                                                    <div className="flex items-center gap-1 text-[10px] text-red-600 bg-red-50 px-1.5 py-1 rounded border border-red-100">
+                                                                        <AlertTriangle className="h-3 w-3" />
+                                                                        <span>মেয়াদ উত্তীর্ণ</span>
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                        )}
 
                                                         {crop.description_bn && (
                                                             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
