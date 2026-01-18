@@ -179,7 +179,8 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
 
     // Handle post delete
     const handleDeletePost = async (postId: string) => {
-        const success = await socialFeedService.deletePost(postId);
+        const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
+        const success = await socialFeedService.deletePost(postId, userId);
 
         if (success) {
             setMyPosts(myPosts.filter(p => p.id !== postId));
@@ -188,6 +189,12 @@ export const PersonalPostManager = ({ onClose }: PersonalPostManagerProps) => {
             toast({
                 title: "পোস্ট মুছে ফেলা হয়েছে",
                 description: "আপনার পোস্ট সফলভাবে মুছে ফেলা হয়েছে।",
+            });
+        } else {
+            toast({
+                title: "ত্রুটি",
+                description: "পোস্ট মুছতে সমস্যা হয়েছে।",
+                variant: "destructive"
             });
         }
     };
