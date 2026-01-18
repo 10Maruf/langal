@@ -213,9 +213,14 @@ class SocialFeedReportController extends Controller
                     
                     // Send notification to post author
                     if ($post && $post->author_id) {
+                        \Log::info('Sending post removal notification', [
+                            'post_id' => $postId,
+                            'author_id' => $post->author_id
+                        ]);
+                        
                         $notificationService = new \App\Services\NotificationService();
                         $postContent = substr($post->content, 0, 50) . (strlen($post->content) > 50 ? '...' : '');
-                        $notificationService->sendToUser(
+                        $result = $notificationService->sendToUser(
                             $post->author_id,
                             'পোস্ট মুছে ফেলা হয়েছে',
                             'আপনার পোস্ট "' . $postContent . '" রিপোর্টের কারণে মুছে ফেলা হয়েছে।',
@@ -225,6 +230,10 @@ class SocialFeedReportController extends Controller
                             ],
                             'high'
                         );
+                        
+                        \Log::info('Post removal notification sent', [
+                            'success' => $result
+                        ]);
                     }
                 }
             } else {
@@ -258,9 +267,14 @@ class SocialFeedReportController extends Controller
                             
                             // Send notification to comment author
                             if ($comment->author_id) {
+                                \Log::info('Sending comment removal notification', [
+                                    'comment_id' => $report->comment_id,
+                                    'author_id' => $comment->author_id
+                                ]);
+                                
                                 $notificationService = new \App\Services\NotificationService();
                                 $commentContent = substr($comment->content, 0, 50) . (strlen($comment->content) > 50 ? '...' : '');
-                                $notificationService->sendToUser(
+                                $result = $notificationService->sendToUser(
                                     $comment->author_id,
                                     'মন্তব্য মুছে ফেলা হয়েছে',
                                     'আপনার মন্তব্য "' . $commentContent . '" রিপোর্টের কারণে মুছে ফেলা হয়েছে।',
@@ -271,6 +285,10 @@ class SocialFeedReportController extends Controller
                                     ],
                                     'high'
                                 );
+                                
+                                \Log::info('Comment removal notification sent', [
+                                    'success' => $result
+                                ]);
                             }
                         }
                     }

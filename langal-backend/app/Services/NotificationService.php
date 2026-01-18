@@ -260,6 +260,8 @@ class NotificationService
                 'marketplace_rejected' => 'marketplace_update',
                 'post_approved' => 'post_update',
                 'post_rejected' => 'post_update',
+                'post_removed' => 'post_update',
+                'comment_removed' => 'post_update',
             ];
             
             $dbNotificationType = $typeMapping[$notificationType] ?? 'system';
@@ -276,6 +278,8 @@ class NotificationService
                 'marketplace_rejected' => 'system',
                 'post_approved' => 'system',
                 'post_rejected' => 'system',
+                'post_removed' => 'system',
+                'comment_removed' => 'system',
             ];
             
             $dbCategory = $categoryMapping[$notificationType] ?? 'system';
