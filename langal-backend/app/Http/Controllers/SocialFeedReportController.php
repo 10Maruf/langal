@@ -204,9 +204,28 @@ class SocialFeedReportController extends Controller
 
                 // Delete post if requested
                 if ($deleteContent) {
+                    $postId = DB::table('post_reports')->where('report_id', $id)->value('post_id');
+                    $post = DB::table('posts')->where('post_id', $postId)->first();
+                    
                     DB::table('posts')
-                        ->where('post_id', DB::table('post_reports')->where('report_id', $id)->value('post_id'))
+                        ->where('post_id', $postId)
                         ->update(['is_deleted' => 1]);
+                    
+                    // Send notification to post author
+                    if ($post && $post->author_id) {
+                        $notificationService = new \App\Services\NotificationService();
+                        $postContent = substr($post->content, 0, 50) . (strlen($post->content) > 50 ? '...' : '');
+                        $notificationService->sendToUser(
+                            $post->author_id,
+                            'পোস্ট মুছে ফেলা হয়েছে',
+                            'আপনার পোস্ট "' . $postContent . '" রিপোর্টের কারণে মুছে ফেলা হয়েছে।',
+                            [
+                                'type' => 'post_removed',
+                                'post_id' => $postId
+                            ],
+                            'high'
+                        );
+                    }
                 }
             } else {
                 // Update comment report status
@@ -220,9 +239,41 @@ class SocialFeedReportController extends Controller
 
                 // Delete comment if requested
                 if ($deleteContent) {
-                    DB::table('comments')
-                        ->where('comment_id', DB::table('comment_reports')->where('report_id', $id)->value('comment_id'))
-                        ->update(['is_deleted' => 1]);
+                    // Get comment details first to find post_id
+                    $report = DB::table('comment_reports')->where('report_id', $id)->first();
+                    if ($report) {
+                        $comment = DB::table('comments')->where('comment_id', $report->comment_id)->first();
+                        
+                        // Only delete and decrement if not already deleted
+                        if ($comment && $comment->is_deleted == 0) {
+                            // Soft delete the comment
+                            DB::table('comments')
+                                ->where('comment_id', $report->comment_id)
+                                ->update(['is_deleted' => 1]);
+                                
+                            // Decrement post comments count
+                            DB::table('posts')
+                                ->where('post_id', $comment->post_id)
+                                ->decrement('comments_count');
+                            
+                            // Send notification to comment author
+                            if ($comment->author_id) {
+                                $notificationService = new \App\Services\NotificationService();
+                                $commentContent = substr($comment->content, 0, 50) . (strlen($comment->content) > 50 ? '...' : '');
+                                $notificationService->sendToUser(
+                                    $comment->author_id,
+                                    'মন্তব্য মুছে ফেলা হয়েছে',
+                                    'আপনার মন্তব্য "' . $commentContent . '" রিপোর্টের কারণে মুছে ফেলা হয়েছে।',
+                                    [
+                                        'type' => 'comment_removed',
+                                        'comment_id' => $report->comment_id,
+                                        'post_id' => $comment->post_id
+                                    ],
+                                    'high'
+                                );
+                            }
+                        }
+                    }
                 }
             }
 

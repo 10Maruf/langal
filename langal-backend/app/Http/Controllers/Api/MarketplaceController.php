@@ -683,6 +683,20 @@ class MarketplaceController extends Controller
                 'approved_by' => $userId
             ]);
 
+            // Send notification to listing owner
+            $notificationService = new \App\Services\NotificationService();
+            $notificationService->sendToUser(
+                $listing->seller_id,
+                'বিজ্ঞাপন অনুমোদিত',
+                'আপনার বিজ্ঞাপন "' . $listing->title . '" অনুমোদিত হয়েছে।',
+                [
+                    'type' => 'marketplace_approved',
+                    'listing_id' => $listing->listing_id,
+                    'title' => $listing->title
+                ],
+                'high'
+            );
+
             return response()->json(['success' => true, 'message' => 'Listing approved successfully']);
         } catch (\Exception $e) {
             \Log::error('Marketplace approval error: ' . $e->getMessage());
@@ -710,6 +724,20 @@ class MarketplaceController extends Controller
                 'approved_at' => now(),
                 'approved_by' => $userId
             ]);
+
+            // Send notification to listing owner
+            $notificationService = new \App\Services\NotificationService();
+            $notificationService->sendToUser(
+                $listing->seller_id,
+                'বিজ্ঞাপন প্রত্যাখ্যাত',
+                'আপনার বিজ্ঞাপন "' . $listing->title . '" প্রত্যাখ্যাত হয়েছে।',
+                [
+                    'type' => 'marketplace_rejected',
+                    'listing_id' => $listing->listing_id,
+                    'title' => $listing->title
+                ],
+                'high'
+            );
 
             return response()->json(['success' => true, 'message' => 'Listing rejected successfully']);
         } catch (\Exception $e) {

@@ -256,6 +256,10 @@ class NotificationService
                 'appointment_cancelled' => 'consultation_request',
                 'appointment_reminder' => 'consultation_request',
                 'incoming_call' => 'consultation_request',
+                'marketplace_approved' => 'marketplace_update',
+                'marketplace_rejected' => 'marketplace_update',
+                'post_approved' => 'post_update',
+                'post_rejected' => 'post_update',
             ];
             
             $dbNotificationType = $typeMapping[$notificationType] ?? 'system';
@@ -268,9 +272,25 @@ class NotificationService
                 'appointment_cancelled' => 'appointment',
                 'appointment_reminder' => 'reminder',
                 'incoming_call' => 'call',
+                'marketplace_approved' => 'system',
+                'marketplace_rejected' => 'system',
+                'post_approved' => 'system',
+                'post_rejected' => 'system',
             ];
             
             $dbCategory = $categoryMapping[$notificationType] ?? 'system';
+            
+            // Determine related entity ID
+            $relatedEntityId = null;
+            if (isset($data['appointment_id'])) {
+                $relatedEntityId = (string)$data['appointment_id'];
+            } elseif (isset($data['listing_id'])) {
+                $relatedEntityId = (string)$data['listing_id'];
+            } elseif (isset($data['post_id'])) {
+                $relatedEntityId = (string)$data['post_id'];
+            } elseif (isset($data['related_entity_id'])) {
+                $relatedEntityId = $data['related_entity_id'];
+            }
             
             // Insert directly into notifications table (notification_id is auto-increment)
             \Illuminate\Support\Facades\DB::table('notifications')->insert([
@@ -281,7 +301,7 @@ class NotificationService
                 'priority' => $priority,
                 'title' => $title,
                 'message' => $body,
-                'related_entity_id' => isset($data['appointment_id']) ? (string)$data['appointment_id'] : ($data['related_entity_id'] ?? null),
+                'related_entity_id' => $relatedEntityId,
                 'is_read' => 0,
                 'created_at' => now(),
             ]);

@@ -68,13 +68,15 @@ export const EnhancedPostCard = ({
     const [showReportDialog, setShowReportDialog] = useState(false);
     const [reportReason, setReportReason] = useState("");
     const [reportCommentId, setReportCommentId] = useState<string | null>(null);
+    const [isReporting, setIsReporting] = useState(false);
     const [showFullContent, setShowFullContent] = useState(false);
 
     // Load comments when showing comments section
     const loadComments = async () => {
         if (!showComments) {
             try {
-                const postComments = await socialFeedService.getComments(post.id);
+                const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
+                const postComments = await socialFeedService.getComments(post.id, userId);
                 setComments(postComments || []);
             } catch (error) {
                 console.error('Error loading comments:', error);
@@ -217,16 +219,32 @@ export const EnhancedPostCard = ({
             return;
         }
 
+        setIsReporting(true);
         const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
         const result = await socialFeedService.reportPost(post.id, reportReason, post.type, userId);
 
+        setIsReporting(false);
+        setShowReportDialog(false);
+        setReportReason("");
+
         if (result) {
-            setShowReportDialog(false);
-            setReportReason("");
+            // Update post reported state
+            if (onUpdate) {
+                onUpdate(post.id, { 
+                    reported: result.reported,
+                    reports: result.reports 
+                });
+            }
 
             toast({
                 title: result.reported ? "রিপোর্ট জমা দেওয়া হয়েছে" : "রিপোর্ট বাতিল করা হয়েছে",
                 description: result.reported ? "আমরা আপনার রিপোর্ট পর্যালোচনা করব।" : "আপনার রিপোর্ট সরিয়ে দেওয়া হয়েছে।",
+            });
+        } else {
+            toast({
+                title: "ত্রুটি",
+                description: "রিপোর্ট জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+                variant: "destructive"
             });
         }
     };
@@ -242,17 +260,30 @@ export const EnhancedPostCard = ({
             return;
         }
 
+        setIsReporting(true);
         const userId = user?.user_id || (user?.id ? parseInt(user.id) : undefined);
         const result = await socialFeedService.reportComment(post.id, commentId, reportReason, userId);
 
+        setIsReporting(false);
+        setShowReportDialog(false);
+        setReportReason("");
+        setReportCommentId(null);
+
         if (result) {
-            setShowReportDialog(false);
-            setReportReason("");
-            setReportCommentId(null);
+            // Update comment reported state
+            setComments(comments.map(c => 
+                c.id === commentId ? { ...c, reported: result.reported } : c
+            ));
 
             toast({
                 title: result.reported ? "মন্তব্য রিপোর্ট করা হয়েছে" : "রিপোর্ট বাতিল করা হয়েছে",
                 description: result.reported ? "আমরা আপনার রিপোর্ট পর্যালোচনা করব।" : "আপনার রিপোর্ট সরিয়ে দেওয়া হয়েছে।",
+            });
+        } else {
+            toast({
+                title: "ত্রুটি",
+                description: "মন্তব্য রিপোর্ট জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+                variant: "destructive"
             });
         }
     };
@@ -729,8 +760,8 @@ export const EnhancedPostCard = ({
                                                 }}
                                                 className="h-6 px-2 text-xs"
                                             >
-                                                <Flag className="h-3 w-3 mr-1" />
-                                                রিপোর্ট
+                                                <Flag className={cn("h-3 w-3 mr-1", comment.reported && "text-orange-500 fill-current")} />
+                                                {comment.reported ? 'রিপোর্ট বাতিল' : 'রিপোর্ট'}
                                             </Button>
                                         </div>
                                     </div>
@@ -757,22 +788,22 @@ export const EnhancedPostCard = ({
                             <SelectContent>
                                 {(reportCommentId ? COMMENT_REPORT_REASONS : POST_REPORT_REASONS).map((reason) => (
                                     <SelectItem key={reason.id} value={reason.id}>
-                                        <div>
-                                            <div className="font-medium">{reason.label}</div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {reason.description}
-                                            </div>
-                                        </div>
+                                        {reason.label}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
+                        {reportReason && (
+                            <p className="text-sm text-muted-foreground">
+                                {(reportCommentId ? COMMENT_REPORT_REASONS : POST_REPORT_REASONS).find(r => r.id === reportReason)?.description}
+                            </p>
+                        )}
                         <div className="flex gap-2">
                             <Button
                                 onClick={() => reportCommentId ? handleReportComment(reportCommentId) : handleReportPost()}
-                                disabled={!reportReason}
+                                disabled={!reportReason || isReporting}
                             >
-                                রিপোর্ট জমা দিন
+                                {isReporting ? "জমা দেওয়া হচ্ছে..." : "রিপোর্ট জমা দিন"}
                             </Button>
                             <Button
                                 variant="outline"

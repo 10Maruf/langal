@@ -65,6 +65,7 @@ export interface PostComment {
     postedAt: string;
     likes: number;
     liked?: boolean;
+    reported?: boolean;
     replies: PostReply[];
 }
 

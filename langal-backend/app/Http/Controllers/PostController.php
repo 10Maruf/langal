@@ -294,6 +294,9 @@ class PostController extends Controller
     // Get comments for a post
     public function getComments($id)
     {
+        // Get user_id from query parameter if provided
+        $userId = request()->query('user_id');
+        
         $comments = DB::select("
             SELECT
                 c.*,
@@ -308,7 +311,7 @@ class PostController extends Controller
             ORDER BY c.created_at ASC
         ", [$id]);
 
-        $formattedComments = array_map(function ($comment) {
+        $formattedComments = array_map(function ($comment) use ($userId) {
             // Build full avatar URL
             $avatarUrl = null;
             if ($comment->author_avatar) {
@@ -354,6 +357,10 @@ class PostController extends Controller
                 'postedAt' => $comment->created_at,
                 'likes' => 0,
                 'liked' => false,
+                'reported' => $userId ? DB::table('comment_reports')
+                    ->where('comment_id', $comment->comment_id)
+                    ->where('user_id', $userId)
+                    ->exists() : false,
                 'replies' => []
             ];
         }, $comments);
@@ -539,6 +546,7 @@ class PostController extends Controller
                 'user_id' => $userId,
                 'report_reason' => $reason,
                 'post_type' => $postType,
+                'status' => 'pending',
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -553,13 +561,10 @@ class PostController extends Controller
 
             // Notify data operators about the report
             $notificationService = new DataOperatorNotificationService();
-            $postContent = $post ? substr($post->content, 0, 50) : 'Post';
             $notificationService->notifyPostReport(
-                $id,
                 $userId,
-                $reason,
-                $postContent,
-                $reporter ? $reporter->full_name : 'Unknown User'
+                $id,
+                $reason
             );
 
             $reported = true;
@@ -604,6 +609,7 @@ class PostController extends Controller
                 'comment_id' => $commentId,
                 'user_id' => $userId,
                 'report_reason' => $reason,
+                'status' => 'pending',
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -619,12 +625,9 @@ class PostController extends Controller
             // Notify data operators about the report
             $notificationService = new DataOperatorNotificationService();
             $notificationService->notifyCommentReport(
-                $commentId,
-                $postId,
                 $userId,
-                $reason,
-                $comment ? substr($comment->comment_text, 0, 50) : 'Comment',
-                $reporter ? $reporter->full_name : 'Unknown User'
+                $commentId,
+                $reason
             );
 
             $reported = true;
@@ -783,8 +786,26 @@ class PostController extends Controller
                 'updated_at' => now()
             ]);
 
-        // Notify the post author (optional - can be implemented later)
-        // Send notification to author that their post was approved
+        // Send notification to post author
+        $notificationService = new \App\Services\NotificationService();
+        $postContent = substr($post->content, 0, 50) . (strlen($post->content) > 50 ? '...' : '');
+        
+        \Log::info('Sending post approval notification', [
+            'post_id' => $id,
+            'author_id' => $post->author_id,
+            'content' => $postContent
+        ]);
+        
+        $notificationService->sendToUser(
+            $post->author_id,
+            'পোস্ট অনুমোদিত',
+            'আপনার পোস্ট "' . $postContent . '" অনুমোদিত হয়েছে।',
+            [
+                'type' => 'post_approved',
+                'post_id' => $id
+            ],
+            'high'
+        );
 
         return response()->json([
             'message' => 'Post approved successfully',
@@ -819,8 +840,26 @@ class PostController extends Controller
                 'updated_at' => now()
             ]);
 
-        // Notify the post author (optional)
-        // Send notification to author that their post was rejected
+        // Send notification to post author
+        $notificationService = new \App\Services\NotificationService();
+        $postContent = substr($post->content, 0, 50) . (strlen($post->content) > 50 ? '...' : '');
+        
+        \Log::info('Sending post rejection notification', [
+            'post_id' => $id,
+            'author_id' => $post->author_id,
+            'content' => $postContent
+        ]);
+        
+        $notificationService->sendToUser(
+            $post->author_id,
+            'পোস্ট প্রত্যাখ্যাত',
+            'আপনার পোস্ট "' . $postContent . '" প্রত্যাখ্যাত হয়েছে।',
+            [
+                'type' => 'post_rejected',
+                'post_id' => $id
+            ],
+            'high'
+        );
 
         return response()->json([
             'message' => 'Post rejected successfully',

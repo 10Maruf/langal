@@ -69,9 +69,10 @@ export class SocialFeedService {
     }
 
     // Get comments for a post
-    async getComments(postId: string): Promise<PostComment[]> {
+    async getComments(postId: string, userId?: number): Promise<PostComment[]> {
         try {
-            const response = await axios.get(`${API_URL}/posts/${postId}/comments`);
+            const params = userId ? { user_id: userId } : {};
+            const response = await axios.get(`${API_URL}/posts/${postId}/comments`, { params });
             return response.data;
         } catch (error) {
             console.error('Error fetching comments:', error);

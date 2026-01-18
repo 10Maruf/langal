@@ -1559,6 +1559,18 @@ class DataOperatorAuthController extends Controller
 
             $totalPendingReports = $pendingReports + $pendingCommentReports;
 
+            // Get pending marketplace listings count
+            $pendingMarketplace = 0;
+            try {
+                if (\Schema::hasTable('marketplace_listings')) {
+                    $pendingMarketplace = DB::table('marketplace_listings')
+                        ->where('approval_status', 'pending')
+                        ->count();
+                }
+            } catch (\Exception $e) {
+                // Table might not exist
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -1569,6 +1581,7 @@ class DataOperatorAuthController extends Controller
                     'pending_soil_tests' => $pendingSoilTests,
                     'today_field_data' => $todayFieldData,
                     'pending_reports' => $totalPendingReports,
+                    'pending_marketplace' => $pendingMarketplace,
                 ],
             ]);
         } catch (\Exception $e) {
